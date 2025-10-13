@@ -1,0 +1,171 @@
+.step3-container {
+  width: 100%;
+  max-width: 320px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 32px;
+  padding-top: 80px;
+  padding-bottom: 100px;
+}
+
+.step3-content {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.step3-title {
+  color: #FFF9EC;
+  font-size: 16px;
+  font-weight: 500;
+  text-align: center;
+  margin: 0;
+}
+
+.step3-email {
+  color: #FFD700;
+  font-size: 15px;
+  font-weight: 600;
+  text-align: center;
+  margin: 0;
+  word-break: break-all;
+  padding: 0 16px;
+}
+
+.step3-instruction {
+  color: rgba(255, 249, 236, 0.8);
+  font-size: 14px;
+  text-align: center;
+  margin: 0;
+  margin-top: 8px;
+}
+
+/* 6 Ô NHẬP MÃ */
+.verification-code-inputs {
+  display: flex;
+  gap: 8px;
+  margin-top: 24px;
+  justify-content: center;
+}
+
+/* 6 Ô NHẬP MÃ - XÓA VIỀN VÀNG */
+.code-input {
+  width: 45px;
+  height: 56px;
+  background: #FFF9EC !important;
+  border: 2px solid #FFF9EC !important;
+  border-radius: 12px;
+  color: #000000 !important;
+  font-size: 24px;
+  font-weight: 600;
+  text-align: center;
+  outline: none !important; /* ✅ ĐÃ CÓ NHƯNG THÊM !important */
+  transition: all 0.3s ease;
+  caret-color: #000000;
+  box-shadow: none !important; /* ✅ THÊM - XÓA SHADOW MẶC ĐỊNH */
+}
+
+/* ✅ THÊM - XÓA OUTLINE KHI FOCUS */
+.code-input:focus {
+  border-color: #FFD700 !important;
+  background: #FFF9EC !important;
+  box-shadow: 0 0 12px rgba(255, 215, 0, 0.5) !important;
+  transform: scale(1.05);
+  outline: none !important; /* ✅ XÓA OUTLINE VÀNG */
+}
+
+/* ✅ THÊM - XÓA OUTLINE TRÊN TẤT CẢ TRẠNG THÁI */
+.code-input:focus-visible {
+  outline: none !important;
+}
+
+.code-input:not(:placeholder-shown) {
+  border-color: #FFD700 !important;
+  background: #FFF9EC !important;
+}
+
+/* Responsive cho mobile */
+@media (max-width: 375px) {
+  .code-input {
+    width: 40px;
+    height: 52px;
+    font-size: 22px;
+  }
+}
+
+/* NÚT GỬI LẠI MÃ */
+.resend-button {
+  background: none;
+  border: none;
+  color: #FFD700;
+  font-size: 13px;
+  text-decoration: underline;
+  cursor: pointer;
+  margin-top: 16px;
+  padding: 8px;
+  transition: all 0.3s ease;
+  outline: none !important; /* ✅ THÊM - XÓA OUTLINE NÚT */
+}
+
+.resend-button:hover {
+  color: #FFF9EC;
+  transform: scale(1.05);
+}
+
+.resend-button:focus {
+  outline: none !important; /* ✅ THÊM */
+}
+
+/* NÚT TIẾP TỤC */
+.step3-button {
+  position: fixed;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 310px;
+  max-width: calc(100% - 40px);
+  background-color: #FFF9EC !important;
+  color: #000000 !important;
+  height: 48px !important;
+  font-size: 15px !important;
+  font-weight: 600 !important;
+  z-index: 999;
+  border-radius: 24px !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  outline: none !important; /* ✅ THÊM */
+}
+
+.step3-button:hover {
+  transform: translateX(-50%) translateY(-2px);
+  box-shadow: 0 6px 16px rgba(255, 249, 236, 0.4);
+}
+
+.step3-button:focus {
+  outline: none !important; /* ✅ THÊM */
+}
+
+/* Responsive */
+@media (max-width: 375px) {
+  .step3-container {
+    padding-top: 60px;
+    max-width: 100%;
+  }
+
+  .verification-code-inputs {
+    gap: 6px;
+  }
+
+  .code-input {
+    width: 40px;
+    height: 52px;
+    font-size: 22px;
+  }
+
+  .step3-button {
+    width: calc(100% - 32px);
+    bottom: 16px;
+  }
+}

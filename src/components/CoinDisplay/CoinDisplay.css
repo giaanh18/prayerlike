@@ -1,0 +1,74 @@
+/* ./src/components/CoinDisplay/CoinDisplay.css */
+.coin-display {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: #FFF9EC;
+  border: none;
+  border-radius: 20px;
+  padding: 6px 14px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.coin-display:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.coin-display:active {
+  transform: translateY(0);
+}
+
+.coin-icon {
+  font-size: 18px;
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.2));
+}
+
+.coin-amount {
+  font-size: 14px;
+  font-weight: bold;
+  color: #000000;
+  letter-spacing: 0.5px;
+}
+
+/* 尺寸變體 */
+.coin-display-small {
+  padding: 4px 10px;
+  border-radius: 16px;
+}
+
+.coin-display-small .coin-icon {
+  font-size: 14px;
+}
+
+.coin-display-small .coin-amount {
+  font-size: 12px;
+}
+
+.coin-display-medium {
+  padding: 6px 14px;
+  border-radius: 20px;
+}
+
+.coin-display-medium .coin-icon {
+  font-size: 18px;
+}
+
+.coin-display-medium .coin-amount {
+  font-size: 14px;
+}
+
+.coin-display-large {
+  padding: 8px 18px;
+  border-radius: 24px;
+}
+
+.coin-display-large .coin-icon {
+  font-size: 22px;
+}
+
+.coin-display-large .coin-amount {
+  font-size: 16px;
+}

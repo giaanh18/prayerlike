@@ -1,0 +1,81 @@
+/* FULLSCREEN CONTAINER - NỀN MÀU XÁM KHÓI */
+.step4-fullscreen {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  
+background: linear-gradient(135deg, #2c3e50 0%, #3a6073 50%, #c9a961 100%);
+  
+  overflow: hidden;
+  z-index: 9999;
+  opacity: 1;
+  transition: opacity 0.5s ease-out;
+  padding: 20px;
+}
+
+/* FADE OUT EFFECT */
+.step4-fullscreen.fade-out {
+  opacity: 0;
+}
+
+/* HÌNH ẢNH VỪA VẶN - HIỂN THỊ ĐẦY ĐỦ */
+.fullscreen-image {
+  max-width: 90%;
+  max-height: 90vh;
+  width: auto;
+  height: auto;
+  object-fit: contain;
+  object-position: center;
+  border-radius: 16px;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.3);
+  animation: fadeInImage 0.8s ease-out;
+}
+
+/* ANIMATION FADE IN KHI VÀO */
+@keyframes fadeInImage {
+  0% {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Responsive - Mobile */
+@media (max-width: 768px) {
+  .step4-fullscreen {
+    padding: 16px;
+  }
+  
+  .fullscreen-image {
+    max-width: 95%;
+    max-height: 85vh;
+  }
+}
+
+@media (max-width: 480px) {
+  .step4-fullscreen {
+    padding: 12px;
+  }
+  
+  .fullscreen-image {
+    max-width: 100%;
+    max-height: 80vh;
+    border-radius: 12px;
+  }
+}
+
+/* Landscape mode */
+@media (orientation: landscape) and (max-height: 600px) {
+  .fullscreen-image {
+    max-height: 85vh;
+    max-width: auto;
+  }
+}

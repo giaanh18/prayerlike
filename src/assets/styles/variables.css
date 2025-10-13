@@ -1,0 +1,38 @@
+:root {
+  /* 新的漸層顏色 */
+  --gradient-start: #142049;
+  --gradient-middle: #848484;
+  --gradient-end: #FFDF9E;
+  
+  /* 輸入框和按鈕背景色 - 確保是 #FFF9EC */
+  --input-background: #FFF9EC;
+  --button-background: #FFF9EC;
+  
+  /* 文字顏色 - 確保是黑色 */
+  --text-color: #000000;
+  --placeholder-color: #666666;
+  
+  /* 主要顏色 */
+  --primary-color: #d4af37;
+  --secondary-color: #ffffff;
+  
+  /* 陰影 */
+  --shadow-light: 0 2px 10px rgba(0, 0, 0, 0.1);
+  --shadow-medium: 0 4px 20px rgba(0, 0, 0, 0.15);
+  
+  /* 邊框圓角 */
+  --border-radius-small: 8px;
+  --border-radius-medium: 12px;
+  --border-radius-large: 25px;
+  
+  /* 間距 */
+  --spacing-xs: 8px;
+  --spacing-sm: 12px;
+  --spacing-md: 16px;
+  --spacing-lg: 20px;
+  --spacing-xl: 24px;
+  
+  /* 手機強制尺寸 - 調整寬度 */
+  --mobile-max-width: 360px;
+  --mobile-min-height: 100vh;
+}

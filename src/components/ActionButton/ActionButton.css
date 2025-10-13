@@ -1,0 +1,199 @@
+/* src/components/ActionButton/ActionButton.css */
+.action-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: 12px; /* 預設矩形 */
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  outline: none;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  box-sizing: border-box;
+}
+
+/* 新增：圓形變體 */
+.action-button--circle {
+  border-radius: 50%;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  background-color: #D9D9D9; /* 預設背景色 */
+  flex-shrink: 0;
+}
+.action-button--circle img {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  object-fit: cover; /* 確保圖片適應圓形 */
+}
+
+/* 尺寸變體 */
+.action-button--small {
+  padding: 0 16px;
+  font-size: 12px;
+  height: 40px;
+  min-height: 40px;
+  max-height: 40px;
+}
+
+.action-button--medium {
+  padding: 0 20px;
+  font-size: 14px;
+  height: 48px;
+  min-height: 48px;
+  max-height: 48px;
+}
+
+.action-button--large {
+  padding: 0 24px;
+  font-size: 16px;
+  height: 56px;
+  min-height: 56px;
+  max-height: 56px;
+}
+
+/* 圓形按鈕的尺寸覆蓋（固定圓形大小） */
+.action-button--circle.action-button--small,
+.action-button--circle.action-button--medium,
+.action-button--circle.action-button--large {
+  width: 60px;
+  height: 60px;
+}
+
+/* ✅ PRIMARY 和 SECONDARY 變體 - 預設白色背景 */
+.action-button--primary,
+.action-button--secondary {
+  background-color: #FFFFFF !important;
+  color: #000000 !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* 圓形變體的背景覆蓋 */
+.action-button--circle {
+  background-color: #D9D9D9 !important; /* 預設其餘按鈕背景 */
+}
+
+/* ✅ TERTIARY 變體 - 強制黑底白字 (SIGN UP) */
+.action-button--tertiary {
+  background-color: #000000 !important;
+  color: #FFFFFF !important;
+  border: none !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2) !important;
+  font-size: 16px !important;
+}
+
+/* 圓形變體的tertiary覆蓋（如果需要） */
+.action-button--circle.action-button--tertiary {
+  background-color: #000000 !important;
+  color: #FFFFFF !important;
+}
+
+/* ✅ VERIFY 按鈕 - 有 Email 時變米黃色（只負責顏色）*/
+.verify-button.has-email {
+  background-color: #FFF9EC !important;
+  color: #000000 !important;
+}
+
+/* ✅ LOGIN 按鈕 - 有驗證碼時變米黃色（只負責顏色）*/
+.login-button.has-code {
+  background-color: #FFF9EC !important;
+  color: #000000 !important;
+}
+
+/* Hover 效果 */
+.action-button--primary:hover:not(:disabled),
+.action-button--secondary:hover:not(:disabled) {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  transform: translateY(-2px);
+}
+
+/* 圓形變體的hover覆蓋 */
+.action-button--circle:hover:not(:disabled) {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  transform: translateY(-2px);
+}
+
+.action-button--tertiary:hover:not(:disabled) {
+  background-color: #333333 !important;
+  color: #FFFFFF !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  transform: translateY(-2px);
+}
+
+/* 圓形變體的tertiary hover覆蓋 */
+.action-button--circle.action-button--tertiary:hover:not(:disabled) {
+  background-color: #333333 !important;
+  transform: translateY(-2px);
+}
+
+.verify-button.has-email:hover:not(:disabled),
+.login-button.has-code:hover:not(:disabled) {
+  background-color: #FFF5D6 !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  transform: translateY(-2px);
+}
+
+/* Active 效果（點擊時） */
+.action-button--primary:active:not(:disabled),
+.action-button--secondary:active:not(:disabled) {
+  transform: translateY(0);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* 圓形變體的active覆蓋 */
+.action-button--circle:active:not(:disabled) {
+  transform: translateY(0);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
+}
+
+.action-button--tertiary:active:not(:disabled) {
+  background-color: #000000 !important;
+  color: #FFFFFF !important;
+  transform: translateY(0);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
+}
+
+/* 圓形變體的tertiary active覆蓋 */
+.action-button--circle.action-button--tertiary:active:not(:disabled) {
+  background-color: #000000 !important;
+  transform: translateY(0);
+}
+
+.verify-button.has-email:active:not(:disabled),
+.login-button.has-code:active:not(:disabled) {
+  background-color: #FFF9EC !important;
+  transform: translateY(0);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* Disabled 狀態 */
+.action-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+  background-color: #E0E0E0 !important;
+  color: #999999 !important;
+}
+
+/* 圓形變體的disabled覆蓋 */
+.action-button--circle:disabled {
+  background-color: #E0E0E0 !important;
+}
+
+/* 載入動畫 */
+.action-button__spinner {
+  width: 20px;
+  height: 20px;
+  border: 2px solid transparent;
+  border-top: 2px solid currentColor;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}

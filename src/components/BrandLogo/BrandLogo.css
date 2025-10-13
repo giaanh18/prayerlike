@@ -1,0 +1,61 @@
+.brand-logo {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: var(--spacing-md, 16px);
+}
+
+.brand-logo__image {
+  object-fit: contain;
+  transition: transform 0.3s ease;
+}
+
+/* 尺寸變體 - 全部放大 */
+.brand-logo--small .brand-logo__image {
+  width: 80px;  /* 從 60px 增加到 80px */
+  height: 80px; /* 從 60px 增加到 80px */
+}
+
+.brand-logo--medium .brand-logo__image {
+  width: 120px; /* 從 80px 增加到 120px */
+  height: 120px; /* 從 80px 增加到 120px */
+}
+
+.brand-logo--large .brand-logo__image {
+  width: 160px; /* 從 120px 增加到 160px */
+  height: 160px; /* 從 120px 增加到 160px */
+}
+
+.brand-logo:hover .brand-logo__image {
+  transform: scale(1.05);
+}
+
+/* 響應式調整 */
+@media (max-width: 375px) {
+  .brand-logo--small .brand-logo__image {
+    width: 70px;
+    height: 70px;
+  }
+  
+  .brand-logo--medium .brand-logo__image {
+    width: 100px;
+    height: 100px;
+  }
+  
+  .brand-logo--large .brand-logo__image {
+    width: 140px;
+    height: 140px;
+  }
+}
+
+@media (min-width: 415px) {
+  .brand-logo--medium .brand-logo__image {
+    width: 140px; /* 大螢幕進一步放大 */
+    height: 140px;
+  }
+  
+  .brand-logo--large .brand-logo__image {
+    width: 180px;
+    height: 180px;
+  }
+}

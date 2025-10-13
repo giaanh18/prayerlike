@@ -1,0 +1,66 @@
+/* 🎯 FORCE OVERRIDE - ĐẢM BẢO THAY ĐỔI */
+.container {
+  max-width: 360px !important;
+  margin: 0 auto !important;
+  padding: 25px !important;
+  /* 🌈 MÀU MỚI - XANH MINT & HỒNG */
+  background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%) !important;
+  border-radius: 20px !important;
+  box-shadow: 0 15px 35px rgba(255, 105, 180, 0.3), 0 5px 15px rgba(0,0,0,0.1) !important;
+  text-align: center !important;
+  border: 2px solid rgba(255, 105, 180, 0.2) !important;
+}
+
+.title {
+  font-size: 26px !important;
+  font-weight: 700 !important;
+  /* 🌈 GRADIENT TEXT - TÍM & HỒNG */
+  background: linear-gradient(135deg, #667eea 0%, #ff6b9d 100%) !important;
+  -webkit-background-clip: text !important;
+  -webkit-text-fill-color: transparent !important;
+  background-clip: text !important;
+  margin-bottom: 20px !important;
+  text-shadow: 0 2px 4px rgba(255, 107, 157, 0.3) !important;
+}
+
+.button-group {
+  display: flex !important;
+  gap: 18px !important;
+  justify-content: center !important;
+  margin-top: 80px !important;
+  flex-wrap: wrap !important;
+}
+
+.post-button {
+  /* 🌈 GRADIENT MỚI - CAM & HỒNG */
+  background: linear-gradient(135deg, #ff9a9e 0%, #fecfef 50%, #fecfef 100%) !important;
+  color: #333 !important;  /* Chữ tối để dễ đọc */
+  border: none !important;
+  border-radius: 15px !important;
+  padding: 18px 30px !important;
+  font-size: 16px !important;
+  font-weight: 600 !important;
+  cursor: pointer !important;
+  min-width: 160px !important;
+  box-shadow: 0 8px 20px rgba(255, 154, 158, 0.4) !important;
+  transition: all 0.3s ease !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.5px !important;
+}
+
+.post-button:hover {
+  /* 🌈 HOVER - ĐẬM HỚN */
+  background: linear-gradient(135deg, #ff6b9d 0%, #c44569 100%) !important;
+  color: white !important;
+  transform: translateY(-3px) scale(1.05) !important;
+  box-shadow: 0 12px 25px rgba(255, 107, 157, 0.5) !important;
+}
+.page-title {
+  background: linear-gradient(135deg, #f44336 0%, #e91e63 100%) !important;
+  -webkit-background-clip: text !important;
+  -webkit-text-fill-color: transparent !important;
+  background-clip: text !important;
+  margin-top: 50px !important;  /* ← THÊM DÒNG NÀY */
+
+}
+
