@@ -5,7 +5,6 @@ import BrandLogo from '../../components/BrandLogo/BrandLogo';
 import FormInput from '../../components/FormInput/FormInput';
 import ActionButton from '../../components/ActionButton/ActionButton';
 import Step2_Terms from './steps/Step2_Terms';
-import Step3_VerifyEmail from './steps/Step3_VerifyEmail';
 import Step4_Transition from './steps/Step4_Transition';
 import Step5_TribeInfo from './steps/Step5_TribeInfo';
 import Step6_TribeSelection from './steps/Step6_TribeSelection';
@@ -18,10 +17,9 @@ const SignUp = () => {
   
   const [formData, setFormData] = useState({
     userId: '',
-    email: '',
     name: '',
     termsAccepted: false,
-    emailVerified: false,
+    emailVerified: true, // ✅ MẶC ĐỊNH = TRUE
     tribe: null
   });
 
@@ -41,13 +39,6 @@ const SignUp = () => {
       newErrors.userId = 'Vui lòng nhập User ID';
     } else if (formData.userId.length < 3) {
       newErrors.userId = 'User ID phải có ít nhất 3 ký tự';
-    }
-
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!formData.email.trim()) {
-      newErrors.email = 'Vui lòng nhập Email';
-    } else if (!emailRegex.test(formData.email)) {
-      newErrors.email = 'Email không hợp lệ';
     }
 
     if (!formData.name.trim()) {
@@ -75,16 +66,16 @@ const SignUp = () => {
     }
   };
 
+  // ✅ SỬA: NHẢY THẲNG TỪ STEP 2 → STEP 4
   const handleStep2Next = (termsData) => {
-    setFormData(prev => ({ ...prev, ...termsData }));
+    setFormData(prev => ({ 
+      ...prev, 
+      ...termsData,
+      emailVerified: true // ✅ TỰ ĐỘNG XÁC NHẬN EMAIL
+    }));
     console.log('✅ Step 2 Data:', termsData);
-    setCurrentStep(3);
-  };
-
-  const handleStep3Next = () => {
-    setFormData(prev => ({ ...prev, emailVerified: true }));
-    console.log('✅ Step 3: Email verified');
-    setCurrentStep(4);
+    console.log('✅ Email auto-verified (skipped Step 3)');
+    setCurrentStep(4); // ✅ BỎ QUA STEP 3
   };
 
   const handleStep4Complete = () => {
@@ -122,7 +113,6 @@ const SignUp = () => {
       '🎉 ĐĂNG KÝ THÀNH CÔNG!\n\n' +
       '📋 Thông tin tài khoản:\n' +
       `👤 User ID: ${finalData.userId}\n` +
-      `📧 Email: ${finalData.email}\n` +
       `✨ Tên: ${finalData.name}\n` +
       `🏛️ Chi phái: ${finalData.tribe?.name || 'Không chọn'}\n\n` +
       'Vui lòng đăng nhập để tiếp tục!'
@@ -157,17 +147,6 @@ const SignUp = () => {
           />
           {errors.name && <span className="error-text">{errors.name}</span>}
         </div>
-
-        <div className="input-group">
-          <FormInput
-            type="email"
-            placeholder="Enter your email"
-            value={formData.email}
-            onChange={(e) => handleChange('email', e.target.value)}
-            className="signup-input"
-          />
-          {errors.email && <span className="error-text">{errors.email}</span>}
-        </div>
         
         <ActionButton
           onClick={handleNext}
@@ -192,14 +171,7 @@ const SignUp = () => {
             onBack={handleBack}
           />
         );
-      case 3:
-        return (
-          <Step3_VerifyEmail 
-            email={formData.email}
-            onNext={handleStep3Next}
-            onBack={handleBack}
-          />
-        );
+      // ❌ XÓA CASE 3
       case 4:
         return (
           <Step4_Transition 
@@ -209,10 +181,10 @@ const SignUp = () => {
       case 5:
         return (
           <Step5_TribeInfo 
-            formData={formData}           // ✅ Thêm
-            updateFormData={updateFormData} // ✅ Thêm
-            nextStep={handleStep5Next}    // ✅ Đổi onNext → nextStep
-            prevStep={prevStep}           // ✅ Đổi onBack → prevStep
+            formData={formData}
+            updateFormData={updateFormData}
+            nextStep={handleStep5Next}
+            prevStep={prevStep}
           />
         );
       case 6:
@@ -236,7 +208,6 @@ const SignUp = () => {
           <div className="signup-progress">
             <div className={`progress-dot ${currentStep >= 1 ? 'active' : ''}`}></div>
             <div className={`progress-dot ${currentStep >= 2 ? 'active' : ''}`}></div>
-            <div className={`progress-dot ${currentStep >= 3 ? 'active' : ''}`}></div>
           </div>
         )}
         

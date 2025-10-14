@@ -1,6 +1,6 @@
 import React from 'react';
 import { Form, Input, Button, Select } from 'antd';
-import { UserOutlined, MailOutlined, LockOutlined, PhoneOutlined } from '@ant-design/icons';
+import { UserOutlined, LockOutlined, PhoneOutlined } from '@ant-design/icons';
 import './Step1_UserInfo.css';
 
 const { Option } = Select;
@@ -42,21 +42,7 @@ const Step1_UserInfo = ({ onNext }) => {
           />
         </Form.Item>
 
-        {/* Email */}
-        <Form.Item
-          name="email"
-          rules={[
-            { required: true, message: 'Please enter your email' },
-            { type: 'email', message: 'Please enter a valid email' }
-          ]}
-        >
-          <Input
-            prefix={<MailOutlined />}
-            placeholder="Email"
-            size="large"
-            className="step1-input"
-          />
-        </Form.Item>
+        {/* ❌ ĐÃ XÓA PHẦN EMAIL */}
 
         {/* Phone */}
         <Form.Item
@@ -130,7 +116,7 @@ const Step1_UserInfo = ({ onNext }) => {
           </Select>
         </Form.Item>
 
-        {/* ✅ BUTTON - ĐÃ SỬA LẠI HOÀN TOÀN */}
+        {/* Button */}
         <Form.Item 
           style={{ 
             marginBottom: 0,
