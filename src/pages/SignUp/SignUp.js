@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
+
 import LoginBackground from '../../components/LoginBackground/LoginBackground';
 import BrandLogo from '../../components/BrandLogo/BrandLogo';
 import FormInput from '../../components/FormInput/FormInput';
@@ -8,18 +9,25 @@ import Step2_Terms from './steps/Step2_Terms';
 import Step4_Transition from './steps/Step4_Transition';
 import Step5_TribeInfo from './steps/Step5_TribeInfo';
 import Step6_TribeSelection from './steps/Step6_TribeSelection';
+
 import logoImage from '../../assets/images/pray-logo.png';
 import './SignUp.css';
 
-const SignUp = () => {
+const SignUp = ({ onSignUpComplete }) => {
   const navigate = useNavigate();
+  const location = useLocation();
   const [currentStep, setCurrentStep] = useState(1);
+  
+  // ✅ 從 login 頁面接收已驗證的 email（不顯示，但保存在 formData 中）
+  const verifiedEmail = location.state?.email || '';
+  const verificationCode = location.state?.verificationCode || '';
   
   const [formData, setFormData] = useState({
     userId: '',
     name: '',
+    email: verifiedEmail, // ✅ 保存已驗證的 email
     termsAccepted: false,
-    emailVerified: true, // ✅ MẶC ĐỊNH = TRUE
+    emailVerified: true,
     tribe: null
   });
 
@@ -36,13 +44,13 @@ const SignUp = () => {
     const newErrors = {};
     
     if (!formData.userId.trim()) {
-      newErrors.userId = 'Vui lòng nhập User ID';
+      newErrors.userId = '請輸入 User ID';
     } else if (formData.userId.length < 3) {
-      newErrors.userId = 'User ID phải có ít nhất 3 ký tự';
+      newErrors.userId = 'User ID 必須至少 3 個字元';
     }
 
     if (!formData.name.trim()) {
-      newErrors.name = 'Vui lòng nhập tên của bạn';
+      newErrors.name = '請輸入您的名稱';
     }
 
     setErrors(newErrors);
@@ -66,16 +74,15 @@ const SignUp = () => {
     }
   };
 
-  // ✅ SỬA: NHẢY THẲNG TỪ STEP 2 → STEP 4
   const handleStep2Next = (termsData) => {
     setFormData(prev => ({ 
       ...prev, 
       ...termsData,
-      emailVerified: true // ✅ TỰ ĐỘNG XÁC NHẬN EMAIL
+      emailVerified: true
     }));
     console.log('✅ Step 2 Data:', termsData);
     console.log('✅ Email auto-verified (skipped Step 3)');
-    setCurrentStep(4); // ✅ BỎ QUA STEP 3
+    setCurrentStep(4);
   };
 
   const handleStep4Complete = () => {
@@ -104,21 +111,33 @@ const SignUp = () => {
   };
 
   const handleFinalComplete = () => {
-    const finalData = { ...formData };
+    const finalData = { 
+      ...formData,
+      id: formData.userId,
+      avatar: `https://ui-avatars.com/api/?name=${formData.name}&background=667eea&color=fff`,
+      token: `signup-token-${Date.now()}`,
+      loginMethod: 'email_verification'
+    };
+    
     console.log('🎉 FINAL SIGN UP DATA:', finalData);
     
+    // 儲存到 localStorage
     localStorage.setItem('userData', JSON.stringify(finalData));
     
-    alert(
-      '🎉 ĐĂNG KÝ THÀNH CÔNG!\n\n' +
-      '📋 Thông tin tài khoản:\n' +
-      `👤 User ID: ${finalData.userId}\n` +
-      `✨ Tên: ${finalData.name}\n` +
-      `🏛️ Chi phái: ${finalData.tribe?.name || 'Không chọn'}\n\n` +
-      'Vui lòng đăng nhập để tiếp tục!'
-    );
-    
-    navigate('/login');
+    // ✅ 呼叫 onSignUpComplete 來更新 App.js 的登入狀態
+    if (typeof onSignUpComplete === 'function') {
+      console.log('✅ 呼叫 onSignUpComplete，自動登入...');
+      onSignUpComplete(finalData);
+      
+      // 顯示成功訊息後跳轉
+      setTimeout(() => {
+        navigate('/main', { replace: true });
+      }, 500);
+    } else {
+      console.error('❌ onSignUpComplete is not a function');
+      alert('註冊成功！請重新登入。');
+      navigate('/login');
+    }
   };
 
   const renderStep1 = () => (
@@ -126,6 +145,7 @@ const SignUp = () => {
       <BrandLogo logoSrc={logoImage} size="medium" />
       
       <div className="signup-form">
+        {/* ✅ 移除 Email 顯示，只保留 USER ID 和 NAME */}
         <div className="input-group">
           <FormInput
             type="text"
@@ -171,7 +191,6 @@ const SignUp = () => {
             onBack={handleBack}
           />
         );
-      // ❌ XÓA CASE 3
       case 4:
         return (
           <Step4_Transition 

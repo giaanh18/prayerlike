@@ -18,7 +18,7 @@ import facebookIcon from '../../assets/icons/facebook-icon.png';
 import googleIcon from '../../assets/icons/google-icon.png';
 
 import './login.css';
-/*  */
+
 const Login = ({ onLogin }) => {
   const navigate = useNavigate();
 
@@ -97,10 +97,11 @@ const Login = ({ onLogin }) => {
     await sendVerificationCode();
   };
 
+  // ✅ 修改：驗證完成後跳轉到註冊頁面
   const handleLogin = async () => {
-    console.log('🔐 Login form submitted');
+    console.log('🔐 驗證碼確認流程開始');
     console.log('📧 Email:', email);
-    console.log('🎯 onLogin function:', typeof onLogin);
+    console.log('🔢 驗證碼:', verificationCode);
 
     if (!email) {
       setError('請輸入 Email');
@@ -123,12 +124,7 @@ const Login = ({ onLogin }) => {
       return;
     }
 
-    if (typeof onLogin !== 'function') {
-      console.error('❌ onLogin is not a function!', onLogin);
-      setError('登入功能異常，請重新整理頁面');
-      return;
-    }
-
+    // 驗證驗證碼是否正確
     const isCodeValid = await verifyEmailCode(verificationCode);
     if (!isCodeValid) {
       setError('驗證碼錯誤，請重新輸入');
@@ -140,34 +136,32 @@ const Login = ({ onLogin }) => {
     setSuccess('');
 
     try {
-      console.log('📡 Calling ApiService.login...');
+      console.log('📡 呼叫後端 API 驗證使用者狀態...');
 
-      const response = await ApiService.login(email, verificationCode);
+      // ✅ 這裡可以呼叫後端 API 檢查使用者是否已註冊
+      // 但根據您的需求，先固定跳轉到註冊頁面
+      
+      // 模擬 API 呼叫
+      // const response = await ApiService.checkUserExists(email, verificationCode);
+      
+      // 固定為新用戶，跳轉到註冊頁面
+      console.log('✅ 驗證碼正確，跳轉到註冊頁面');
+      setSuccess('第一次登入，正在前往註冊頁面...');
+      
+      setTimeout(() => {
+        // 將 email 和驗證碼傳遞到註冊頁面
+        navigate('/signup', { 
+          state: { 
+            email: email,
+            verificationCode: verificationCode,
+            verified: true 
+          } 
+        });
+      }, 1000);
 
-      console.log('📨 API Response:', response);
-
-      if (response.success) {
-        const userData = {
-          ...response.user,
-          id: response.user?.id,
-          name: response.user?.id,
-          email: email,
-          avatar: response.user?.avatar || `https://ui-avatars.com/api/?name=${email.split('@')[0]}&background=667eea&color=fff`,
-          token: response.token,
-          emailVerified: true,
-          loginMethod: 'email_verification'
-        };
-
-        console.log('✅ Login successful, calling onLogin with:', userData);
-        showLoginSuccess('Email 驗證碼登入', userData);
-
-      } else {
-        console.log('❌ Login failed:', response.message);
-        setError(response.message || '登入失敗，請檢查驗證碼');
-      }
     } catch (error) {
-      console.error('💥 Login error:', error);
-      setError('登入時發生錯誤，請稍後再試');
+      console.error('💥 驗證過程發生錯誤:', error);
+      setError('驗證時發生錯誤，請稍後再試');
     } finally {
       setIsLoading(false);
     }
@@ -187,13 +181,6 @@ const Login = ({ onLogin }) => {
 
     console.log('🚀 Social login successful');
     showLoginSuccess(`${provider} 社交登入`, userData);
-  };
-
-    const handleSignUp = () => {
-    console.log('Navigate to sign up');
-    navigate('/signup');  // ← THÊM DÒNG NÀY
-
-    // 導航到註冊頁面
   };
 
   return (
@@ -218,7 +205,7 @@ const Login = ({ onLogin }) => {
                 value={email}
                 onChange={handleEmailChange}
                 disabled={!!loginSuccessMessage}
-                className="email-input"
+                className="email-input email-left-align"
               />
               <ActionButton
                 onClick={handleVerify}
@@ -231,7 +218,7 @@ const Login = ({ onLogin }) => {
                   !!loginSuccessMessage
                 }
                 loading={isVerificationLoading}
-                className={`verify-button ${email ? 'has-email' : ''}`}  // ✅ 改回 has-email
+                className={`verify-button ${email ? 'has-email' : ''}`}
               >
                 {verificationTimer > 0 ? `${verificationTimer}s` : 
                  isVerificationSent ? 'RESEND' : 'VERIFY'}
@@ -256,6 +243,13 @@ const Login = ({ onLogin }) => {
               </div>
             )}
 
+            {/* 成功訊息 */}
+            {success && (
+              <div className="message-container success-message">
+                {success}
+              </div>
+            )}
+
             {/* 登入成功訊息 */}
             {loginSuccessMessage && (
               <div className="message-container login-success-message">
@@ -263,7 +257,7 @@ const Login = ({ onLogin }) => {
               </div>
             )}
             
-            {/* 登入按鈕 */}
+            {/* ✅ 修改按鈕文字為 CONFIRM */}
             <ActionButton
               onClick={handleLogin}
               variant="primary"
@@ -276,9 +270,9 @@ const Login = ({ onLogin }) => {
                 !!loginSuccessMessage
               }
               loading={isLoading}
-              className={`login-button ${verificationCode.length === 6 ? 'has-code' : ''}`}  // ✅ 保持 has-code
+              className={`login-button ${verificationCode.length === 6 ? 'has-code' : ''}`}
             >
-              LOGIN
+              CONFIRM
             </ActionButton>
           </div>
           
@@ -303,19 +297,6 @@ const Login = ({ onLogin }) => {
               size="medium"
             />
           </div>
-        </div>
-        
-        {/* 固定在底部的註冊按鈕 */}
-        <div className="signup-section">
-          <ActionButton
-            onClick={handleSignUp}
-            variant="tertiary"
-            size="medium"
-            className="signup-button"
-            disabled={!!loginSuccessMessage}
-          >
-            SIGN UP
-          </ActionButton>
         </div>
       </div>
     </LoginBackground>

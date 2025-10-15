@@ -10,7 +10,6 @@
   box-sizing: border-box;
 }
 
-
 .signup-content {
   display: flex;
   flex-direction: column;
@@ -36,6 +35,7 @@
   display: flex;
   flex-direction: column;
   gap: 4px;
+  position: relative;
 }
 
 .signup-input {
@@ -51,7 +51,7 @@
   margin-top: -4px;
 }
 
-/* NÚT CREATE ACCOUNT STICKY BOTTOM */
+/* ✅ CREATE ACCOUNT 按鈕 */
 .create-account-button {
   position: fixed;
   bottom: 20px;
@@ -67,11 +67,21 @@
   z-index: 999;
   box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
   border-radius: 24px !important;
+  transition: all 0.3s ease;
 }
 
-.create-account-button:hover {
-  transform: translateX(-50%) translateY(-2px);
-  box-shadow: 0 4px 12px rgba(255, 249, 236, 0.4);
+/* ✅ 關鍵修正：hover 時必須保持 translateX(-50%)，不能被 ActionButton 的樣式覆蓋 */
+.create-account-button:hover:not(:disabled) {
+  transform: translateX(-50%) !important; /* ✅ 強制保持位置 */
+  box-shadow: 0 4px 20px rgba(255, 249, 236, 0.6) !important;
+  filter: brightness(1.05);
+}
+
+/* ✅ active 效果 */
+.create-account-button:active:not(:disabled) {
+  transform: translateX(-50%) !important; /* ✅ 強制保持位置 */
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15) !important;
+  filter: brightness(0.95);
 }
 
 /* Responsive */

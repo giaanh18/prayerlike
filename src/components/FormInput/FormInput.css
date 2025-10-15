@@ -21,7 +21,7 @@
   transition: all 0.3s ease;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   box-sizing: border-box;
-  text-align: center;
+  text-align: center; /* ✅ 預設置中 */
   
   display: flex;
   align-items: center;
@@ -29,7 +29,7 @@
 }
 
 .form-input::placeholder {
-  color: #CCCCCC !important; /* ✅ Đổi từ #666666 thành #CCCCCC (xám nhạt hơn) */
+  color: #CCCCCC !important;
   text-transform: uppercase;
   font-size: 14px;
   font-weight: bold;

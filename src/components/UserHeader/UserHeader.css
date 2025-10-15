@@ -50,13 +50,13 @@
 
 .user-name-tag {
   background: #FFFFFF;
-  color: #2D3656;
+  color: #000000;  /* ✅ 黑色文字 */
   font-size: 15px;
   font-weight: 600;
   padding: 6px 16px;
   border-radius: 18px;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
-  margin-left: -23px; /* 增加負邊距，讓姓名標籤更貼近頭像 */
+  margin-left: -23px;
 }
 
 /* Right: Notification + Coins */

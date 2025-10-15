@@ -31,7 +31,8 @@
   border-radius: 0;
 }
 
-.app-container .user-header * {
+/* 排除掉User Info 的字，避免全部都改成白色 */
+.app-container .user-header *:not(.user-name-tag):not(.coin-amount) {
   color: #ffffff;
 }
 

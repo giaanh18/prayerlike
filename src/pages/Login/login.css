@@ -4,7 +4,7 @@
   min-height: 100vh;
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
+  justify-content: center; /* ✅ 改為 center，因為移除了底部按鈕 */
   align-items: center;
   padding: 20px;
   box-sizing: border-box;
@@ -20,7 +20,7 @@
   width: 100%;
   max-width: 280px;
   margin: 0 auto;
-  transform: translateY(-30px);
+  transform: translateY(0); /* ✅ 移除向上偏移 */
 }
 
 .login-form-new {
@@ -41,13 +41,25 @@
   height: 48px;
 }
 
-/* ✅ Email 輸入框固定 48px */
+/* ✅ Email 輸入框固定 48px + 文字靠左對齊 */
 .email-input {
   flex: 2;
   height: 48px !important;
   min-height: 48px !important;
   max-height: 48px !important;
   min-width: 0;
+}
+
+/* ✅ 新增：Email 輸入框文字靠左對齊 */
+.email-input.email-left-align input,
+.email-input.email-left-align .form-input {
+  text-align: left !important;
+  padding-left: 16px !important;
+}
+
+.email-input.email-left-align input::placeholder,
+.email-input.email-left-align .form-input::placeholder {
+  text-align: left !important;
 }
 
 /* ✅ VERIFY 按鈕 - 只控制寬度，高度由 ActionButton.css 控制 */
@@ -57,7 +69,6 @@
   min-width: 60px !important;
   max-width: 75px !important;
   white-space: nowrap;
-  /* 移除 height、padding、font-size，讓 action-button--medium 控制 */
 }
 
 /* ========================================
@@ -102,6 +113,14 @@
   border: 1px solid #f5c6cb;
 }
 
+/* ✅ 新增成功訊息樣式 */
+.success-message {
+  color: #155724 !important;
+  background-color: rgba(212, 237, 218, 0.9);
+  border: 1px solid #c3e6cb;
+  font-weight: bold;
+}
+
 .login-success-message {
   color: #155724 !important;
   background-color: rgba(212, 237, 218, 0.9);
@@ -110,9 +129,9 @@
 }
 
 /* ========================================
-   LOGIN 按鈕樣式
+   CONFIRM 按鈕樣式（原 LOGIN 按鈕）
    ======================================== */
-/* ✅ LOGIN 按鈕固定 48px - 核彈級修正 */
+/* ✅ CONFIRM 按鈕固定 48px */
 .login-button,
 button.login-button,
 button.login-button.action-button,
@@ -173,30 +192,9 @@ button.login-button.action-button--medium {
 }
 
 /* ========================================
-   固定在底部的註冊區域
+   ✅ 移除 SIGN UP 按鈕相關樣式
    ======================================== */
-.signup-section {
-  width: 100%;
-  max-width: 280px;
-  margin: 0 auto;
-  padding-top: 20px;
-  padding-bottom: 16px;
-  display: flex;
-  justify-content: center;
-}
-
-/* ✅ SIGN UP 按鈕固定 52px + 強制黑底白字 */
-.signup-section .signup-button {
-  width: 100% !important;
-  margin: 0 !important;
-  height: 52px !important;
-  min-height: 52px !important;
-  max-height: 52px !important;
-  background-color: #000000 !important;
-  color: #FFFFFF !important;
-  border: none !important;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2) !important;
-}
+/* .signup-section - 已移除 */
 
 /* ========================================
    響應式設計
@@ -209,11 +207,7 @@ button.login-button.action-button--medium {
   .login-main-content {
     gap: 16px;
     max-width: 100%;
-    transform: translateY(-20px);
-  }
-  
-  .signup-section {
-    max-width: 100%;
+    transform: translateY(0);
   }
   
   .email-verify-row {
@@ -223,18 +217,18 @@ button.login-button.action-button--medium {
   .verify-button {
     min-width: 60px !important;
     width: 60px !important;
-    /* 移除 font-size，讓 ActionButton.css 控制 */
   }
   
   .social-login-container {
     gap: 12px;
   }
 }
+
 /* ========================================
-   ✅ CHỈ ĐIỀU CHỈNH KÍCH THƯỚC CHỮ - FORCE OVERRIDE
+   ✅ 字體大小調整
    ======================================== */
 
-/* Email Input - Font size với nhiều selector */
+/* Email Input - Font size */
 .email-input input,
 .email-input .form-input,
 .form-input-container.email-input input,
@@ -246,7 +240,7 @@ div.email-input input[type="email"],
   line-height: 1.4 !important;
 }
 
-/* Email placeholder - Force override */
+/* Email placeholder */
 .email-input input::placeholder,
 .email-input .form-input::placeholder,
 .form-input-container.email-input input::placeholder,
@@ -254,7 +248,7 @@ input.form-input[type="email"]::placeholder {
   font-size: 13px !important;
 }
 
-/* Login Button - Font size với nhiều selector */
+/* CONFIRM Button - Font size */
 .login-button,
 button.login-button,
 button.login-button.action-button,
@@ -281,63 +275,6 @@ button.action-button.action-button--primary.action-button--medium.verify-button,
   .login-button,
   button.login-button,
   button.action-button {
-    font-size: 12px !important;
-  }
-}
-/* ========================================
-   ✅ TĂNG KÍCH THƯỚC CHỮ "SIGN UP TO"
-   ======================================== */
-
-/* SIGN UP TO text - Tăng lên một chút */
-.sign-button,
-button.sign-button,
-.sign-text,
-.signup-button,
-button.signup-button,
-.action-button.sign-button,
-button[class*="sign"],
-a[class*="sign"],
-span[class*="sign"],
-.signup-text,
-.sign-up-text {
-  font-size: 15px !important;  /* Hoặc 16px nếu muốn to hơn */
-  line-height: 1.4 !important;
-}
-
-/* Email Input - Giữ nguyên 13px */
-.email-input input,
-.email-input .form-input,
-.form-input-container.email-input input,
-input.form-input[type="email"] {
-  font-size: 13px !important;
-  line-height: 1.4 !important;
-}
-
-/* Email placeholder - Giữ nguyên 13px */
-.email-input input::placeholder,
-.email-input .form-input::placeholder {
-  font-size: 13px !important;
-}
-
-/* Login Button - Giữ nguyên 13px */
-.login-button,
-button.login-button,
-button.action-button.login-button {
-  font-size: 13px !important;
-  line-height: 1.4 !important;
-}
-
-/* Mobile responsive */
-@media (max-width: 375px) {
-  .sign-button,
-  button.sign-button,
-  button[class*="sign"],
-  a[class*="sign"] {
-    font-size: 14px !important;  /* Mobile cũng to hơn một chút */
-  }
-  
-  .email-input input,
-  .login-button {
     font-size: 12px !important;
   }
 }

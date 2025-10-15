@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import Login from './pages/Login/login';
-import SignUp from './pages/SignUp/SignUp';  // ✅ Đúng đường dẫn
+import SignUp from './pages/SignUp/SignUp';
 import MainApp from './pages/Context/context';
 import CreatePostScreen from './pages/CreatePostScreen/CreatePostScreen';
 import TextPostScreen from './pages/CreatePostScreen/TextPostScreen';
@@ -14,6 +14,14 @@ function App() {
   const [user, setUser] = useState(null);
 
   const handleLogin = (userData) => {
+    console.log('✅ App.js - handleLogin called:', userData);
+    setIsLoggedIn(true);
+    setUser(userData);
+  };
+
+  // ✅ 新增：處理註冊完成後的自動登入
+  const handleSignUpComplete = (userData) => {
+    console.log('✅ App.js - handleSignUpComplete called:', userData);
     setIsLoggedIn(true);
     setUser(userData);
   };
@@ -21,6 +29,7 @@ function App() {
   const handleLogout = () => {
     setIsLoggedIn(false);
     setUser(null);
+    localStorage.removeItem('userData');
   };
 
   const ProtectedRoute = ({ children }) => {
@@ -40,10 +49,14 @@ function App() {
             element={isLoggedIn ? <Navigate to="/main" replace /> : <Login onLogin={handleLogin} />} 
           />
 
-          {/* 註冊頁 */}
+          {/* ✅ 註冊頁 - 傳入 onSignUpComplete */}
           <Route 
             path="/signup" 
-            element={isLoggedIn ? <Navigate to="/main" replace /> : <SignUp />} 
+            element={
+              isLoggedIn ? 
+              <Navigate to="/main" replace /> : 
+              <SignUp onSignUpComplete={handleSignUpComplete} />
+            } 
           />
 
           {/* 主頁 */}
