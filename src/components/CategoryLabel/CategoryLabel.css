@@ -1,6 +1,8 @@
 /* ./src/components/CategoryLabel/CategoryLabel.css */
 
-/* 標籤包裝器 */
+/* ========================================
+   📦 標籤包裝器
+   ======================================== */
 .category-label-wrapper {
   position: relative;
   display: flex;
@@ -9,10 +11,13 @@
   width: 100%;
   max-width: 180px;
   margin: 6px auto 0;
-  pointer-events: none;
+  pointer-events: auto;
+  cursor: default;
 }
 
-/* 向上的小三角形箭頭 */
+/* ========================================
+   🔺 向上的小三角形箭頭
+   ======================================== */
 .category-label-arrow {
   width: 0;
   height: 0;
@@ -23,10 +28,12 @@
   z-index: 2;
 }
 
-/* 對話框主體 */
+/* ========================================
+   💬 對話框主體
+   ======================================== */
 .category-label {
   display: flex;
-  justify-content: center;
+  justify-content: flex-start;
   align-items: center;
   width: 100%;
   padding: 8px 10px;
@@ -36,9 +43,43 @@
   position: relative;
   z-index: 1;
   box-sizing: border-box;
+  overflow: hidden;
 }
 
-/* 標籤文字 */
+/* ========================================
+   🎠 SCROLL CONTAINER - WRAPPER
+   ======================================== */
+.category-label-scroll-container {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+/* ✅ Text để đo kích thước - ẨN ĐI */
+.category-label-text-measure {
+  position: absolute;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+/* ========================================
+   🎠 SCROLL ANIMATION - CHẠY LIÊN TỤC
+   ======================================== */
+.category-label-scroll {
+  display: inline-flex;
+  align-items: center;
+  white-space: nowrap;
+  animation: scroll-seamless linear infinite;
+  animation-duration: var(--animation-duration, 10s);
+  will-change: transform;
+  backface-visibility: hidden;
+  perspective: 1000px;
+}
+
+/* ========================================
+   📝 標籤文字
+   ======================================== */
 .category-label-text {
   font-size: 11px;
   font-weight: 700;
@@ -46,15 +87,83 @@
   text-align: center;
   letter-spacing: 0.3px;
   white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
   text-shadow: 0 1px 2px rgba(255, 255, 255, 0.5);
   line-height: 1.2;
   user-select: none;
-  max-width: 100%;
+  display: inline-block;
+  flex-shrink: 0;
+  padding: 0 30px 0 0; /* ✅ Khoảng cách giữa các text */
 }
 
-/* ==================== 響應式設計 - 簡化版 ==================== */
+/* ========================================
+   🎬 KEYFRAMES - CHẠY MƯỢT HOÀN HẢO
+   ======================================== */
+@keyframes scroll-seamless {
+  0% {
+    transform: translateX(0) translateZ(0);
+  }
+  100% {
+    transform: translateX(calc(-1 * (var(--text-width) + 30px))) translateZ(0);
+    /* ✅ Di chuyển đúng bằng (độ rộng text + padding-right) */
+  }
+}
+
+/* ========================================
+   🌫️ FADE EFFECT Ở 2 ĐẦU
+   ======================================== */
+.category-label::before,
+.category-label::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 20px;
+  z-index: 2;
+  pointer-events: none;
+  opacity: 1;
+}
+
+.category-label::before {
+  left: 0;
+  background: linear-gradient(to right, #F4E4C1, transparent);
+}
+
+.category-label::after {
+  right: 0;
+  background: linear-gradient(to left, #E8D4A8, transparent);
+}
+
+/* ========================================
+   🎨 ĐỔI MÀU CHO PERSONAL & FAMILY
+   ======================================== */
+.category-buttons .category-item:first-child .category-label {
+  background: linear-gradient(135deg, #FFDE97 0%, #FFD580 100%) !important;
+}
+
+.category-buttons .category-item:first-child .category-label-arrow {
+  border-bottom-color: #FFDE97 !important;
+}
+
+.category-buttons .category-item:first-child .category-label::before {
+  background: linear-gradient(to right, #FFDE97, transparent);
+}
+
+.category-buttons .category-item:first-child .category-label::after {
+  background: linear-gradient(to left, #FFD580, transparent);
+}
+
+/* ========================================
+   🎯 HOVER EFFECT CHO WRAPPER
+   ======================================== */
+.category-label-wrapper:hover .category-label {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  transform: translateY(-1px);
+  transition: all 0.3s ease;
+}
+
+/* ========================================
+   📱 響應式設計
+   ======================================== */
 
 /* 極小手機 (≤360px) */
 @media (max-width: 360px) {
@@ -77,6 +186,21 @@
   .category-label-text {
     font-size: 8px;
     letter-spacing: 0px;
+    padding-right: 15px;
+  }
+
+  .category-label::before,
+  .category-label::after {
+    width: 12px;
+  }
+  
+  @keyframes scroll-seamless {
+    0% {
+      transform: translateX(0) translateZ(0);
+    }
+    100% {
+      transform: translateX(calc(-1 * (var(--text-width) + 15px))) translateZ(0);
+    }
   }
 }
 
@@ -101,6 +225,21 @@
   .category-label-text {
     font-size: 9.5px;
     letter-spacing: 0.1px;
+    padding-right: 20px;
+  }
+
+  .category-label::before,
+  .category-label::after {
+    width: 15px;
+  }
+  
+  @keyframes scroll-seamless {
+    0% {
+      transform: translateX(0) translateZ(0);
+    }
+    100% {
+      transform: translateX(calc(-1 * (var(--text-width) + 20px))) translateZ(0);
+    }
   }
 }
 
@@ -125,6 +264,21 @@
   .category-label-text {
     font-size: 10.5px;
     letter-spacing: 0.25px;
+    padding-right: 25px;
+  }
+
+  .category-label::before,
+  .category-label::after {
+    width: 18px;
+  }
+  
+  @keyframes scroll-seamless {
+    0% {
+      transform: translateX(0) translateZ(0);
+    }
+    100% {
+      transform: translateX(calc(-1 * (var(--text-width) + 25px))) translateZ(0);
+    }
   }
 }
 
@@ -149,6 +303,7 @@
   .category-label-text {
     font-size: 11.5px;
     letter-spacing: 0.35px;
+    padding-right: 30px;
   }
 }
 
@@ -173,6 +328,21 @@
   .category-label-text {
     font-size: 12.5px;
     letter-spacing: 0.45px;
+    padding-right: 35px;
+  }
+
+  .category-label::before,
+  .category-label::after {
+    width: 22px;
+  }
+  
+  @keyframes scroll-seamless {
+    0% {
+      transform: translateX(0) translateZ(0);
+    }
+    100% {
+      transform: translateX(calc(-1 * (var(--text-width) + 35px))) translateZ(0);
+    }
   }
 }
 
@@ -197,6 +367,21 @@
   .category-label-text {
     font-size: 14px;
     letter-spacing: 0.55px;
+    padding-right: 40px;
+  }
+
+  .category-label::before,
+  .category-label::after {
+    width: 25px;
+  }
+  
+  @keyframes scroll-seamless {
+    0% {
+      transform: translateX(0) translateZ(0);
+    }
+    100% {
+      transform: translateX(calc(-1 * (var(--text-width) + 40px))) translateZ(0);
+    }
   }
 }
 
@@ -221,13 +406,37 @@
   .category-label-text {
     font-size: 15px;
     letter-spacing: 0.6px;
+    padding-right: 45px;
+  }
+
+  .category-label::before,
+  .category-label::after {
+    width: 28px;
+  }
+  
+  @keyframes scroll-seamless {
+    0% {
+      transform: translateX(0) translateZ(0);
+    }
+    100% {
+      transform: translateX(calc(-1 * (var(--text-width) + 45px))) translateZ(0);
+    }
   }
 }
-/* Đổi màu Personal & Family */
-.category-buttons .category-item:first-child .category-label {
-  background: linear-gradient(135deg, #FFDE97 0%, #FFD580 100%) !important;
-}
 
-.category-buttons .category-item:first-child .category-label-arrow {
-  border-bottom-color: #FFDE97 !important;
+/* ========================================
+   ♿ ACCESSIBILITY
+   ======================================== */
+@media (prefers-reduced-motion: reduce) {
+  .category-label-scroll {
+    animation: none !important;
+  }
+  
+  .category-label-scroll {
+    justify-content: center;
+  }
+  
+  .category-label-text:not(:first-child) {
+    display: none;
+  }
 }
