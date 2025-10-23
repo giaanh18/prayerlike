@@ -1,12 +1,13 @@
+/* ========================================
+   📐 LAYOUT CHÍNH
+   ======================================== */
 .signup-container {
   width: 100%;
   min-height: 100vh;
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 20px;
-  padding-top: 80px;
-  padding-bottom: 80px;
+  padding: 80px 20px;
   box-sizing: border-box;
 }
 
@@ -17,8 +18,7 @@
   gap: 24px;
   width: 100%;
   max-width: 320px;
-  margin: 0 auto;
-  margin-top: 20px;
+  margin: 20px auto 0;
   flex: 1;
 }
 
@@ -30,6 +30,9 @@
   flex: 1;
 }
 
+/* ========================================
+   📝 INPUT GROUP
+   ======================================== */
 .input-group {
   width: 100%;
   display: flex;
@@ -51,7 +54,9 @@
   margin-top: -4px;
 }
 
-/* ✅ CREATE ACCOUNT 按鈕 */
+/* ========================================
+   🔘 CREATE ACCOUNT BUTTON - FIXED BOTTOM
+   ======================================== */
 .create-account-button {
   position: fixed;
   bottom: 20px;
@@ -59,37 +64,37 @@
   transform: translateX(-50%);
   width: 310px;
   max-width: calc(100% - 40px);
+  height: 48px !important;
   background-color: #FFF9EC !important;
   color: #000000 !important;
-  height: 48px !important;
   font-size: 15px !important;
   font-weight: 600 !important;
-  z-index: 999;
-  box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
   border-radius: 24px !important;
+  box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
+  z-index: 999;
   transition: all 0.3s ease;
 }
 
-/* ✅ 關鍵修正：hover 時必須保持 translateX(-50%)，不能被 ActionButton 的樣式覆蓋 */
+/* ✅ Hover - Giữ nguyên vị trí center */
 .create-account-button:hover:not(:disabled) {
-  transform: translateX(-50%) !important; /* ✅ 強制保持位置 */
+  transform: translateX(-50%) !important;
   box-shadow: 0 4px 20px rgba(255, 249, 236, 0.6) !important;
   filter: brightness(1.05);
 }
 
-/* ✅ active 效果 */
+/* ✅ Active - Giữ nguyên vị trí center */
 .create-account-button:active:not(:disabled) {
-  transform: translateX(-50%) !important; /* ✅ 強制保持位置 */
+  transform: translateX(-50%) !important;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15) !important;
   filter: brightness(0.95);
 }
 
-/* Responsive */
+/* ========================================
+   📱 RESPONSIVE DESIGN
+   ======================================== */
 @media (max-width: 375px) {
   .signup-container {
-    padding: 16px;
-    padding-top: 60px;
-    padding-bottom: 80px;
+    padding: 60px 16px 80px;
   }
   
   .signup-content {
@@ -109,7 +114,7 @@
 
   .create-account-button {
     width: calc(100% - 32px);
-    bottom: 16px;
     height: 46px !important;
+    bottom: 16px;
   }
 }

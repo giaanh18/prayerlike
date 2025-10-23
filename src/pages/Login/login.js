@@ -1,20 +1,20 @@
-// ./src/pages/Login/login.js
+// src/pages/Login/login.js
 
 // ========================================
 // 📦 IMPORT CÁC THƯ VIỆN VÀ COMPONENTS
 // ========================================
 
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom'; // Hook để điều hướng giữa các trang
-import ApiService from '../../services/api'; // Service để gọi API backend
-import useEmailVerification from '../../hooks/useEmailVerification'; // Custom hook xử lý xác thực email
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import useEmailVerification from '../../hooks/useEmailVerification';
+import authService from '../../services/authService';
 
 // Các component UI đã được tái sử dụng
-import LoginBackground from '../../components/LoginBackground/LoginBackground'; // Nền gradient
-import BrandLogo from '../../components/BrandLogo/BrandLogo'; // Logo thương hiệu
-import FormInput from '../../components/FormInput/FormInput'; // Input form
-import ActionButton from '../../components/ActionButton/ActionButton'; // Nút hành động
-import CircleButton from '../../components/CircleButton/CircleButton'; // Nút tròn cho social login
+import LoginBackground from '../../components/LoginBackground/LoginBackground';
+import BrandLogo from '../../components/BrandLogo/BrandLogo';
+import FormInput from '../../components/FormInput/FormInput';
+import ActionButton from '../../components/ActionButton/ActionButton';
+import CircleButton from '../../components/CircleButton/CircleButton';
 
 // Các file ảnh
 import logoImage from '../../assets/images/pray-logo.png';
@@ -22,30 +22,37 @@ import appleIcon from '../../assets/icons/apple-icon.png';
 import facebookIcon from '../../assets/icons/facebook-icon.png';
 import googleIcon from '../../assets/icons/google-icon.png';
 
-import './login.css'; // File CSS riêng cho trang login
+import './login.css';
 
 // ========================================
 // 🎯 COMPONENT CHÍNH
 // ========================================
 
-const Login = ({ onLogin }) => { // onLogin: callback từ component cha khi đăng nhập thành công
+const Login = ({ onLogin }) => {
   
   // ========================================
   // 🔧 KHỞI TẠO HOOKS
   // ========================================
   
-  const navigate = useNavigate(); // Hook để chuyển trang
+  const navigate = useNavigate();
 
   // ========================================
   // 📊 STATE MANAGEMENT
   // ========================================
   
-  const [email, setEmail] = useState(''); // Lưu email người dùng nhập
-  const [isLoading, setIsLoading] = useState(false); // Trạng thái loading khi xử lý đăng nhập
-  const [loginSuccessMessage, setLoginSuccessMessage] = useState(''); // Thông báo đăng nhập thành công
-  const [error, setError] = useState(''); // Thông báo lỗi
-  const [success, setSuccess] = useState(''); // Thông báo thành công
-  const [verificationCode, setVerificationCode] = useState(''); // Lưu mã xác thực 6 số
+  const [email, setEmail] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [verificationCode, setVerificationCode] = useState('');
+  
+  // ✅ State cho OAuth providers
+  const [providers, setProviders] = useState([]);
+  const [loadingProviders, setLoadingProviders] = useState(true);
+  
+  // ✅ GỘP TẤT CẢ MESSAGE VÀO 1 STATE
+  const [message, setMessage] = useState({
+    type: '', // 'error' | 'success' | 'login-success'
+    text: ''
+  });
 
   // Thời gian đếm ngược mặc định: 90 giây
   const EMAIL_VERIFICATION_COUNTDOWN_DEFAULT_SECONDS = 90;
@@ -55,43 +62,110 @@ const Login = ({ onLogin }) => { // onLogin: callback từ component cha khi đ�
   // ========================================
   
   const {
-    isVerificationSent,      // Boolean: Đã gửi mã xác thực chưa?
-    isVerificationLoading,   // Boolean: Đang gửi mã?
-    verificationTimer,       // Number: Thời gian đếm ngược (90, 89, 88...)
-    sendVerificationCode,    // Function: Gửi mã xác thực
-    verifyEmailCode,         // Function: Kiểm tra mã xác thực
-    resetVerificationState,  // Function: Reset lại trạng thái xác thực
+    isVerificationSent,
+    isVerificationLoading,
+    verificationTimer,
+    sendVerificationCode,
+    verifyEmailCode,
+    resetVerificationState,
   } = useEmailVerification(
-    email,                   // Truyền email vào hook
-    setError,                // Callback để set lỗi
-    () => {},                // Callback success (không dùng)
-    EMAIL_VERIFICATION_COUNTDOWN_DEFAULT_SECONDS // Thời gian đếm ngược
+    email,
+    (errorMsg) => setMessage({ type: 'error', text: errorMsg }),
+    () => {},
+    EMAIL_VERIFICATION_COUNTDOWN_DEFAULT_SECONDS
   );
+
+  // ========================================
+  // ✅ useEffect để load OAuth providers
+  // ========================================
+  
+  useEffect(() => {
+    loadProviders();
+  }, []);
+
+  const loadProviders = async () => {
+    console.log('🔄 Loading OAuth providers...');
+    setLoadingProviders(true);
+    
+    try {
+      const result = await authService.getProviders();
+      
+      console.log('📦 Providers result:', result);
+      
+      if (result.success && result.providers && result.providers.length > 0) {
+        console.log('✅ Available providers:', result.providers);
+        
+        // ✅ Log chi tiết từng provider
+        result.providers.forEach(p => {
+          console.log(`  • ${p.display_name || p.name}: ${p.enabled !== false ? 'enabled' : 'disabled'}`);
+        });
+        
+        setProviders(result.providers);
+        
+        // ✅ Hiển thị warning nếu dùng fallback
+        if (result.fallback) {
+          console.warn('⚠️ Đang dùng default providers (backend không khả dụng)');
+        }
+      } else {
+        console.error('❌ Failed to load providers:', result.error);
+        
+        // ✅ Set empty array nếu thất bại hoàn toàn
+        setProviders([]);
+      }
+      
+    } catch (error) {
+      console.error('❌ Load providers error:', error);
+      setProviders([]);
+    } finally {
+      setLoadingProviders(false);
+    }
+  };
+
+  // ========================================
+  // 🔧 HÀM VALIDATE EMAIL
+  // ========================================
+  
+  const validateEmail = (emailToValidate) => {
+    if (!emailToValidate) {
+      setMessage({ type: 'error', text: '請輸入 Email' });
+      return false;
+    }
+    
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(emailToValidate)) {
+      setMessage({ type: 'error', text: '請輸入正確的 Email 格式' });
+      return false;
+    }
+    
+    return true;
+  };
 
   // ========================================
   // 🎉 HÀM HIỂN THỊ THÔNG BÁO ĐĂNG NHẬP THÀNH CÔNG
   // ========================================
   
-  const showLoginSuccess = (method, userData) => {
-    // Các thông báo tương ứng với từng phương thức đăng nhập
+  const showLoginSuccess = (userData) => {
     const messages = {
-      'email_verification': '驗證碼登入成功，正在進入系統', // Đăng nhập bằng mã xác thực
-      'google_social': 'Google 登入成功，正在進入系統',
-      'facebook_social': 'Facebook 登入成功，正在進入系統',
-      'apple_social': 'Apple 登入成功，正在進入系統'
+      'email_verification': '驗證碼登入成功，正在進入系統',
+      'oauth': 'OAuth 登入成功，正在進入系統',
+      'google': 'Google 登入成功，正在進入系統',
+      'facebook': 'Facebook 登入成功，正在進入系統',
+      'apple': 'Apple 登入成功，正在進入系統'
     };
     
-    // Hiển thị thông báo tương ứng
-    setLoginSuccessMessage(messages[userData.loginMethod] || '登入成功，正在進入系統');
+    const messageKey = userData.loginMethod || userData.provider || 'oauth';
     
-    // Sau 1 giây:
+    setMessage({
+      type: 'login-success',
+      text: messages[messageKey] || '登入成功，正在進入系統'
+    });
+    
     setTimeout(() => {
-      setLoginSuccessMessage(''); // Xóa thông báo
-      onLogin(userData); // Gọi callback từ component cha
+      setMessage({ type: '', text: '' });
+      onLogin(userData);
       
-      // Sau thêm 0.1 giây nữa → Chuyển sang trang /main
       setTimeout(() => {
-        navigate('/main', { replace: true }); // replace: true → không lưu history
+        navigate('/main', { replace: true });
       }, 100);
     }, 1000);
   };
@@ -101,15 +175,12 @@ const Login = ({ onLogin }) => { // onLogin: callback từ component cha khi đ�
   // ========================================
   
   const handleEmailChange = (e) => {
-    setEmail(e.target.value); // Cập nhật email
-    setError(''); // Xóa thông báo lỗi
-    setSuccess(''); // Xóa thông báo thành công
-    setLoginSuccessMessage(''); // Xóa thông báo đăng nhập
+    setEmail(e.target.value);
+    setMessage({ type: '', text: '' });
     
-    // Nếu đã gửi mã xác thực → Reset lại
     if (isVerificationSent) {
-      resetVerificationState(); // Reset trạng thái xác thực
-      setVerificationCode(''); // Xóa mã đã nhập
+      resetVerificationState();
+      setVerificationCode('');
     }
   };
 
@@ -118,13 +189,12 @@ const Login = ({ onLogin }) => { // onLogin: callback từ component cha khi đ�
   // ========================================
   
   const handleVerificationCodeChange = (e) => {
-    // Chỉ cho phép nhập số và tối đa 6 ký tự
     const value = e.target.value
-      .replace(/\D/g, '')  // Loại bỏ tất cả ký tự không phải số (\D = non-digit)
-      .slice(0, 6);        // Chỉ lấy 6 ký tự đầu
+      .replace(/\D/g, '')
+      .slice(0, 6);
     
-    setVerificationCode(value); // Cập nhật mã
-    setError(''); // Xóa thông báo lỗi
+    setVerificationCode(value);
+    setMessage({ type: '', text: '' });
   };
 
   // ========================================
@@ -132,20 +202,7 @@ const Login = ({ onLogin }) => { // onLogin: callback từ component cha khi đ�
   // ========================================
   
   const handleVerify = async () => {
-    // 1. Kiểm tra email có được nhập không
-    if (!email) {
-      setError('請輸入 Email'); // "Vui lòng nhập Email"
-      return;
-    }
-
-    // 2. Kiểm tra định dạng email
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/; // Regex chuẩn cho email
-    if (!emailRegex.test(email)) {
-      setError('請輸入正確的 Email 格式'); // "Vui lòng nhập đúng định dạng Email"
-      return;
-    }
-
-    // 3. Gọi hàm gửi mã xác thực từ custom hook
+    if (!validateEmail(email)) return;
     await sendVerificationCode();
   };
 
@@ -154,118 +211,75 @@ const Login = ({ onLogin }) => { // onLogin: callback từ component cha khi đ�
   // ========================================
   
   const handleLogin = async () => {
-    console.log('🔐 驗證碼確認流程開始'); // "Bắt đầu quy trình xác nhận mã"
+    console.log('🔐 驗證碼確認流程開始');
     console.log('📧 Email:', email);
-    console.log('🔢 驗證碼:', verificationCode); // "Mã xác thực"
+    console.log('🔢 驗證碼:', verificationCode);
 
-    // ========================================
-    // 📋 CÁC BƯỚC KIỂM TRA
-    // ========================================
+    if (!validateEmail(email)) return;
 
-    // 1. Kiểm tra email
-    if (!email) {
-      setError('請輸入 Email');
-      return;
-    }
-
-    // 2. Kiểm tra định dạng email
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-      setError('請輸入正確的 Email 格式');
-      return;
-    }
-
-    // 3. Kiểm tra đã gửi mã chưa
     if (!isVerificationSent) {
-      setError('請先發送驗證碼'); // "Vui lòng gửi mã xác thực trước"
+      setMessage({ type: 'error', text: '請先發送驗證碼' });
       return;
     }
 
-    // 4. Kiểm tra mã xác thực phải đủ 6 số
     if (!verificationCode || verificationCode.length !== 6) {
-      setError('請輸入 6 位數驗證碼'); // "Vui lòng nhập mã 6 số"
+      setMessage({ type: 'error', text: '請輸入 6 位數驗證碼' });
       return;
     }
 
-    // ========================================
-    // ✅ XÁC THỰC MÃ VỚI BACKEND
-    // ========================================
-
-    // Gọi hàm verify từ custom hook
     const isCodeValid = await verifyEmailCode(verificationCode);
     
-    // Nếu mã sai
     if (!isCodeValid) {
-      setError('驗證碼錯誤，請重新輸入'); // "Mã sai, vui lòng nhập lại"
+      setMessage({ type: 'error', text: '驗證碼錯誤，請重新輸入' });
       return;
     }
 
-    // ========================================
-    // 🚀 XỬ LÝ SAU KHI XÁC THỰC THÀNH CÔNG
-    // ========================================
-
-    setIsLoading(true); // Bật loading
-    setError(''); // Xóa lỗi
-    setSuccess(''); // Xóa thông báo thành công
+    setIsLoading(true);
+    setMessage({ type: '', text: '' });
 
     try {
-      console.log('📡 呼叫後端 API 驗證使用者狀態...'); // "Gọi API backend kiểm tra trạng thái user"
+      console.log('📡 呼叫後端 API 驗證使用者狀態...');
 
-      // ========================================
-      // 💡 PHẦN NÀY CÓ THỂ GỌI API THẬT
-      // ========================================
-      // const response = await ApiService.checkUserExists(email, verificationCode);
-      // if (response.isNewUser) {
-      //   navigate('/signup', { state: { email, verificationCode, verified: true } });
-      // } else {
-      //   navigate('/main', { state: { userData: response.user } });
-      // }
-
-      // ========================================
-      // 🔧 HIỆN TẠI: LUÔN CHUYỂN SANG TRANG ĐĂNG KÝ
-      // ========================================
+      console.log('✅ 驗證碼正確，跳轉到註冊頁面');
+      setMessage({ type: 'success', text: '第一次登入，正在前往註冊頁面...' });
       
-      console.log('✅ 驗證碼正確，跳轉到註冊頁面'); // "Mã đúng, chuyển sang trang đăng ký"
-      setSuccess('第一次登入，正在前往註冊頁面...'); // "Lần đầu đăng nhập, đang chuyển đến trang đăng ký"
-      
-      // Sau 1 giây → Chuyển trang
       setTimeout(() => {
         navigate('/signup', { 
           state: { 
-            email: email,                // Truyền email
-            verificationCode: verificationCode, // Truyền mã xác thực
-            verified: true               // Đánh dấu đã xác thực
+            email: email,
+            verificationCode: verificationCode,
+            verified: true
           } 
         });
       }, 1000);
 
     } catch (error) {
-      console.error('💥 驗證過程發生錯誤:', error); // "Lỗi trong quá trình xác thực"
-      setError('驗證時發生錯誤，請稍後再試'); // "Có lỗi xảy ra, vui lòng thử lại"
+      console.error('💥 驗證過程發生錯誤:', error);
+      setMessage({ type: 'error', text: '驗證時發生錯誤，請稍後再試' });
     } finally {
-      setIsLoading(false); // Tắt loading
+      setIsLoading(false);
     }
   };
 
   // ========================================
-  // 🌐 XỬ LÝ ĐĂNG NHẬP BẰNG MẠNG XÃ HỘI
+  // ✅ XỬ LÝ ĐĂNG NHẬP BẰNG OAUTH
   // ========================================
   
-  const handleSocialLogin = (provider) => {
-    console.log(`🔐 Social login with ${provider}`);
-
-    // Tạo dữ liệu user giả lập (trong thực tế sẽ nhận từ OAuth)
-    const userData = {
-      id: `${provider} User`,
-      name: `${provider} User`,
-      email: `user@${provider.toLowerCase()}.com`,
-      avatar: `https://ui-avatars.com/api/?name=${provider}&background=667eea&color=fff`,
-      token: `${provider.toLowerCase()}-token-${Date.now()}`, // Token giả
-      loginMethod: `${provider.toLowerCase()}_social` // Phương thức đăng nhập
-    };
-
-    console.log('🚀 Social login successful');
-    showLoginSuccess(`${provider} 社交登入`, userData); // Hiển thị thông báo thành công
+  const handleSocialLogin = (providerName) => {
+    console.log(`🔐 Starting OAuth login with ${providerName}`);
+    console.log('📍 Current location:', window.location.href);
+    
+    // ✅ Kiểm tra provider có enabled không
+    const provider = providers.find(p => p.name.toLowerCase() === providerName.toLowerCase());
+    
+    if (provider && provider.enabled === false) {
+      console.warn(`⚠️ Provider ${providerName} is disabled`);
+      alert(`${providerName} 登入暫時無法使用`);
+      return;
+    }
+    
+    // ✅ Gọi authService để bắt đầu OAuth flow
+    authService.startOAuthLogin(providerName.toLowerCase());
   };
 
   // ========================================
@@ -274,101 +288,68 @@ const Login = ({ onLogin }) => { // onLogin: callback từ component cha khi đ�
   
   return (
     <LoginBackground
-      gradientColors={['#142049', '#848484', '#FFDF9E']} // Màu gradient cho nền
+      gradientColors={['#142049', '#848484', '#FFDF9E']}
     >
       <div className="login-page">
-        {/* ========================================
-            📦 NỘI DUNG CHÍNH
-            ======================================== */}
         <div className="login-main-content">
           
-          {/* ========================================
-              🏷️ LOGO THƯƠNG HIỆU
-              ======================================== */}
           <BrandLogo 
             logoSrc={logoImage}
             size="medium"
           />
           
-          {/* ========================================
-              📝 FORM ĐĂNG NHẬP
-              ======================================== */}
           <div className="login-form-new">
             
             {/* ========================================
                 📧 HÀNG EMAIL + NÚT VERIFY
                 ======================================== */}
             <div className="email-verify-row">
-              {/* Input Email */}
               <FormInput
                 type="email"
                 placeholder="EMAIL"
                 value={email}
                 onChange={handleEmailChange}
-                disabled={!!loginSuccessMessage} // Disable nếu đang hiện thông báo thành công
+                disabled={message.type === 'login-success'}
                 className="email-input email-left-align"
               />
               
-              {/* Nút Verify/Resend */}
               <ActionButton
                 onClick={handleVerify}
                 variant="primary"
                 size="medium"
                 disabled={
-                  !email ||                      // Chưa nhập email
-                  isVerificationLoading ||       // Đang gửi mã
-                  verificationTimer > 0 ||       // Đang đếm ngược
-                  !!loginSuccessMessage          // Đang hiện thông báo thành công
+                  !email ||
+                  isVerificationLoading ||
+                  verificationTimer > 0 ||
+                  message.type === 'login-success'
                 }
-                loading={isVerificationLoading}  // Hiện loading khi gửi
+                loading={isVerificationLoading}
                 className={`verify-button ${email ? 'has-email' : ''}`}
               >
-                {/* Hiển thị text động:
-                    - Nếu đang đếm ngược: "90s", "89s"...
-                    - Nếu đã gửi và hết thời gian: "RESEND"
-                    - Nếu chưa gửi: "VERIFY" */}
                 {verificationTimer > 0 ? `${verificationTimer}s` : 
                  isVerificationSent ? 'RESEND' : 'VERIFY'}
               </ActionButton>
             </div>
             
             {/* ========================================
-                🔢 INPUT MÃ XÁC THỰC (chỉ hiện sau khi gửi mã)
+                🔢 INPUT MÃ XÁC THỰC
                 ======================================== */}
             {isVerificationSent && (
               <FormInput
                 placeholder="123456"
                 value={verificationCode}
                 onChange={handleVerificationCodeChange}
-                disabled={!!loginSuccessMessage}
+                disabled={message.type === 'login-success'}
                 className="verification-code-input"
               />
             )}
             
             {/* ========================================
-                ⚠️ THÔNG BÁO LỖI
+                💬 THÔNG BÁO
                 ======================================== */}
-            {error && (
-              <div className="message-container error-message">
-                {error}
-              </div>
-            )}
-
-            {/* ========================================
-                ✅ THÔNG BÁO THÀNH CÔNG
-                ======================================== */}
-            {success && (
-              <div className="message-container success-message">
-                {success}
-              </div>
-            )}
-
-            {/* ========================================
-                🎉 THÔNG BÁO ĐĂNG NHẬP THÀNH CÔNG
-                ======================================== */}
-            {loginSuccessMessage && (
-              <div className="message-container login-success-message">
-                {loginSuccessMessage}
+            {message.text && (
+              <div className={`message-container ${message.type}-message`}>
+                {message.text}
               </div>
             )}
             
@@ -380,11 +361,11 @@ const Login = ({ onLogin }) => { // onLogin: callback từ component cha khi đ�
               variant="primary"
               size="medium"
               disabled={
-                isLoading ||                     // Đang xử lý
-                !email ||                        // Chưa nhập email
-                !isVerificationSent ||           // Chưa gửi mã
-                verificationCode.length !== 6 || // Mã chưa đủ 6 số
-                !!loginSuccessMessage            // Đang hiện thông báo thành công
+                isLoading ||
+                !email ||
+                !isVerificationSent ||
+                verificationCode.length !== 6 ||
+                message.type === 'login-success'
               }
               loading={isLoading}
               className={`login-button ${verificationCode.length === 6 ? 'has-code' : ''}`}
@@ -394,41 +375,74 @@ const Login = ({ onLogin }) => { // onLogin: callback từ component cha khi đ�
           </div>
           
           {/* ========================================
-              🌐 CÁC NÚT ĐĂNG NHẬP MẠNG XÃ HỘI
+              ✅ CÁC NÚT ĐĂNG NHẬP OAUTH
               ======================================== */}
           <div className="social-login-container">
-            {/* Nút Apple */}
-            <CircleButton
-              provider="Apple"
-              iconSrc={appleIcon}
-              onClick={() => handleSocialLogin('Apple')}
-              size="medium"
-            />
-            
-            {/* Nút Facebook */}
-            <CircleButton
-              provider="Facebook"
-              iconSrc={facebookIcon}
-              onClick={() => handleSocialLogin('Facebook')}
-              size="medium"
-            />
-            
-            {/* Nút Google */}
-            <CircleButton
-              provider="Google"
-              iconSrc={googleIcon}
-              onClick={() => handleSocialLogin('Google')}
-              size="medium"
-            />
+            {loadingProviders ? (
+              <div style={{ 
+                textAlign: 'center', 
+                padding: '20px', 
+                color: '#999',
+                fontSize: '14px'
+              }}>
+                載入中...
+              </div>
+            ) : providers.length > 0 ? (
+              <>
+                {providers.find(p => p.name === 'apple') && (
+                  <CircleButton
+                    provider="Apple"
+                    iconSrc={appleIcon}
+                    onClick={() => {
+                      console.log('🍎 Apple button clicked');
+                      handleSocialLogin('apple');
+                    }}
+                    size="medium"
+                    disabled={message.type === 'login-success'}
+                  />
+                )}
+                
+                {providers.find(p => p.name === 'facebook') && (
+                  <CircleButton
+                    provider="Facebook"
+                    iconSrc={facebookIcon}
+                    onClick={() => {
+                      console.log('📘 Facebook button clicked');
+                      handleSocialLogin('facebook');
+                    }}
+                    size="medium"
+                    disabled={message.type === 'login-success'}
+                  />
+                )}
+                
+                {providers.find(p => p.name === 'google') && (
+                  <CircleButton
+                    provider="Google"
+                    iconSrc={googleIcon}
+                    onClick={() => {
+                      console.log('🔍 Google button clicked');
+                      handleSocialLogin('google');
+                    }}
+                    size="medium"
+                    disabled={message.type === 'login-success'}
+                  />
+                )}
+              </>
+            ) : (
+              <div style={{ 
+                textAlign: 'center', 
+                padding: '20px', 
+                color: '#999',
+                fontSize: '14px'
+              }}>
+                暫無可用的社交登入方式
+              </div>
+            )}
           </div>
         </div>
       </div>
     </LoginBackground>
   );
 };
-
-// ========================================
-// 📤 EXPORT COMPONENT
-// ========================================
 
 export default Login;

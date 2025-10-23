@@ -1,0 +1,129 @@
+/* src/pages/AuthCallback/AuthCallback.css */
+
+.auth-callback-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  background: linear-gradient(135deg, #142049 0%, #848484 50%, #FFDF9E 100%);
+}
+
+.auth-callback-content {
+  background: white;
+  padding: 60px 40px;
+  border-radius: 20px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+  text-align: center;
+  min-width: 400px;
+  max-width: 500px;
+}
+
+/* Spinner Animation */
+.spinner {
+  width: 60px;
+  height: 60px;
+  margin: 0 auto 30px;
+  border: 6px solid #f3f3f3;
+  border-top: 6px solid #142049;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Success Icon */
+.success-icon {
+  width: 80px;
+  height: 80px;
+  margin: 0 auto 30px;
+  background: #4CAF50;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 48px;
+  color: white;
+  animation: scaleIn 0.5s ease-out;
+}
+
+@keyframes scaleIn {
+  0% {
+    transform: scale(0);
+    opacity: 0;
+  }
+  50% {
+    transform: scale(1.1);
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+/* Error Icon */
+.error-icon {
+  width: 80px;
+  height: 80px;
+  margin: 0 auto 30px;
+  background: #f44336;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 48px;
+  color: white;
+  animation: shake 0.5s ease-out;
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  10%, 30%, 50%, 70%, 90% { transform: translateX(-10px); }
+  20%, 40%, 60%, 80% { transform: translateX(10px); }
+}
+
+/* Text Styles */
+.auth-callback-content h2 {
+  font-size: 24px;
+  font-weight: 600;
+  color: #333;
+  margin: 0 0 15px 0;
+}
+
+.auth-callback-content p {
+  font-size: 16px;
+  color: #666;
+  margin: 10px 0;
+}
+
+.redirect-hint {
+  font-size: 14px;
+  color: #999;
+  margin-top: 20px;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .auth-callback-content {
+    min-width: 300px;
+    padding: 40px 30px;
+  }
+
+  .auth-callback-content h2 {
+    font-size: 20px;
+  }
+
+  .spinner,
+  .success-icon,
+  .error-icon {
+    width: 60px;
+    height: 60px;
+  }
+
+  .success-icon,
+  .error-icon {
+    font-size: 36px;
+  }
+}

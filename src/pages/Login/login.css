@@ -1,10 +1,14 @@
 /* src/pages/Login/login.css */
+
+/* ========================================
+   📐 LAYOUT CHÍNH
+   ======================================== */
 .login-page {
   width: 100%;
   min-height: 100vh;
   display: flex;
   flex-direction: column;
-  justify-content: center; /* ✅ 改為 center，因為移除了底部按鈕 */
+  justify-content: center;
   align-items: center;
   padding: 20px;
   box-sizing: border-box;
@@ -20,7 +24,7 @@
   width: 100%;
   max-width: 280px;
   margin: 0 auto;
-  transform: translateY(0); /* ✅ 移除向上偏移 */
+  transform: translateY(0);
 }
 
 .login-form-new {
@@ -32,7 +36,7 @@
 }
 
 /* ========================================
-   Email 和 Verify 同一欄佈局
+   📧 EMAIL VÀ VERIFY BUTTON - CÙNG HÀNG
    ======================================== */
 .email-verify-row {
   display: flex;
@@ -41,7 +45,7 @@
   height: 48px;
 }
 
-/* ✅ Email 輸入框固定 48px + 文字靠左對齊 */
+/* ✅ Email Input Container */
 .email-input {
   flex: 2;
   height: 48px !important;
@@ -50,31 +54,35 @@
   min-width: 0;
 }
 
-/* ✅ 新增：Email 輸入框文字靠左對齊 */
+/* ✅ Email Input - Text align left + Font size */
 .email-input.email-left-align input,
 .email-input.email-left-align .form-input {
   text-align: left !important;
   padding-left: 16px !important;
+  font-size: 13px !important;
+  line-height: 1.4 !important;
 }
 
 .email-input.email-left-align input::placeholder,
 .email-input.email-left-align .form-input::placeholder {
   text-align: left !important;
+  font-size: 13px !important;
 }
 
-/* ✅ VERIFY 按鈕 - 只控制寬度，高度由 ActionButton.css 控制 */
+/* ✅ VERIFY Button - Chỉ kiểm soát width */
 .verify-button {
   flex: 0 0 auto;
   width: 70px !important;
   min-width: 60px !important;
   max-width: 75px !important;
   white-space: nowrap;
+  font-size: 13px !important;
+  line-height: 1.4 !important;
 }
 
 /* ========================================
-   驗證碼輸入框
+   🔢 VERIFICATION CODE INPUT
    ======================================== */
-/* ✅ 驗證碼輸入框固定 48px */
 .verification-code-input {
   animation: fadeInDown 0.3s ease-out;
   height: 48px !important;
@@ -95,7 +103,7 @@
 }
 
 /* ========================================
-   訊息容器
+   💬 MESSAGE CONTAINER
    ======================================== */
 .message-container {
   padding: 12px;
@@ -107,13 +115,14 @@
   box-sizing: border-box;
 }
 
+/* ✅ Error Message */
 .error-message {
   color: #dc3545 !important;
   background-color: rgba(248, 215, 218, 0.9);
   border: 1px solid #f5c6cb;
 }
 
-/* ✅ 新增成功訊息樣式 */
+/* ✅ Success Message */
 .success-message {
   color: #155724 !important;
   background-color: rgba(212, 237, 218, 0.9);
@@ -121,6 +130,7 @@
   font-weight: bold;
 }
 
+/* ✅ Login Success Message */
 .login-success-message {
   color: #155724 !important;
   background-color: rgba(212, 237, 218, 0.9);
@@ -129,9 +139,8 @@
 }
 
 /* ========================================
-   CONFIRM 按鈕樣式（原 LOGIN 按鈕）
+   🔐 CONFIRM BUTTON (原 LOGIN BUTTON)
    ======================================== */
-/* ✅ CONFIRM 按鈕固定 48px */
 .login-button,
 button.login-button,
 button.login-button.action-button,
@@ -145,14 +154,14 @@ button.login-button.action-button--medium {
   padding: 0 20px !important;
   margin: 0 auto !important;
   box-sizing: border-box !important;
-  font-size: 14px !important;
+  font-size: 13px !important;
+  line-height: 1.4 !important;
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
-  line-height: normal !important;
 }
 
-/* ✅ 有驗證碼時變米黃色 */
+/* ✅ Có mã xác thực → Màu vàng */
 .login-button.has-code {
   background-color: #FFF9EC !important;
   color: #000000 !important;
@@ -170,7 +179,7 @@ button.login-button.action-button--medium {
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
 }
 
-/* ✅ 確保內部元素不影響高度 */
+/* ✅ Đảm bảo các element bên trong không ảnh hưởng height */
 .login-button > *,
 .login-button span,
 .login-button div {
@@ -179,7 +188,7 @@ button.login-button.action-button--medium {
 }
 
 /* ========================================
-   社交登入容器
+   🌐 SOCIAL LOGIN CONTAINER
    ======================================== */
 .social-login-container {
   display: flex;
@@ -192,12 +201,7 @@ button.login-button.action-button--medium {
 }
 
 /* ========================================
-   ✅ 移除 SIGN UP 按鈕相關樣式
-   ======================================== */
-/* .signup-section - 已移除 */
-
-/* ========================================
-   響應式設計
+   📱 RESPONSIVE DESIGN
    ======================================== */
 @media (max-width: 375px) {
   .login-page {
@@ -222,59 +226,22 @@ button.login-button.action-button--medium {
   .social-login-container {
     gap: 12px;
   }
-}
-
-/* ========================================
-   ✅ 字體大小調整
-   ======================================== */
-
-/* Email Input - Font size */
-.email-input input,
-.email-input .form-input,
-.form-input-container.email-input input,
-.form-input-container.email-input .form-input,
-input.form-input[type="email"],
-div.email-input input[type="email"],
-.email-input input[type="email"] {
-  font-size: 13px !important;
-  line-height: 1.4 !important;
-}
-
-/* Email placeholder */
-.email-input input::placeholder,
-.email-input .form-input::placeholder,
-.form-input-container.email-input input::placeholder,
-input.form-input[type="email"]::placeholder {
-  font-size: 13px !important;
-}
-
-/* CONFIRM Button - Font size */
-.login-button,
-button.login-button,
-button.login-button.action-button,
-button.login-button.action-button.action-button--primary,
-button.action-button.action-button--primary.action-button--medium.verify-button,
-.action-button.action-button--primary.action-button--medium {
-  font-size: 13px !important;
-  line-height: 1.4 !important;
-}
-
-/* Mobile responsive */
-@media (max-width: 375px) {
-  .email-input input,
-  .email-input .form-input,
-  input.form-input[type="email"] {
+  
+  /* Font size cho mobile */
+  .email-input.email-left-align input,
+  .email-input.email-left-align .form-input {
     font-size: 12px !important;
   }
   
-  .email-input input::placeholder,
-  .email-input .form-input::placeholder {
+  .email-input.email-left-align input::placeholder,
+  .email-input.email-left-align .form-input::placeholder {
     font-size: 12px !important;
   }
   
   .login-button,
   button.login-button,
-  button.action-button {
+  button.action-button,
+  .verify-button {
     font-size: 12px !important;
   }
 }
