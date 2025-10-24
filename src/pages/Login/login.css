@@ -1,4 +1,8 @@
 /* src/pages/Login/login.css */
+
+/* ========================================
+   📐 LAYOUT CHÍNH
+   ======================================== */
 .login-page {
   width: 100%;
   min-height: 100vh;
@@ -32,7 +36,7 @@
 }
 
 /* ========================================
-   Email 和 Verify 同一欄佈局
+   📧 EMAIL VÀ VERIFY BUTTON - CÙNG HÀNG
    ======================================== */
 .email-verify-row {
   display: flex;
@@ -41,7 +45,7 @@
   height: 48px;
 }
 
-/* ✅ Email 輸入框固定 48px + 文字靠左對齊 */
+/* ✅ Email Input Container */
 .email-input {
   flex: 2;
   height: 48px !important;
@@ -55,11 +59,14 @@
 .email-input.email-left-align .form-input {
   text-align: left !important;
   padding-left: 16px !important;
+  font-size: 13px !important;
+  line-height: 1.4 !important;
 }
 
 .email-input.email-left-align input::placeholder,
 .email-input.email-left-align .form-input::placeholder {
   text-align: left !important;
+  font-size: 13px !important;
 }
 
 /* ✅ VERIFY 按鈕 */
@@ -69,10 +76,12 @@
   min-width: 60px !important;
   max-width: 75px !important;
   white-space: nowrap;
+  font-size: 13px !important;
+  line-height: 1.4 !important;
 }
 
 /* ========================================
-   驗證碼輸入框
+   🔢 VERIFICATION CODE INPUT
    ======================================== */
 .verification-code-input {
   animation: fadeInDown 0.3s ease-out;
@@ -94,7 +103,7 @@
 }
 
 /* ========================================
-   訊息容器
+   💬 MESSAGE CONTAINER
    ======================================== */
 .message-container {
   padding: 12px;
@@ -116,6 +125,7 @@
   }
 }
 
+/* ✅ Error Message */
 .error-message {
   color: #dc3545 !important;
   background-color: rgba(248, 215, 218, 0.9);
@@ -129,6 +139,7 @@
   font-weight: bold;
 }
 
+/* ✅ Login Success Message */
 .login-success-message {
   color: #155724 !important;
   background-color: rgba(212, 237, 218, 0.9);
@@ -152,14 +163,14 @@ button.login-button.action-button--medium {
   padding: 0 20px !important;
   margin: 0 auto !important;
   box-sizing: border-box !important;
-  font-size: 14px !important;
+  font-size: 13px !important;
+  line-height: 1.4 !important;
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
-  line-height: normal !important;
 }
 
-/* ✅ 有驗證碼時變米黃色 */
+/* ✅ Có mã xác thực → Màu vàng */
 .login-button.has-code {
   background-color: #FFF9EC !important;
   color: #000000 !important;
@@ -177,7 +188,7 @@ button.login-button.action-button--medium {
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
 }
 
-/* ✅ 確保內部元素不影響高度 */
+/* ✅ Đảm bảo các element bên trong không ảnh hưởng height */
 .login-button > *,
 .login-button span,
 .login-button div {
@@ -186,7 +197,7 @@ button.login-button.action-button--medium {
 }
 
 /* ========================================
-   社交登入容器
+   🌐 SOCIAL LOGIN CONTAINER
    ======================================== */
 .social-login-container {
   display: flex;
@@ -269,14 +280,15 @@ button.action-button.action-button--primary.action-button--medium.verify-button,
     font-size: 12px !important;
   }
   
-  .email-input input::placeholder,
-  .email-input .form-input::placeholder {
+  .email-input.email-left-align input::placeholder,
+  .email-input.email-left-align .form-input::placeholder {
     font-size: 12px !important;
   }
   
   .login-button,
   button.login-button,
-  button.action-button {
+  button.action-button,
+  .verify-button {
     font-size: 12px !important;
   }
 }

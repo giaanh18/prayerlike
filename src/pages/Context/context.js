@@ -1060,47 +1060,65 @@ const MainApp = ({ user, onLogout }) => {
 
         <hr className="divider-line" />
         {/* 分類按鈕列 */}
-        <div className="category-buttons">
-          <div className="category-item">
-            <RectButton
-              image={family_and_personal}
-              imageAlt="Personal & Family"
-              onClick={() => console.log('Personal & Family')}
-              size="medium"
-            />
-            <CategoryLabel text="Personal & Family" />
-          </div>
+        {/* Category Buttons với CategoryLabel hoàn chỉnh */}
+<div className="category-buttons">
+  <div className="category-item">
+    <RectButton
+      image={family_and_personal}
+      imageAlt="Personal & Family"
+      onClick={() => console.log('Personal & Family')}
+      size="medium"
+    />
+    <CategoryLabel 
+      text="Personal & Family" 
+      enableMarquee={true}
+      speed={8}
+    />
+  </div>
 
-          <div className="category-item">
-            <RectButton
-              image={church}
-              imageAlt="Church & Ministry"
-              onClick={() => console.log('Church & Ministry')}
-              size="medium"
-            />
-            <CategoryLabel text="Church & Ministry" />
-          </div>
+  <div className="category-item">
+    <RectButton
+      image={church}
+      imageAlt="Church & Ministry"
+      onClick={() => console.log('Church & Ministry')}
+      size="medium"
+    />
+    <CategoryLabel 
+      text="Church & Ministry" 
+      enableMarquee={true}
+      speed={8}
+    />
+  </div>
 
-          <div className="category-item">
-            <RectButton
-              image={kingdom}
-              imageAlt="Kingdom Prayer"
-              onClick={() => console.log('Kingdom Prayer')}
-              size="medium"
-            />
-            <CategoryLabel text="Kingdom Prayer" />
-          </div>
+  <div className="category-item">
+    <RectButton
+      image={kingdom}
+      imageAlt="Kingdom Prayer"
+      onClick={() => console.log('Kingdom Prayer')}
+      size="medium"
+    />
+    <CategoryLabel 
+      text="Kingdom Prayer" 
+      enableMarquee={true}
+      speed={8}
+    />
+  </div>
 
-          <div className="category-item">
-            <RectButton
-              image={tribe}
-              imageAlt="Tribes Prayer"
-              onClick={() => console.log('Tribes Prayer')}
-              size="medium"
-            />
-            <CategoryLabel text="Tribe Prayer" />
-          </div>
-        </div>
+  <div className="category-item">
+    <RectButton
+      image={tribe}
+      imageAlt="Tribes Prayer"
+      onClick={() => console.log('Tribes Prayer')}
+      size="medium"
+    />
+    <CategoryLabel 
+      text="Tribe Prayer" 
+      enableMarquee={true}
+      speed={8}
+    />
+  </div>
+</div>
+
         <hr className="divider-line" />
 
         {/* 貼文篩選列 */}

@@ -1,13 +1,20 @@
-/* App.css - Enhanced với authentication */
-
-/* Container chính */
+/* ========================================
+   🎨 GLOBAL STYLES
+   ======================================== */
 .app-container {
   min-height: 100vh;
   background: linear-gradient(135deg, #FFF 0%, #FFF 100%);
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 
-/* Login container */
+/* ✅ Smooth transitions cho tất cả elements */
+.app-container * {
+  transition: all 0.3s ease;
+}
+
+/* ========================================
+   🔐 LOGIN PAGE
+   ======================================== */
 .login-container {
   display: flex;
   flex-direction: column;
@@ -34,7 +41,9 @@
   opacity: 0.9;
 }
 
-/* Header sau khi đăng nhập */
+/* ========================================
+   📌 HEADER (Sau khi đăng nhập)
+   ======================================== */
 .app-header {
   background: rgba(255, 255, 255, 0.95);
   backdrop-filter: blur(10px);
@@ -59,6 +68,7 @@
   font-size: 1.8rem;
 }
 
+/* User info & Logout button */
 .user-info {
   display: flex;
   align-items: center;
@@ -86,7 +96,9 @@
   transform: translateY(-1px);
 }
 
-/* Main content layout */
+/* ========================================
+   📐 MAIN LAYOUT
+   ======================================== */
 .main-content {
   max-width: 1200px;
   margin: 0 auto;
@@ -100,12 +112,15 @@
   align-items: start;
 }
 
-/* Sidebar */
+/* ========================================
+   📂 SIDEBAR
+   ======================================== */
 .sidebar {
   position: sticky;
   top: 100px;
 }
 
+/* ✅ Gộp chung styles cho filter-section và users-section */
 .filter-section,
 .users-section {
   background: rgba(255, 255, 255, 0.95);
