@@ -4,14 +4,12 @@ import { useNavigate } from 'react-router-dom';
 import AuthAPI from '../../services/authApi';
 import useEmailVerification from '../../hooks/useEmailVerification';
 
-// 導入重新命名的元件
 import LoginBackground from '../../components/LoginBackground/LoginBackground';
 import BrandLogo from '../../components/BrandLogo/BrandLogo';
 import FormInput from '../../components/FormInput/FormInput';
 import ActionButton from '../../components/ActionButton/ActionButton';
 import CircleButton from '../../components/CircleButton/CircleButton';
 
-// 導入圖片資源
 import logoImage from '../../assets/images/pray-logo.png';
 import appleIcon from '../../assets/icons/apple-icon.png';
 import facebookIcon from '../../assets/icons/facebook-icon.png';
@@ -40,7 +38,7 @@ const Login = ({ onLogin }) => {
   } = useEmailVerification(
     email,
     setError,
-    () => {}, // 移除成功訊息設定
+    () => {},
     EMAIL_VERIFICATION_COUNTDOWN_DEFAULT_SECONDS 
   );
 
@@ -61,7 +59,6 @@ const Login = ({ onLogin }) => {
     setError('');
   };
 
-  // ✅ Gửi OTP qua API
   const handleVerify = async () => {
     if (!email) {
       setError('請輸入 Email');
@@ -82,7 +79,7 @@ const Login = ({ onLogin }) => {
       await AuthAPI.requestOTP(email);
       
       setSuccess('驗證碼已發送到您的信箱');
-      sendVerificationCode(); // Bắt đầu countdown
+      sendVerificationCode();
       
       console.log('✅ OTP 發送成功');
     } catch (error) {
@@ -91,7 +88,6 @@ const Login = ({ onLogin }) => {
     }
   };
 
-  // ✅ Xác thực OTP và kiểm tra first_login
   const handleLogin = async () => {
     console.log('🔐 驗證碼確認流程開始');
     console.log('📧 Email:', email);
@@ -123,7 +119,6 @@ const Login = ({ onLogin }) => {
     setSuccess('');
 
     try {
-      // ✅ Bước 1: Verify OTP
       console.log('📡 呼叫 /auth/otp/verify...');
       const verifyResult = await AuthAPI.verifyOTP(email, verificationCode);
       console.log('📊 Verify result:', verifyResult);
@@ -136,7 +131,6 @@ const Login = ({ onLogin }) => {
 
       console.log('✅ OTP 驗證成功');
 
-      // ✅ Bước 2: Kiểm tra session
       console.log('📡 呼叫 /auth/session...');
       const session = await AuthAPI.getSession();
       console.log('📊 Session data:', session);
@@ -147,7 +141,6 @@ const Login = ({ onLogin }) => {
         return;
       }
 
-      // ✅ Bước 3: Kiểm tra first_login
       if (session.first_login) {
         console.log('🆕 First login detected → Redirect to /signup');
         setSuccess('第一次登入，正在前往註冊頁面...');
@@ -165,7 +158,6 @@ const Login = ({ onLogin }) => {
       } else {
         console.log('👤 Returning user → Fetch profile');
         
-        // ✅ Bước 4: Lấy thông tin profile
         try {
           const profile = await AuthAPI.getProfile();
           console.log('👤 Profile data:', profile);
@@ -192,8 +184,6 @@ const Login = ({ onLogin }) => {
         } catch (profileError) {
           console.error('❌ 無法取得 profile:', profileError);
           
-          // Nếu không lấy được profile, có thể là first_login nhưng API trả sai
-          // Redirect về signup để tạo profile
           setSuccess('需要完成註冊，正在前往註冊頁面...');
           
           setTimeout(() => {
@@ -217,12 +207,11 @@ const Login = ({ onLogin }) => {
     }
   };
 
-  // ✅ SỬA LỖI: Social login function
+  // ✅ SỬA LẠI: Thêm BASE_URL
   const handleSocialLogin = async (provider) => {
     console.log(`🔐 Social login with ${provider}`);
     
     try {
-      // ✅ Kiểm tra provider có available không
       const providers = await AuthAPI.getProviders();
       console.log('📊 Available providers:', providers);
       
@@ -232,8 +221,11 @@ const Login = ({ onLogin }) => {
         return;
       }
 
-      // ✅ Redirect đến OAuth URL của backend
-      const BASE_URL = 'https://pray-api.yalinelena.church'; // ⭐ Thêm dòng này
+      // ✅ THÊM BASE_URL
+      const BASE_URL = 'https://pray-api.yalinelena.church';
+      
+      // ✅ Redirect đến OAuth URL
+      console.log(`🔗 Redirecting to: ${BASE_URL}/auth/${providerKey}/login`);
       window.location.href = `${BASE_URL}/auth/${providerKey}/login`;
       
     } catch (error) {
@@ -247,16 +239,13 @@ const Login = ({ onLogin }) => {
       gradientColors={['#142049', '#848484', '#FFDF9E']}
     >
       <div className="login-page">
-        {/* 主要內容區域 */}
         <div className="login-main-content">
-          {/* Logo */}
           <BrandLogo 
             logoSrc={logoImage}
             size="medium"
           />
           
           <div className="login-form-new">
-            {/* Email 和 Verify 同一欄 */}
             <div className="email-verify-row">
               <FormInput
                 type="email"
@@ -284,7 +273,6 @@ const Login = ({ onLogin }) => {
               </ActionButton>
             </div>
             
-            {/* 驗證碼輸入框 - 只有在發送驗證碼後才顯示 */}
             {isVerificationSent && (
               <FormInput
                 placeholder="123456"
@@ -295,28 +283,24 @@ const Login = ({ onLogin }) => {
               />
             )}
             
-            {/* 錯誤訊息 */}
             {error && (
               <div className="message-container error-message">
                 {error}
               </div>
             )}
 
-            {/* 成功訊息 */}
             {success && (
               <div className="message-container success-message">
                 {success}
               </div>
             )}
 
-            {/* 登入成功訊息 */}
             {loginSuccessMessage && (
               <div className="message-container login-success-message">
                 {loginSuccessMessage}
               </div>
             )}
             
-            {/* CONFIRM 按鈕 */}
             <ActionButton
               onClick={handleLogin}
               variant="primary"
@@ -335,7 +319,6 @@ const Login = ({ onLogin }) => {
             </ActionButton>
           </div>
           
-          {/* 社交登入按鈕 */}
           <div className="social-login-container">
             <CircleButton
               provider="Apple"

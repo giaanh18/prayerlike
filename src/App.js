@@ -4,6 +4,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import AuthAPI from './services/authApi';
 import Login from './pages/Login/login';
 import SignUp from './pages/SignUp/SignUp';
+import OAuthCallback from './pages/OAuthCallback/OAuthCallback'; // ✅ THÊM
 import MainApp from './pages/Context/context';
 import CreatePostScreen from './pages/CreatePostScreen/CreatePostScreen';
 import TextPostScreen from './pages/CreatePostScreen/TextPostScreen';
@@ -16,12 +17,10 @@ function App() {
   const [user, setUser] = useState(null);
   const [isCheckingAuth, setIsCheckingAuth] = useState(true);
 
-  // ✅ Kiểm tra session khi app load
   useEffect(() => {
     checkAuthStatus();
   }, []);
 
-  // ✅ Auto refresh token mỗi 15 phút
   useEffect(() => {
     if (isLoggedIn) {
       const interval = setInterval(async () => {
@@ -31,16 +30,14 @@ function App() {
           console.log('✅ Token refreshed:', result);
         } catch (error) {
           console.error('❌ Token refresh failed:', error);
-          // Nếu refresh thất bại, logout
           handleLogout();
         }
-      }, 15 * 60 * 1000); // 15 phút
+      }, 15 * 60 * 1000);
 
       return () => clearInterval(interval);
     }
   }, [isLoggedIn]);
 
-  // ✅ Kiểm tra auth status từ localStorage và session
   const checkAuthStatus = async () => {
     try {
       const savedUser = localStorage.getItem('userData');
@@ -49,7 +46,6 @@ function App() {
         const userData = JSON.parse(savedUser);
         console.log('📦 Found saved user data:', userData);
         
-        // Kiểm tra session còn valid không
         try {
           const session = await AuthAPI.getSession();
           console.log('📊 Session check:', session);
@@ -59,7 +55,6 @@ function App() {
             setUser(userData);
             console.log('✅ User authenticated from saved session');
           } else {
-            // Session hết hạn, xóa localStorage
             localStorage.removeItem('userData');
             console.log('⚠️ Session expired, cleared localStorage');
           }
@@ -82,7 +77,6 @@ function App() {
     localStorage.setItem('userData', JSON.stringify(userData));
   };
 
-  // ✅ Xử lý đăng ký hoàn tất
   const handleSignUpComplete = (userData) => {
     console.log('✅ App.js - handleSignUpComplete called:', userData);
     setIsLoggedIn(true);
@@ -160,6 +154,12 @@ function App() {
               <Navigate to="/main" replace /> : 
               <SignUp onSignUpComplete={handleSignUpComplete} />
             } 
+          />
+
+          {/* ✅ THÊM: OAuth Callback Route */}
+          <Route 
+            path="/auth/callback" 
+            element={<OAuthCallback onLogin={handleLogin} />} 
           />
 
           {/* 主頁 */}

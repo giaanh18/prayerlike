@@ -1,0 +1,127 @@
+/* src/pages/OAuthCallback/OAuthCallback.css */
+
+.oauth-callback-container {
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: linear-gradient(135deg, #142049 0%, #848484 50%, #FFDF9E 100%);
+  padding: 20px;
+}
+
+.oauth-callback-content {
+  text-align: center;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+  padding: 60px 40px;
+  border-radius: 24px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  max-width: 400px;
+  width: 100%;
+}
+
+.oauth-spinner {
+  width: 80px;
+  height: 80px;
+  margin: 0 auto 30px;
+  position: relative;
+}
+
+.spinner-circle {
+  width: 100%;
+  height: 100%;
+  border: 4px solid rgba(102, 126, 234, 0.2);
+  border-top-color: #667eea;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.error-icon {
+  width: 80px;
+  height: 80px;
+  background-color: #ff6b6b;
+  border-radius: 50%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 48px;
+  color: white;
+  animation: errorPulse 0.5s ease-out;
+}
+
+@keyframes errorPulse {
+  0% {
+    transform: scale(0.8);
+    opacity: 0;
+  }
+  50% {
+    transform: scale(1.1);
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.oauth-status {
+  font-size: 24px;
+  font-weight: 600;
+  color: #333;
+  margin: 0 0 12px 0;
+  animation: fadeIn 0.5s ease-out;
+}
+
+.oauth-status.error {
+  color: #ff6b6b;
+}
+
+.oauth-subtitle {
+  font-size: 16px;
+  color: #666;
+  margin: 0;
+  animation: fadeIn 0.5s ease-out 0.2s both;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Responsive */
+@media (max-width: 480px) {
+  .oauth-callback-content {
+    padding: 40px 24px;
+  }
+
+  .oauth-spinner {
+    width: 60px;
+    height: 60px;
+    margin-bottom: 24px;
+  }
+
+  .error-icon {
+    width: 60px;
+    height: 60px;
+    font-size: 36px;
+  }
+
+  .oauth-status {
+    font-size: 20px;
+  }
+
+  .oauth-subtitle {
+    font-size: 14px;
+  }
+}

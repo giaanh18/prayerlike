@@ -20,10 +20,11 @@ const SignUp = ({ onSignUpComplete }) => {
   const location = useLocation();
   const [currentStep, setCurrentStep] = useState(1);
   
-  // ✅ 從 login 頁面接收已驗證的 email
+  // ✅ Nhận data từ login hoặc OAuth callback
   const verifiedEmail = location.state?.email || '';
   const verificationCode = location.state?.verificationCode || '';
   const sessionData = location.state?.sessionData || null;
+  const provider = location.state?.provider || 'email'; // ✅ THÊM
   
   const [formData, setFormData] = useState({
     userId: '',
@@ -31,7 +32,8 @@ const SignUp = ({ onSignUpComplete }) => {
     email: verifiedEmail,
     termsAccepted: false,
     emailVerified: true,
-    tribe: null
+    tribe: null,
+    provider: provider // ✅ THÊM
   });
 
   const [errors, setErrors] = useState({});
@@ -114,7 +116,6 @@ const SignUp = ({ onSignUpComplete }) => {
     handleFinalComplete();
   };
 
-  // ✅ Gọi API cập nhật profile
   const handleFinalComplete = async () => {
     setIsSubmitting(true);
 
@@ -125,11 +126,9 @@ const SignUp = ({ onSignUpComplete }) => {
         user_id: formData.userId
       });
       
-      // ✅ Gọi API cập nhật profile
       const updateResult = await AuthAPI.updateProfile(formData.name, formData.userId);
       console.log('✅ Profile updated successfully:', updateResult);
 
-      // ✅ Lấy lại profile để có đầy đủ thông tin
       console.log('📡 呼叫 /auth/profile (GET)...');
       const profile = await AuthAPI.getProfile();
       console.log('👤 Profile data:', profile);
@@ -140,16 +139,14 @@ const SignUp = ({ onSignUpComplete }) => {
         email: formData.email,
         avatar: profile.avatar || `https://ui-avatars.com/api/?name=${formData.name}&background=667eea&color=fff`,
         token: sessionData?.app_token || 'session-token',
-        loginMethod: 'email_verification',
+        loginMethod: formData.provider === 'oauth' ? 'oauth' : 'email_verification', // ✅ SỬA
         tribe: formData.tribe
       };
       
       console.log('🎉 FINAL SIGN UP DATA:', finalData);
       
-      // Lưu vào localStorage
       localStorage.setItem('userData', JSON.stringify(finalData));
       
-      // ✅ Gọi callback để cập nhật App.js
       if (typeof onSignUpComplete === 'function') {
         console.log('✅ 呼叫 onSignUpComplete，自動登入...');
         onSignUpComplete(finalData);
@@ -166,7 +163,6 @@ const SignUp = ({ onSignUpComplete }) => {
     } catch (error) {
       console.error('💥 更新 profile 失敗:', error);
       
-      // ✅ Hiển thị lỗi chi tiết
       let errorMessage = '註冊失敗，請稍後再試';
       
       if (error.message.includes('Unauthorized')) {
