@@ -1,5 +1,7 @@
-import React, { useState } from 'react';
+// src/App.js
+import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import AuthAPI from './services/authApi';
 import Login from './pages/Login/login';
 import SignUp from './pages/SignUp/SignUp';
 import MainApp from './pages/Context/context';
@@ -12,32 +14,133 @@ import './App.css';
 function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [user, setUser] = useState(null);
+  const [isCheckingAuth, setIsCheckingAuth] = useState(true);
+
+  // ✅ Kiểm tra session khi app load
+  useEffect(() => {
+    checkAuthStatus();
+  }, []);
+
+  // ✅ Auto refresh token mỗi 15 phút
+  useEffect(() => {
+    if (isLoggedIn) {
+      const interval = setInterval(async () => {
+        try {
+          console.log('🔄 Auto refreshing token...');
+          const result = await AuthAPI.refreshToken();
+          console.log('✅ Token refreshed:', result);
+        } catch (error) {
+          console.error('❌ Token refresh failed:', error);
+          // Nếu refresh thất bại, logout
+          handleLogout();
+        }
+      }, 15 * 60 * 1000); // 15 phút
+
+      return () => clearInterval(interval);
+    }
+  }, [isLoggedIn]);
+
+  // ✅ Kiểm tra auth status từ localStorage và session
+  const checkAuthStatus = async () => {
+    try {
+      const savedUser = localStorage.getItem('userData');
+      
+      if (savedUser) {
+        const userData = JSON.parse(savedUser);
+        console.log('📦 Found saved user data:', userData);
+        
+        // Kiểm tra session còn valid không
+        try {
+          const session = await AuthAPI.getSession();
+          console.log('📊 Session check:', session);
+          
+          if (session.authenticated) {
+            setIsLoggedIn(true);
+            setUser(userData);
+            console.log('✅ User authenticated from saved session');
+          } else {
+            // Session hết hạn, xóa localStorage
+            localStorage.removeItem('userData');
+            console.log('⚠️ Session expired, cleared localStorage');
+          }
+        } catch (error) {
+          console.error('❌ Session check failed:', error);
+          localStorage.removeItem('userData');
+        }
+      }
+    } catch (error) {
+      console.error('❌ Auth check error:', error);
+    } finally {
+      setIsCheckingAuth(false);
+    }
+  };
 
   const handleLogin = (userData) => {
     console.log('✅ App.js - handleLogin called:', userData);
     setIsLoggedIn(true);
     setUser(userData);
+    localStorage.setItem('userData', JSON.stringify(userData));
   };
 
-  // ✅ 新增：處理註冊完成後的自動登入
+  // ✅ Xử lý đăng ký hoàn tất
   const handleSignUpComplete = (userData) => {
     console.log('✅ App.js - handleSignUpComplete called:', userData);
     setIsLoggedIn(true);
     setUser(userData);
+    localStorage.setItem('userData', JSON.stringify(userData));
   };
 
-  const handleLogout = () => {
-    setIsLoggedIn(false);
-    setUser(null);
-    localStorage.removeItem('userData');
+  const handleLogout = async () => {
+    try {
+      console.log('🚪 Logging out...');
+      await AuthAPI.logout();
+      console.log('✅ Logged out successfully');
+    } catch (error) {
+      console.error('❌ Logout error:', error);
+    } finally {
+      setIsLoggedIn(false);
+      setUser(null);
+      localStorage.removeItem('userData');
+    }
   };
 
   const ProtectedRoute = ({ children }) => {
+    if (isCheckingAuth) {
+      return (
+        <div style={{ 
+          display: 'flex', 
+          justifyContent: 'center', 
+          alignItems: 'center', 
+          height: '100vh',
+          fontSize: '18px',
+          color: '#666'
+        }}>
+          Loading...
+        </div>
+      );
+    }
+
     if (!isLoggedIn) {
       return <Navigate to="/login" replace />;
     }
+    
     return children;
   };
+
+  if (isCheckingAuth) {
+    return (
+      <div style={{ 
+        display: 'flex', 
+        justifyContent: 'center', 
+        alignItems: 'center', 
+        height: '100vh',
+        fontSize: '18px',
+        color: '#666'
+      }}>
+        Loading...
+      </div>
+    );
+  }
 
   return (
     <Router>
@@ -49,7 +152,7 @@ function App() {
             element={isLoggedIn ? <Navigate to="/main" replace /> : <Login onLogin={handleLogin} />} 
           />
 
-          {/* ✅ 註冊頁 - 傳入 onSignUpComplete */}
+          {/* 註冊頁 */}
           <Route 
             path="/signup" 
             element={

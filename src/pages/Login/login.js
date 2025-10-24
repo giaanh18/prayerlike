@@ -1,7 +1,7 @@
-// ./src/pages/Login/login.js
+// src/pages/Login/login.js
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import ApiService from '../../services/api';
+import AuthAPI from '../../services/authApi';
 import useEmailVerification from '../../hooks/useEmailVerification';
 
 // 導入重新命名的元件
@@ -36,7 +36,6 @@ const Login = ({ onLogin }) => {
     isVerificationLoading,
     verificationTimer,
     sendVerificationCode,
-    verifyEmailCode,
     resetVerificationState,
   } = useEmailVerification(
     email,
@@ -44,26 +43,6 @@ const Login = ({ onLogin }) => {
     () => {}, // 移除成功訊息設定
     EMAIL_VERIFICATION_COUNTDOWN_DEFAULT_SECONDS 
   );
-
-  const showLoginSuccess = (method, userData) => {
-    const messages = {
-      'email_verification': '驗證碼登入成功，正在進入系統',
-      'google_social': 'Google 登入成功，正在進入系統',
-      'facebook_social': 'Facebook 登入成功，正在進入系統',
-      'apple_social': 'Apple 登入成功，正在進入系統'
-    };
-    
-    setLoginSuccessMessage(messages[userData.loginMethod] || '登入成功，正在進入系統');
-    
-    setTimeout(() => {
-      setLoginSuccessMessage('');
-      onLogin(userData);
-      
-      setTimeout(() => {
-        navigate('/main', { replace: true });
-      }, 100);
-    }, 1000);
-  };
 
   const handleEmailChange = (e) => {
     setEmail(e.target.value);
@@ -82,6 +61,7 @@ const Login = ({ onLogin }) => {
     setError('');
   };
 
+  // ✅ Gửi OTP qua API
   const handleVerify = async () => {
     if (!email) {
       setError('請輸入 Email');
@@ -94,10 +74,24 @@ const Login = ({ onLogin }) => {
       return;
     }
 
-    await sendVerificationCode();
+    try {
+      setError('');
+      setSuccess('');
+      console.log('📧 發送 OTP 到:', email);
+      
+      await AuthAPI.requestOTP(email);
+      
+      setSuccess('驗證碼已發送到您的信箱');
+      sendVerificationCode(); // Bắt đầu countdown
+      
+      console.log('✅ OTP 發送成功');
+    } catch (error) {
+      console.error('❌ 發送 OTP 失敗:', error);
+      setError(error.message || '發送驗證碼失敗，請稍後再試');
+    }
   };
 
-  // ✅ 修改：驗證完成後跳轉到註冊頁面
+  // ✅ Xác thực OTP và kiểm tra first_login
   const handleLogin = async () => {
     console.log('🔐 驗證碼確認流程開始');
     console.log('📧 Email:', email);
@@ -124,63 +118,128 @@ const Login = ({ onLogin }) => {
       return;
     }
 
-    // 驗證驗證碼是否正確
-    const isCodeValid = await verifyEmailCode(verificationCode);
-    if (!isCodeValid) {
-      setError('驗證碼錯誤，請重新輸入');
-      return;
-    }
-
     setIsLoading(true);
     setError('');
     setSuccess('');
 
     try {
-      console.log('📡 呼叫後端 API 驗證使用者狀態...');
+      // ✅ Bước 1: Verify OTP
+      console.log('📡 呼叫 /auth/otp/verify...');
+      const verifyResult = await AuthAPI.verifyOTP(email, verificationCode);
+      console.log('📊 Verify result:', verifyResult);
+      
+      if (!verifyResult.ok) {
+        setError('驗證碼錯誤，請重新輸入');
+        setIsLoading(false);
+        return;
+      }
 
-      // ✅ 這裡可以呼叫後端 API 檢查使用者是否已註冊
-      // 但根據您的需求，先固定跳轉到註冊頁面
-      
-      // 模擬 API 呼叫
-      // const response = await ApiService.checkUserExists(email, verificationCode);
-      
-      // 固定為新用戶，跳轉到註冊頁面
-      console.log('✅ 驗證碼正確，跳轉到註冊頁面');
-      setSuccess('第一次登入，正在前往註冊頁面...');
-      
-      setTimeout(() => {
-        // 將 email 和驗證碼傳遞到註冊頁面
-        navigate('/signup', { 
-          state: { 
+      console.log('✅ OTP 驗證成功');
+
+      // ✅ Bước 2: Kiểm tra session
+      console.log('📡 呼叫 /auth/session...');
+      const session = await AuthAPI.getSession();
+      console.log('📊 Session data:', session);
+
+      if (!session.authenticated) {
+        setError('驗證失敗，請重試');
+        setIsLoading(false);
+        return;
+      }
+
+      // ✅ Bước 3: Kiểm tra first_login
+      if (session.first_login) {
+        console.log('🆕 First login detected → Redirect to /signup');
+        setSuccess('第一次登入，正在前往註冊頁面...');
+        
+        setTimeout(() => {
+          navigate('/signup', { 
+            state: { 
+              email: email,
+              verificationCode: verificationCode,
+              verified: true,
+              sessionData: session
+            } 
+          });
+        }, 1000);
+      } else {
+        console.log('👤 Returning user → Fetch profile');
+        
+        // ✅ Bước 4: Lấy thông tin profile
+        try {
+          const profile = await AuthAPI.getProfile();
+          console.log('👤 Profile data:', profile);
+
+          const userData = {
+            id: profile.user_id || profile.id,
+            name: profile.name,
             email: email,
-            verificationCode: verificationCode,
-            verified: true 
-          } 
-        });
-      }, 1000);
+            avatar: profile.avatar || `https://ui-avatars.com/api/?name=${profile.name}&background=667eea&color=fff`,
+            token: session.app_token || 'session-token',
+            loginMethod: 'email_verification'
+          };
+
+          setLoginSuccessMessage('登入成功，正在進入系統...');
+          
+          setTimeout(() => {
+            setLoginSuccessMessage('');
+            onLogin(userData);
+            
+            setTimeout(() => {
+              navigate('/main', { replace: true });
+            }, 100);
+          }, 1000);
+        } catch (profileError) {
+          console.error('❌ 無法取得 profile:', profileError);
+          
+          // Nếu không lấy được profile, có thể là first_login nhưng API trả sai
+          // Redirect về signup để tạo profile
+          setSuccess('需要完成註冊，正在前往註冊頁面...');
+          
+          setTimeout(() => {
+            navigate('/signup', { 
+              state: { 
+                email: email,
+                verificationCode: verificationCode,
+                verified: true,
+                sessionData: session
+              } 
+            });
+          }, 1000);
+        }
+      }
 
     } catch (error) {
       console.error('💥 驗證過程發生錯誤:', error);
-      setError('驗證時發生錯誤，請稍後再試');
+      setError(error.message || '驗證時發生錯誤，請稍後再試');
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleSocialLogin = (provider) => {
+  // ✅ SỬA LỖI: Social login function
+  const handleSocialLogin = async (provider) => {
     console.log(`🔐 Social login with ${provider}`);
+    
+    try {
+      // ✅ Kiểm tra provider có available không
+      const providers = await AuthAPI.getProviders();
+      console.log('📊 Available providers:', providers);
+      
+      const providerKey = provider.toLowerCase();
+      if (!providers[providerKey]) {
+        setError(`${provider} login is not available`);
+        return;
+      }
 
-    const userData = {
-      id: `${provider} User`,
-      name: `${provider} User`,
-      email: `user@${provider.toLowerCase()}.com`,
-      avatar: `https://ui-avatars.com/api/?name=${provider}&background=667eea&color=fff`,
-      token: `${provider.toLowerCase()}-token-${Date.now()}`,
-      loginMethod: `${provider.toLowerCase()}_social`
-    };
-
-    console.log('🚀 Social login successful');
-    showLoginSuccess(`${provider} 社交登入`, userData);
+      // ✅ Redirect đến OAuth URL của backend
+      const BASE_URL = 'https://pray-api.yalinelena.church'; // ⭐ Thêm dòng này
+      window.location.href = `${BASE_URL}/auth/${providerKey}/login`;
+      
+    } catch (error) {
+      console.error(`❌ ${provider} login error:`, error);
+      setError(`${provider} 登入失敗，請稍後再試`);
+    }
   };
 
   return (
@@ -257,7 +316,7 @@ const Login = ({ onLogin }) => {
               </div>
             )}
             
-            {/* ✅ 修改按鈕文字為 CONFIRM */}
+            {/* CONFIRM 按鈕 */}
             <ActionButton
               onClick={handleLogin}
               variant="primary"
@@ -276,7 +335,7 @@ const Login = ({ onLogin }) => {
             </ActionButton>
           </div>
           
-          {/* 社交登入按鈕 - 使用重新命名的 CircleButton */}
+          {/* 社交登入按鈕 */}
           <div className="social-login-container">
             <CircleButton
               provider="Apple"

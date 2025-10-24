@@ -4,7 +4,7 @@
   min-height: 100vh;
   display: flex;
   flex-direction: column;
-  justify-content: center; /* ✅ 改為 center，因為移除了底部按鈕 */
+  justify-content: center;
   align-items: center;
   padding: 20px;
   box-sizing: border-box;
@@ -20,7 +20,7 @@
   width: 100%;
   max-width: 280px;
   margin: 0 auto;
-  transform: translateY(0); /* ✅ 移除向上偏移 */
+  transform: translateY(0);
 }
 
 .login-form-new {
@@ -50,7 +50,7 @@
   min-width: 0;
 }
 
-/* ✅ 新增：Email 輸入框文字靠左對齊 */
+/* ✅ Email 輸入框文字靠左對齊 */
 .email-input.email-left-align input,
 .email-input.email-left-align .form-input {
   text-align: left !important;
@@ -62,7 +62,7 @@
   text-align: left !important;
 }
 
-/* ✅ VERIFY 按鈕 - 只控制寬度，高度由 ActionButton.css 控制 */
+/* ✅ VERIFY 按鈕 */
 .verify-button {
   flex: 0 0 auto;
   width: 70px !important;
@@ -74,7 +74,6 @@
 /* ========================================
    驗證碼輸入框
    ======================================== */
-/* ✅ 驗證碼輸入框固定 48px */
 .verification-code-input {
   animation: fadeInDown 0.3s ease-out;
   height: 48px !important;
@@ -105,6 +104,16 @@
   margin: 8px 0;
   width: 100%;
   box-sizing: border-box;
+  animation: fadeIn 0.3s ease-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
 .error-message {
@@ -113,7 +122,6 @@
   border: 1px solid #f5c6cb;
 }
 
-/* ✅ 新增成功訊息樣式 */
 .success-message {
   color: #155724 !important;
   background-color: rgba(212, 237, 218, 0.9);
@@ -129,9 +137,8 @@
 }
 
 /* ========================================
-   CONFIRM 按鈕樣式（原 LOGIN 按鈕）
+   CONFIRM 按鈕樣式
    ======================================== */
-/* ✅ CONFIRM 按鈕固定 48px */
 .login-button,
 button.login-button,
 button.login-button.action-button,
@@ -192,11 +199,6 @@ button.login-button.action-button--medium {
 }
 
 /* ========================================
-   ✅ 移除 SIGN UP 按鈕相關樣式
-   ======================================== */
-/* .signup-section - 已移除 */
-
-/* ========================================
    響應式設計
    ======================================== */
 @media (max-width: 375px) {
@@ -225,7 +227,7 @@ button.login-button.action-button--medium {
 }
 
 /* ========================================
-   ✅ 字體大小調整
+   字體大小調整
    ======================================== */
 
 /* Email Input - Font size */

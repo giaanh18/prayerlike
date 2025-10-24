@@ -1,5 +1,7 @@
+// src/pages/SignUp/SignUp.js
 import React, { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
+import AuthAPI from '../../services/authApi';
 
 import LoginBackground from '../../components/LoginBackground/LoginBackground';
 import BrandLogo from '../../components/BrandLogo/BrandLogo';
@@ -18,20 +20,22 @@ const SignUp = ({ onSignUpComplete }) => {
   const location = useLocation();
   const [currentStep, setCurrentStep] = useState(1);
   
-  // ✅ 從 login 頁面接收已驗證的 email（不顯示，但保存在 formData 中）
+  // ✅ 從 login 頁面接收已驗證的 email
   const verifiedEmail = location.state?.email || '';
   const verificationCode = location.state?.verificationCode || '';
+  const sessionData = location.state?.sessionData || null;
   
   const [formData, setFormData] = useState({
     userId: '',
     name: '',
-    email: verifiedEmail, // ✅ 保存已驗證的 email
+    email: verifiedEmail,
     termsAccepted: false,
     emailVerified: true,
     tribe: null
   });
 
   const [errors, setErrors] = useState({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleChange = (field, value) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -110,33 +114,73 @@ const SignUp = ({ onSignUpComplete }) => {
     handleFinalComplete();
   };
 
-  const handleFinalComplete = () => {
-    const finalData = { 
-      ...formData,
-      id: formData.userId,
-      avatar: `https://ui-avatars.com/api/?name=${formData.name}&background=667eea&color=fff`,
-      token: `signup-token-${Date.now()}`,
-      loginMethod: 'email_verification'
-    };
-    
-    console.log('🎉 FINAL SIGN UP DATA:', finalData);
-    
-    // 儲存到 localStorage
-    localStorage.setItem('userData', JSON.stringify(finalData));
-    
-    // ✅ 呼叫 onSignUpComplete 來更新 App.js 的登入狀態
-    if (typeof onSignUpComplete === 'function') {
-      console.log('✅ 呼叫 onSignUpComplete，自動登入...');
-      onSignUpComplete(finalData);
+  // ✅ Gọi API cập nhật profile
+  const handleFinalComplete = async () => {
+    setIsSubmitting(true);
+
+    try {
+      console.log('📡 呼叫 /auth/profile (POST)...');
+      console.log('📊 Data to send:', {
+        name: formData.name,
+        user_id: formData.userId
+      });
       
-      // 顯示成功訊息後跳轉
-      setTimeout(() => {
-        navigate('/main', { replace: true });
-      }, 500);
-    } else {
-      console.error('❌ onSignUpComplete is not a function');
-      alert('註冊成功！請重新登入。');
-      navigate('/login');
+      // ✅ Gọi API cập nhật profile
+      const updateResult = await AuthAPI.updateProfile(formData.name, formData.userId);
+      console.log('✅ Profile updated successfully:', updateResult);
+
+      // ✅ Lấy lại profile để có đầy đủ thông tin
+      console.log('📡 呼叫 /auth/profile (GET)...');
+      const profile = await AuthAPI.getProfile();
+      console.log('👤 Profile data:', profile);
+      
+      const finalData = { 
+        id: profile.user_id || formData.userId,
+        name: profile.name || formData.name,
+        email: formData.email,
+        avatar: profile.avatar || `https://ui-avatars.com/api/?name=${formData.name}&background=667eea&color=fff`,
+        token: sessionData?.app_token || 'session-token',
+        loginMethod: 'email_verification',
+        tribe: formData.tribe
+      };
+      
+      console.log('🎉 FINAL SIGN UP DATA:', finalData);
+      
+      // Lưu vào localStorage
+      localStorage.setItem('userData', JSON.stringify(finalData));
+      
+      // ✅ Gọi callback để cập nhật App.js
+      if (typeof onSignUpComplete === 'function') {
+        console.log('✅ 呼叫 onSignUpComplete，自動登入...');
+        onSignUpComplete(finalData);
+        
+        setTimeout(() => {
+          navigate('/main', { replace: true });
+        }, 500);
+      } else {
+        console.error('❌ onSignUpComplete is not a function');
+        alert('註冊成功！請重新登入。');
+        navigate('/login');
+      }
+
+    } catch (error) {
+      console.error('💥 更新 profile 失敗:', error);
+      
+      // ✅ Hiển thị lỗi chi tiết
+      let errorMessage = '註冊失敗，請稍後再試';
+      
+      if (error.message.includes('Unauthorized')) {
+        errorMessage = 'Session 已過期，請重新登入';
+        setTimeout(() => {
+          navigate('/login');
+        }, 2000);
+      } else {
+        errorMessage = error.message || errorMessage;
+      }
+      
+      alert(errorMessage);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -145,7 +189,6 @@ const SignUp = ({ onSignUpComplete }) => {
       <BrandLogo logoSrc={logoImage} size="medium" />
       
       <div className="signup-form">
-        {/* ✅ 移除 Email 顯示，只保留 USER ID 和 NAME */}
         <div className="input-group">
           <FormInput
             type="text"
@@ -153,6 +196,7 @@ const SignUp = ({ onSignUpComplete }) => {
             value={formData.userId}
             onChange={(e) => handleChange('userId', e.target.value)}
             className="signup-input"
+            disabled={isSubmitting}
           />
           {errors.userId && <span className="error-text">{errors.userId}</span>}
         </div>
@@ -164,6 +208,7 @@ const SignUp = ({ onSignUpComplete }) => {
             value={formData.name}
             onChange={(e) => handleChange('name', e.target.value)}
             className="signup-input"
+            disabled={isSubmitting}
           />
           {errors.name && <span className="error-text">{errors.name}</span>}
         </div>
@@ -173,6 +218,8 @@ const SignUp = ({ onSignUpComplete }) => {
           variant="primary"
           size="medium"
           className="create-account-button"
+          disabled={isSubmitting}
+          loading={isSubmitting}
         >
           Create account
         </ActionButton>

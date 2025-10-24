@@ -1,3 +1,4 @@
+/* src/pages/SignUp/SignUp.css */
 .signup-container {
   width: 100%;
   min-height: 100vh;
@@ -70,16 +71,16 @@
   transition: all 0.3s ease;
 }
 
-/* ✅ 關鍵修正：hover 時必須保持 translateX(-50%)，不能被 ActionButton 的樣式覆蓋 */
+/* ✅ Hover effect - giữ nguyên vị trí */
 .create-account-button:hover:not(:disabled) {
-  transform: translateX(-50%) !important; /* ✅ 強制保持位置 */
+  transform: translateX(-50%) !important;
   box-shadow: 0 4px 20px rgba(255, 249, 236, 0.6) !important;
   filter: brightness(1.05);
 }
 
-/* ✅ active 效果 */
+/* ✅ Active effect */
 .create-account-button:active:not(:disabled) {
-  transform: translateX(-50%) !important; /* ✅ 強制保持位置 */
+  transform: translateX(-50%) !important;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15) !important;
   filter: brightness(0.95);
 }
