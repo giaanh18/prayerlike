@@ -116,3 +116,158 @@
     bottom: 16px;
   }
 }
+/* ========================================
+   🎨 ADDITIONAL STYLES
+   ======================================== */
+
+/* Input group */
+.input-group {
+  margin-bottom: 20px;
+}
+
+/* Input hint text */
+.input-hint {
+  display: block;
+  color: #a0aec0;
+  font-size: 11px;
+  margin-top: 5px;
+  padding-left: 4px;
+  line-height: 1.4;
+}
+
+/* Error text */
+.error-text {
+  display: block;
+  color: #e53e3e;
+  font-size: 12px;
+  margin-top: 6px;
+  padding-left: 4px;
+  font-weight: 500;
+}
+
+/* Back to login section */
+.back-to-login {
+  text-align: center;
+  margin-top: 20px;
+}
+
+.back-to-login-button {
+  background: none;
+  border: none;
+  color: #667eea;
+  cursor: pointer;
+  text-decoration: underline;
+  font-size: 14px;
+  padding: 8px 12px;
+  transition: all 0.2s ease;
+  border-radius: 6px;
+}
+
+.back-to-login-button:hover:not(:disabled) {
+  color: #5568d3;
+  background-color: rgba(102, 126, 234, 0.05);
+}
+
+.back-to-login-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Loading overlay */
+.loading-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.75);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 9999;
+  backdrop-filter: blur(8px);
+  animation: fadeIn 0.3s ease;
+}
+
+.loading-box {
+  background: white;
+  padding: 45px 50px;
+  border-radius: 20px;
+  text-align: center;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+  animation: scaleIn 0.3s ease;
+  min-width: 200px;
+}
+
+.loading-spinner {
+  font-size: 56px;
+  margin-bottom: 18px;
+  animation: spin 1.5s linear infinite;
+}
+
+.loading-text {
+  font-size: 16px;
+  color: #2d3748;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes scaleIn {
+  from {
+    transform: scale(0.9);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Responsive */
+@media (max-width: 480px) {
+  .loading-box {
+    padding: 35px 40px;
+    min-width: 180px;
+  }
+
+  .loading-spinner {
+    font-size: 48px;
+    margin-bottom: 15px;
+  }
+
+  .loading-text {
+    font-size: 14px;
+  }
+
+  .input-hint {
+    font-size: 10px;
+  }
+
+  .error-text {
+    font-size: 11px;
+  }
+
+  .back-to-login-button {
+    font-size: 13px;
+    padding: 6px 10px;
+  }
+}

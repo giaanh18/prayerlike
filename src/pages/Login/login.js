@@ -166,7 +166,7 @@ const Login = ({ onLogin }) => {
             id: profile.user_id || profile.id,
             name: profile.name,
             email: email,
-            avatar: profile.avatar || `https://ui-avatars.com/api/?name=${profile.name}&background=667eea&color=fff`,
+            avatar: profile.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(profile.name)}&background=667eea&color=fff`,
             token: session.app_token || 'session-token',
             loginMethod: 'email_verification'
           };
@@ -207,43 +207,46 @@ const Login = ({ onLogin }) => {
     }
   };
 
-  // ✅ SỬA LẠI: Thêm BASE_URL
-  const handleSocialLogin = async (provider) => {
-    console.log(`🔐 Social login with ${provider}`);
+const handleSocialLogin = async (provider) => {
+  console.log(`🔐 Starting ${provider} login...`);
+  setError('');
+  
+  try {
+    // ✅ 1. Get available providers
+    const providers = await AuthAPI.getProviders();
+    console.log('📊 Available providers:', providers);
     
-    try {
-      const providers = await AuthAPI.getProviders();
-      console.log('📊 Available providers:', providers);
-      
-      const providerKey = provider.toLowerCase();
-      if (!providers[providerKey]) {
-        setError(`${provider} login is not available`);
-        return;
-      }
-
-      // ✅ THÊM BASE_URL
-      const BASE_URL = 'https://pray-api.yalinelena.church';
-      
-      // ✅ Redirect đến OAuth URL
-      console.log(`🔗 Redirecting to: ${BASE_URL}/auth/${providerKey}/login`);
-      window.location.href = `${BASE_URL}/auth/${providerKey}/login`;
-      
-    } catch (error) {
-      console.error(`❌ ${provider} login error:`, error);
-      setError(`${provider} 登入失敗，請稍後再試`);
+    const providerKey = provider.toLowerCase();
+    if (!providers[providerKey]) {
+      setError(`${provider} 登入目前無法使用`);
+      return;
     }
-  };
+
+    // ✅ 2. Construct OAuth URL
+    const BASE_URL = 'https://pray-api.yalinelena.church';
+    const oauthUrl = `${BASE_URL}/auth/${providerKey}/login`;
+    
+    console.log(`🔗 Redirecting to: ${oauthUrl}`);
+    
+    // ✅ 3. 儲存當前狀態（可選）
+    sessionStorage.setItem('oauth_provider', provider);
+    sessionStorage.setItem('oauth_timestamp', Date.now().toString());
+    
+    // ✅ 4. Redirect to OAuth
+    window.location.href = oauthUrl;
+    
+  } catch (error) {
+    console.error(`❌ ${provider} login error:`, error);
+    setError(`${provider} 登入失敗，請稍後再試`);
+  }
+};
+
 
   return (
-    <LoginBackground
-      gradientColors={['#142049', '#848484', '#FFDF9E']}
-    >
+    <LoginBackground gradientColors={['#142049', '#848484', '#FFDF9E']}>
       <div className="login-page">
         <div className="login-main-content">
-          <BrandLogo 
-            logoSrc={logoImage}
-            size="medium"
-          />
+          <BrandLogo logoSrc={logoImage} size="medium" />
           
           <div className="login-form-new">
             <div className="email-verify-row">

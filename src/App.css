@@ -1,15 +1,61 @@
+/* src/App.css */
+
 /* ========================================
    🎨 GLOBAL STYLES
    ======================================== */
-.app-container {
-  min-height: 100vh;
-  background: linear-gradient(135deg, #FFF 0%, #FFF 100%);
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
 }
 
-/* ✅ Smooth transitions cho tất cả elements */
-.app-container * {
-  transition: all 0.3s ease;
+body {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.app {
+  min-height: 100vh;
+}
+
+/* ========================================
+   ⏳ LOADING SCREEN
+   ======================================== */
+.loading-screen {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  background: linear-gradient(135deg, #142049 0%, #848484 50%, #FFDF9E 100%);
+  color: white;
+}
+
+.loading-spinner {
+  width: 50px;
+  height: 50px;
+  border: 4px solid rgba(255, 255, 255, 0.3);
+  border-top-color: white;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-bottom: 20px;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.loading-screen p {
+  font-size: 18px;
+  font-weight: 500;
+  margin: 0;
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
 }
 
 /* ========================================
@@ -42,7 +88,7 @@
 }
 
 /* ========================================
-   📌 HEADER (Sau khi đăng nhập)
+   📌 HEADER (After login)
    ======================================== */
 .app-header {
   background: rgba(255, 255, 255, 0.95);
@@ -94,6 +140,11 @@
 .logout-btn:hover {
   background: #ff5252;
   transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(255, 107, 107, 0.3);
+}
+
+.logout-btn:active {
+  transform: translateY(0);
 }
 
 /* ========================================
@@ -120,7 +171,6 @@
   top: 100px;
 }
 
-/* ✅ Gộp chung styles cho filter-section và users-section */
 .filter-section,
 .users-section {
   background: rgba(255, 255, 255, 0.95);
@@ -129,6 +179,13 @@
   padding: 20px;
   margin-bottom: 20px;
   box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+  transition: all 0.3s ease;
+}
+
+.filter-section:hover,
+.users-section:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 40px rgba(0,0,0,0.15);
 }
 
 .filter-section h3,
@@ -152,6 +209,12 @@
   border-radius: 15px;
   padding: 25px;
   box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+  transition: all 0.3s ease;
+}
+
+.main-feed:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 40px rgba(0,0,0,0.15);
 }
 
 /* Loading state */
@@ -162,7 +225,9 @@
   font-size: 1.1rem;
 }
 
-/* Responsive design */
+/* ========================================
+   📱 RESPONSIVE DESIGN
+   ======================================== */
 @media (max-width: 768px) {
   .content-wrapper {
     grid-template-columns: 1fr;
@@ -209,17 +274,4 @@
   .users-section {
     padding: 15px;
   }
-}
-
-/* Animation cho smooth transitions */
-.app-container * {
-  transition: all 0.3s ease;
-}
-
-/* Hover effects */
-.filter-section:hover,
-.users-section:hover,
-.main-feed:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 12px 40px rgba(0,0,0,0.15);
 }
