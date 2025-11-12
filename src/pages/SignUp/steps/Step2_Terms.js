@@ -1,3 +1,4 @@
+// ./src/pages/SignUp/steps/Step2_Terms.js
 import React, { useState } from 'react';
 import ActionButton from '../../../components/ActionButton/ActionButton';
 import './Step2_Terms.css';

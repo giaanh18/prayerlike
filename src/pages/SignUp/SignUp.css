@@ -271,3 +271,55 @@
     padding: 6px 10px;
   }
 }
+
+/* ✅ Tribe Info Styles */
+.tribe-info-content {
+  padding: 20px 0;
+}
+
+.tribe-intro,
+.tribe-benefits {
+  margin-bottom: 30px;
+}
+
+.tribe-intro h3,
+.tribe-benefits h3 {
+  color: #667eea;
+  font-size: 1.2rem;
+  margin-bottom: 15px;
+}
+
+.tribe-intro p {
+  color: #666;
+  line-height: 1.6;
+}
+
+.tribe-benefits ul {
+  list-style: none;
+  padding: 0;
+}
+
+.tribe-benefits li {
+  padding: 10px 0;
+  color: #666;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.tribe-benefits li:last-child {
+  border-bottom: none;
+}
+
+.tribe-note {
+  background: #fff3cd;
+  border-left: 4px solid #ffc107;
+  padding: 15px;
+  border-radius: 4px;
+  margin-top: 20px;
+}
+
+.tribe-note p {
+  margin: 0;
+  color: #856404;
+  font-size: 0.95rem;
+}
+

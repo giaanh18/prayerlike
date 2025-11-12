@@ -1,3 +1,5 @@
+// ./src/pages/SignUp/steps/Step1_UserInfo
+
 import React from 'react';
 import { Form, Input, Button, Select } from 'antd';
 import { UserOutlined, LockOutlined, PhoneOutlined } from '@ant-design/icons';

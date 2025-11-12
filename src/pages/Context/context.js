@@ -28,12 +28,46 @@ import Nova from '../../assets/icons/Nova.png';
 
 import Mdi from '../../assets/icons/mdi_family.png';
 import Fluent from '../../assets/icons/fluent_people-interwoven-20-filled.png';
-import Reuben from '../../assets/icons/Reuben.png';
+
+// 以下為所有可能的支派
+import judahIcon from '../../assets/images/tribes/judah.png';
+import reubenIcon from '../../assets/images/tribes/reuben.png';
+import gadIcon from '../../assets/images/tribes/gad.png';
+import asherIcon from '../../assets/images/tribes/asher.png';
+import naphtaliIcon from '../../assets/images/tribes/naphtali.png';
+import manassehIcon from '../../assets/images/tribes/manasseh.png';
+import simeonIcon from '../../assets/images/tribes/simeon.png';
+import leviIcon from '../../assets/images/tribes/levi.png';
+import issacharIcon from '../../assets/images/tribes/issachar.png';
+import zebulunIcon from '../../assets/images/tribes/zebulun.png';
+import josephIcon from '../../assets/images/tribes/joseph.png';
+import benjaminIcon from '../../assets/images/tribes/benjamin.png';
+// 支派種類結束
+
 
 import './context.css';
 
+// ==================== 支派 ID 對照表 ====================
+const tribeIdMap = {
+  1: { name: 'Judah', icon: judahIcon },
+  2: { name: 'Reuben', icon: reubenIcon },
+  3: { name: 'Gad', icon: gadIcon },
+  4: { name: 'Asher', icon: asherIcon },
+  5: { name: 'Naphtali', icon: naphtaliIcon },
+  6: { name: 'Manasseh', icon: manassehIcon },
+  7: { name: 'Simeon', icon: simeonIcon },
+  8: { name: 'Levi', icon: leviIcon },
+  9: { name: 'Issachar', icon: issacharIcon },
+  10: { name: 'Zebulun', icon: zebulunIcon },
+  11: { name: 'Joseph', icon: josephIcon },
+  12: { name: 'Benjamin', icon: benjaminIcon },
+  'default': { name: 'TRIBE', icon: reubenIcon } // 預設值 (使用原來的 Reuben)
+};
+
+
 // ==================== Component Dropdown 隱私設定 ====================
 const PrivacyDropdown = ({ onChange, initialValue = 'public' }) => {
+  // ... (元件內容保持不變) ...
   const [selected, setSelected] = useState(initialValue);
   const [isOpen, setIsOpen] = useState(false);
 
@@ -84,6 +118,7 @@ const PrivacyDropdown = ({ onChange, initialValue = 'public' }) => {
 
 // ==================== Component 評論 ====================
 const Comment = ({ comment, onReply, onEdit, onDelete, onLike, currentUserId, postDocid }) => {
+  // ... (元件內容保持不變) ...
   const [isReplying, setIsReplying] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [replyText, setReplyText] = useState('');
@@ -370,6 +405,7 @@ const Comment = ({ comment, onReply, onEdit, onDelete, onLike, currentUserId, po
 
 // ==================== Component 貼文（擴展版） ====================
 const Post = ({ post, allPosts, onLike, onComment }) => {
+  // ... (元件內容保持不變) ...
   const [isLiking, setIsLiking] = useState(false);
   const [isCommenting, setIsCommenting] = useState(false);
   const [showCommentForm, setShowCommentForm] = useState(false);
@@ -802,11 +838,39 @@ const MainApp = ({ user, onLogout }) => {
   const [notificationCount] = useState(0);
   const [coinAmount] = useState(200000);
 
+  // ==================== 【修改處 1/2】 ====================
+  // 處理 tribe props 的邏輯
+  const userTribeId = user?.tribe;
+  let tribeNameProp;
+  let tribeLogoProp;
+
+  if (userTribeId === null || userTribeId === undefined) {
+    // 情況 1: tribe 為 null 或 undefined
+    tribeNameProp = "not tribe";
+    tribeLogoProp = null; // 傳遞 null，讓 UserHeader 元件處理
+  } else {
+    // 情況 2: 有 tribe ID (或使用預設)
+    const tribeData = tribeIdMap[userTribeId] || tribeIdMap['default'];
+    tribeNameProp = tribeData.name;
+    tribeLogoProp = tribeData.icon;
+  }
+  // ==================== 【修改結束】 ====================
+
+
+  // 【原始邏輯】
+  // const userTribeId = user?.tribe;
+  // const currentTribe = tribeIdMap[userTribeId] || tribeIdMap['default'];
+
   useEffect(() => {
     console.log('🏠 MainApp 載入，使用者:', user);
     console.log('🔧 目前API使用者:', ApiService.getCurrentUser());
+    // console.log('🛡️ 當前支派 ID:', userTribeId, '對應:', currentTribe); // 可選的 debug
+    
+    // ✅ 【修改處 2/2】: 將 fetchPosts 移到 useCallback 中
+    // 這樣 ESLint 就不會警告，同時確保 fetchPosts 不會在每次 render 時都重新創建
+    // (雖然在這個例子中，直接加入依賴也可以，但 useCallBack 是更標準的做法)
     fetchPosts();
-  }, [user]);
+  }, [user]); // 依賴 user 保持不變
 
   // 取得演示貼文
   const getDemoPosts = useCallback(() => [
@@ -849,7 +913,8 @@ const MainApp = ({ user, onLogout }) => {
   ], [user?.name]);
 
   // 載入貼文
-  const fetchPosts = async () => {
+  // ✅ 【修改處 2/2】: 將 fetchPosts 包裹在 useCallback 中
+  const fetchPosts = useCallback(async () => {
     setLoading(true);
     try {
       console.log('📡 從API取得貼文...');
@@ -903,7 +968,7 @@ const MainApp = ({ user, onLogout }) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [getDemoPosts, user?.name]); // ✅ 加入 getDemoPosts 和 user.name 作為依賴
 
   // 處理評論後刷新
   const handleCommentPost = async (postId, commentText) => {
@@ -1032,17 +1097,18 @@ const MainApp = ({ user, onLogout }) => {
     <AppBackground backgroundColor="#2D3656">
       <div className="app-container">
         {/* 頂部使用者資訊列 */}   
-     <UserHeader
-      user={user}
-      coins={coinAmount}
-      tribeLogo={Reuben}
-      familyIcon={Mdi}        // ✅ Ảnh cho nút Family
-      blessingIcon={Fluent}          // ✅ Ảnh cho nút Blessing
-      notificationCount={notificationCount}
-      onNotificationClick={handleNotificationClick}
-      onCoinClick={handleCoinClick}
-      onLogoClick={handleLogoClick}
-    />
+       <UserHeader
+         user={user}
+         coins={coinAmount}
+         tribeLogo={tribeLogoProp}  // <-- 【修改】使用新的 logo prop
+         tribeName={tribeNameProp} // <-- 【修改】使用新的 name prop
+         familyIcon={Mdi}
+         blessingIcon={Fluent}
+         notificationCount={notificationCount}
+         onNotificationClick={handleNotificationClick}
+         onCoinClick={handleCoinClick}
+         onLogoClick={handleLogoClick}
+       />
 
         {/* 功能列：通知鈴鐺和金幣 */}
         <div className="top-action-bar">
@@ -1053,8 +1119,8 @@ const MainApp = ({ user, onLogout }) => {
           />
           <CoinDisplay
             amount={coinAmount}
-            onClick={handleCoinClick}
-            size="medium"
+              onClick={handleCoinClick}
+              size="medium"
           />
         </div>
 
@@ -1086,7 +1152,7 @@ const MainApp = ({ user, onLogout }) => {
     <CategoryLabel 
       text="Church & Ministry" 
       enableMarquee={true}
-      speed={8}
+        speed={8}
     />
   </div>
 
@@ -1100,7 +1166,7 @@ const MainApp = ({ user, onLogout }) => {
     <CategoryLabel 
       text="Kingdom Prayer" 
       enableMarquee={true}
-      speed={8}
+        speed={8}
     />
   </div>
 
@@ -1114,7 +1180,7 @@ const MainApp = ({ user, onLogout }) => {
     <CategoryLabel 
       text="Tribe Prayer" 
       enableMarquee={true}
-      speed={8}
+        speed={8}
     />
   </div>
 </div>
@@ -1124,23 +1190,23 @@ const MainApp = ({ user, onLogout }) => {
         {/* 貼文篩選列 */}
         <div className="filter-bar">
           <div className="filter-controls">
-            <RectButton
+           <RectButton
               icon=""
               onClick={handleRefreshPosts}
               disabled={loading}
               size="small"
               variant="secondary"
-            >
+           >
               {loading ? '載入中...' : 'Original Post'}
-            </RectButton>
-            <RectButton
+           </RectButton>
+           <RectButton
               icon=""
               onClick={() => console.log('Show Comments')}
               size="small"
               variant="secondary"
-            >
+           >
               Witness Wall
-            </RectButton>
+           </RectButton>
           </div>
 
         </div>
@@ -1149,71 +1215,71 @@ const MainApp = ({ user, onLogout }) => {
         <div className="main-content">
           {/* 貼文列表 */}
           <div className="posts-container">
-            {loading && (
-              <div className="loading-container">
-                <div className="loading-spinner"></div>
-                <p>載入中...</p>
-              </div>
-            )}
+           {loading && (
+             <div className="loading-container">
+               <div className="loading-spinner"></div>
+               <p>載入中...</p>
+             </div>
+           )}
 
-            {!loading && filteredPosts.length > 0 ? (
-              <div className="posts-feed">
-                {filteredPosts.map(post => (
-                  <Post
-                    key={post.id}
-                    post={post}
-                    allPosts={allPosts}
-                    onLike={handleLikePost}
-                    onComment={handleCommentPost}
-                  />
-                ))}
-              </div>
-            ) : !loading ? (
-              <div className="no-posts">
-                <div className="no-posts-icon">📭</div>
-                <h4>沒有符合此隱私設定的貼文</h4>
-                <p>嘗試切換到其他隱私設定查看現有貼文</p>
-              </div>
-            ) : null}
+           {!loading && filteredPosts.length > 0 ? (
+             <div className="posts-feed">
+               {filteredPosts.map(post => (
+                 <Post
+                   key={post.id}
+                   post={post}
+                   allPosts={allPosts}
+                   onLike={handleLikePost}
+                   onComment={handleCommentPost}
+                 />
+               ))}
+             </div>
+           ) : !loading ? (
+             <div className="no-posts">
+               <div className="no-posts-icon">📭</div>
+               <h4>沒有符合此隱私設定的貼文</h4>
+               <p>嘗試切換到其他隱私設定查看現有貼文</p>
+             </div>
+           ) : null}
           </div>
         </div>
 
         {/* 底部導航列 */}
         <div className="bottom-navigation">
           <CircleButton
-            provider="Home"
-            iconSrc={Home}
-            onClick={() => console.log('Home')}
-            size="medium"
-            ariaLabel="首頁"
+           provider="Home"
+           iconSrc={Home}
+           onClick={() => console.log('Home')}
+           size="medium"
+           ariaLabel="首頁"
           />
           <CircleButton
-            provider="Search"
-            iconSrc={Search}
-            onClick={() => console.log('Search')}
-            size="medium"
-            ariaLabel="搜尋"
+           provider="Search"
+           iconSrc={Search}
+           onClick={() => console.log('Search')}
+           size="medium"
+           ariaLabel="搜尋"
           />
           <CircleButton
-            provider="Add"
-            iconSrc= {Add}
-            onClick={handleCreatePost}
-            size="medium"
-            ariaLabel="新增貼文"
+           provider="Add"
+           iconSrc= {Add}
+           onClick={handleCreatePost}
+           size="medium"
+           ariaLabel="新增貼文"
           />
           <CircleButton
-            provider="Profile"
-            iconSrc={Profile}
-            onClick={() => console.log('Profile')}
-            size="medium"
-            ariaLabel="個人資料"
+           provider="Profile"
+           iconSrc={Profile}
+           onClick={() => console.log('Profile')}
+           size="medium"
+           ariaLabel="個人資料"
           />
           <CircleButton
-            provider="Nova"
-            iconSrc={Nova}
-            onClick={handleLogout}
-            size="medium"
-            ariaLabel="nova小天使"
+           provider="Nova"
+           iconSrc={Nova}
+           onClick={handleLogout}
+           size="medium"
+           ariaLabel="nova小天使"
           />
         </div>
 

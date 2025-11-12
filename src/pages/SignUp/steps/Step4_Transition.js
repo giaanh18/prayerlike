@@ -1,3 +1,4 @@
+// src/pages/SignUp/steps/Step4_Transition.js
 import React, { useEffect, useState } from 'react';
 import transitionImage from '../../../assets/images/transition-prayer.png';
 import './Step4_Transition.css';

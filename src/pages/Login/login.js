@@ -17,6 +17,22 @@ import googleIcon from '../../assets/icons/google-icon.png';
 
 import './login.css';
 
+// ================== 開發者後門設定 ==================
+const isDevelopment = process.env.NODE_ENV === 'development';
+const DEV_BACKDOOR_EMAIL = 'test@example.ucl';
+
+// ================== 測試帳號資訊 ====================
+const mockUser = {
+  id: 999,
+  name: '測試開發者 (Dev)',
+  email: DEV_BACKDOOR_EMAIL,
+  tribe: null,
+  avatar: `https://ui-avatars.com/api/?name=Dev&background=random&color=fff`,
+  token: 'dev-mode-fake-token',
+  loginMethod: 'dev_backdoor'
+};
+
+
 const Login = ({ onLogin }) => {
   const navigate = useNavigate();
 
@@ -60,6 +76,15 @@ const Login = ({ onLogin }) => {
   };
 
   const handleVerify = async () => {
+
+    // ================== 後門邏輯 ==================
+    if (isDevelopment && email === DEV_BACKDOOR_EMAIL) {
+      console.warn('⚠️ DEV BACKDOOR: Bypassing login with mock user.');
+      onLogin(mockUser);
+      return; 
+    }
+    // ================== 上線需移除 =================
+
     if (!email) {
       setError('請輸入 Email');
       return;
