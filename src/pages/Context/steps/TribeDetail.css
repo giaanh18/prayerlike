@@ -1,0 +1,400 @@
+/* ./src/pages/Context/steps/TribeDetail.css */
+
+/* ===== 最外層容器（支援電腦版） ===== */
+.tribe-detail-wrapper {
+  width: 100%;
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding: 0;
+  margin: 0;
+}
+
+/* ===== TRIBE INFO CONTAINER ===== */
+.tribe-info-container {
+  width: 100%;
+  max-width: 500px;
+  margin: 0 auto;
+  padding: 20px;
+  padding-bottom: 100px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-height: 100vh;
+  position: relative;
+}
+
+/* ===== 載入中狀態 ===== */
+.loading-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 80vh;
+  gap: 20px;
+  color: white;
+}
+
+.loading-spinner {
+  width: 50px;
+  height: 50px;
+  border: 4px solid rgba(255, 255, 255, 0.3);
+  border-top-color: #D4AF37;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ===== 錯誤狀態 ===== */
+.error-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 80vh;
+  gap: 20px;
+  text-align: center;
+  color: white;
+}
+
+.error-container h3 {
+  color: #ff6b6b;
+  font-size: 1.2rem;
+}
+
+/* ===== 返回按鈕（固定在左上角） ===== */
+.back-btn {
+  position: fixed !important;
+  top: 40px !important;
+  left: 30px !important;
+  width: 44px;
+  height: 44px;
+  background: rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(10px);
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-radius: 50%;
+  color: white;
+  font-size: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+  z-index: 9999 !important;
+}
+
+.back-btn:hover {
+  background: rgba(255, 255, 255, 0.25);
+  border-color: rgba(255, 255, 255, 0.5);
+  transform: translateX(-3px) scale(1.05);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+}
+
+.back-btn:active {
+  transform: translateX(-2px) scale(0.98);
+}
+
+/* ===== TRIBE DETAIL VIEW ===== */
+.tribe-detail-view {
+  width: 100%;
+  max-width: 500px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding-top: 60px;
+}
+
+.tribe-detail-header {
+  width: 100%;
+  display: flex;
+  justify-content: flex-start;
+  margin-bottom: 30px;
+}
+
+.tribe-detail-content {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0;
+  padding: 0;
+}
+
+/* ===== 上半部：圖示 + 名稱/狀態 ===== */
+.tribe-detail-header-row {
+  width: 100%;
+  display: flex;
+  align-items: flex-start;
+  gap: 20px;
+  margin-bottom: 30px;
+}
+
+/* 左側：圖示 */
+.tribe-detail-icon {
+  width: 140px;
+  height: 140px;
+  min-width: 140px;
+  background: linear-gradient(135deg, #4a5568 0%, #2d3748 100%);
+  border: 3px solid #6b7280;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4);
+  position: relative;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.tribe-detail-icon img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  position: relative;
+  z-index: 1;
+  filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.3));
+}
+
+.tribe-icon-placeholder {
+  font-size: 3rem;
+  font-weight: bold;
+  color: white;
+  text-transform: uppercase;
+}
+
+/* 右側：名稱 + 狀態 */
+.tribe-detail-text-section {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  justify-content: center;
+}
+
+/* 支派名稱（白色框） */
+.tribe-detail-name {
+  width: 100%;
+  background: white;
+  color: #1a2332;
+  font-size: 20px;
+  font-weight: 600;
+  margin: 0;
+  padding: 12px 20px;
+  border-radius: 12px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* 狀態欄位（白色框） */
+.tribe-detail-status {
+  width: 100%;
+  background: white;
+  color: #4a5568;
+  font-size: 16px;
+  font-weight: 500;
+  margin: 0;
+  padding: 10px 20px;
+  border-radius: 10px;
+  box-shadow: 0 3px 12px rgba(0, 0, 0, 0.15);
+  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ===== 白色卡片：支派說明 ===== */
+.tribe-detail-info {
+  width: 100%;
+  background: white;
+  border-radius: 20px;
+  padding: 30px 25px;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+  margin-bottom: 30px;
+}
+
+.tribe-detail-info p {
+  color: #4a5568;
+  font-size: 15px;
+  line-height: 1.8;
+  margin: 0;
+  text-align: justify;
+}
+
+/* ===== 底部導航列 ===== */
+.bottom-navigation {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  width: 100%;
+  max-width: 100vw;
+  height: 70px;
+  background: rgba(26, 35, 50, 0.95);
+  backdrop-filter: blur(10px);
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  padding: 0 20px;
+  box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.3);
+  z-index: 1000;
+  margin: 0;
+}
+
+/* ===== 電腦版優化（768px 以上） ===== */
+@media (min-width: 768px) {
+  .tribe-detail-wrapper {
+    padding: 40px 20px;
+  }
+
+  .tribe-info-container {
+    max-width: 600px;
+    padding: 40px;
+    padding-bottom: 120px;
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 20px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  }
+
+  .tribe-detail-view {
+    max-width: 600px;
+  }
+
+  .tribe-detail-icon {
+    width: 160px;
+    height: 160px;
+    min-width: 160px;
+  }
+
+  .tribe-detail-name {
+    font-size: 24px;
+    padding: 16px 24px;
+  }
+
+  .tribe-detail-status {
+    font-size: 18px;
+    padding: 12px 24px;
+  }
+
+  .tribe-detail-info {
+    padding: 40px 35px;
+  }
+
+  .tribe-detail-info p {
+    font-size: 16px;
+  }
+
+  .bottom-navigation {
+    height: 80px;
+    padding: 0 40px;
+  }
+
+  .back-btn {
+    top: 60px !important;
+    left: 50px !important;
+    width: 50px;
+    height: 50px;
+    font-size: 22px;
+  }
+}
+
+/* ===== 大螢幕優化（1024px 以上） ===== */
+@media (min-width: 1024px) {
+  .tribe-info-container {
+    max-width: 700px;
+  }
+
+  .tribe-detail-view {
+    max-width: 700px;
+  }
+
+  .bottom-navigation {
+    padding: 0 60px;
+  }
+}
+
+/* ===== 手機版響應式（480px 以下） ===== */
+@media (max-width: 480px) {
+  .tribe-detail-header-row {
+    gap: 15px;
+  }
+
+  .tribe-detail-icon {
+    width: 110px;
+    height: 110px;
+    min-width: 110px;
+    border: 2px solid #6b7280;
+  }
+
+  .tribe-detail-name {
+    font-size: 18px;
+    padding: 10px 16px;
+  }
+
+  .tribe-detail-status {
+    font-size: 14px;
+    padding: 8px 16px;
+  }
+
+  .tribe-detail-info {
+    padding: 25px 20px;
+  }
+
+  .tribe-detail-info p {
+    font-size: 14px;
+  }
+
+  .bottom-navigation {
+    height: 65px;
+    padding: 0 10px;
+  }
+}
+
+/* ===== 極小螢幕優化（380px 以下） ===== */
+@media (max-width: 380px) {
+  .tribe-detail-header-row {
+    gap: 12px;
+  }
+
+  .tribe-detail-icon {
+    width: 95px;
+    height: 95px;
+    min-width: 95px;
+    border: 2px solid #6b7280;
+  }
+
+  .tribe-detail-name {
+    font-size: 16px;
+    padding: 8px 14px;
+  }
+
+  .tribe-detail-status {
+    font-size: 13px;
+    padding: 7px 14px;
+  }
+
+  .tribe-detail-info {
+    padding: 20px 18px;
+  }
+
+  .bottom-navigation {
+    height: 60px;
+    padding: 0 5px;
+  }
+
+  .back-btn {
+    top: 30px !important;
+    left: 20px !important;
+    width: 40px;
+    height: 40px;
+    font-size: 18px;
+  }
+}

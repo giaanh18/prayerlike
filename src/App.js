@@ -32,9 +32,7 @@ function AppRoutes() {
   }, []); // 👈 這個 useEffect 只在啟動時執行一次，保持原樣
 
   
-  // ✅ 【修改處 1/3】: 登出函式
-  // 將 handleLogout 包裹在 useCallback 中
-  // 這樣它就可以安全地作為依賴傳入下方的 useEffect，並修復 ESLint 警告
+
   const handleLogout = useCallback(async () => {
     try {
       console.log('🚪 Logging out from App context...');
