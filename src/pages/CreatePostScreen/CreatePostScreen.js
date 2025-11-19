@@ -1,52 +1,121 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import './CreatePostScreen.css';  // Import file CSS cho component này
+import CircleButton from '../../components/CircleButton/CircleButton';
+import './CreatePostScreen.css';
 
-const CreatePostScreen = () => {
-  const navigate = useNavigate(); // Hook để điều hướng giữa các trang
+// Import icons
+import Home from '../../assets/icons/Homeicon.png';
+import Search from '../../assets/icons/Searchicon.png';
+import Add from '../../assets/icons/Addicon.png';
+import Profile from '../../assets/icons/Profileicon.png';
+import Nova from '../../assets/icons/Nova.png';
+
+const CreatePostScreen = ({ onLogout }) => {
+  const navigate = useNavigate();
+
+  // ✅ Handler functions
+  const handleCreatePost = () => {
+    console.log('🆕 Already on create post page');
+    // Có thể scroll to top hoặc refresh
+  };
+
+  const handleHome = () => {
+    console.log('🏠 Navigate to home');
+    navigate('/');
+  };
+
+  const handleSearch = () => {
+    console.log('🔍 Search clicked');
+    alert('功能開發中');
+  };
+
+  const handleProfile = () => {
+    console.log('👤 Profile clicked');
+    alert('功能開發中');
+  };
+
+  const handleLogout = async () => {
+    console.log('🚪 Logout clicked');
+    if (onLogout) {
+      await onLogout();
+    }
+    navigate('/login', { replace: true });
+  };
 
   return (
-    <div className="centered-layout"> {/* Container chính căn giữa */}
-      <h1 className="page-title">建立新貼文</h1> {/* Tiêu đề trang với gradient màu */}
-      
-      <div
-        style={{
-          display: 'flex', // Sử dụng flexbox
-          flexDirection: 'column', // Sắp xếp theo chiều dọc
-          alignItems: 'center', // Căn giữa theo chiều ngang
-          gap: '20px', // Khoảng cách giữa các phần tử
-          marginBottom: '40px', // Khoảng cách phía dưới
-          marginTop: '95px',  // Đẩy nội dung xuống 95px từ phía trên
-        }}
-      >
-        {/* Div này hiện tại đang trống */}
+    <div className="create-post-page">
+      <div className="centered-layout">
+        {/* ✅ NÚT BACK VỀ TRANG CONTEXT (Route /) */}
+        <button 
+          className="back-button" 
+          onClick={() => navigate('/')} 
+          aria-label="返回首頁"
+        >
+          ←
+        </button>
+
+        <div className="button-container">
+          <button
+            className="post-button"
+            onClick={() => navigate('/create-post/text')}
+            aria-label="建立文字貼文"
+          >
+            Create text post
+          </button>
+          
+          <button
+            className="post-button"
+            onClick={() => navigate('/create-post/audio', { 
+              state: { autoStart: true }
+            })}
+            aria-label="建立音訊貼文"
+          >
+            Create voice post
+          </button>
+        </div>
       </div>
-      
-      <div style={{ 
-        display: 'flex', // Sử dụng flexbox
-        flexDirection: 'column', // Sắp xếp theo chiều dọc
-        alignItems: 'center', // Căn giữa theo chiều ngang
-        gap: '20px', // Khoảng cách 20px giữa các nút
-        marginBottom: '40px' // Khoảng cách 40px phía dưới
-      }}>        
-        <button
-          className="post-button" // Class CSS cho styling nút
-          onClick={() => navigate('/create-post/text')} // Chuyển đến trang tạo bài viết văn bản
-          aria-label="建立文字貼文" // Nhãn trợ năng cho screen reader
-        >
-          建立文字貼文 {/* Nút tạo bài viết văn bản */}
-        </button>
-        
-        <button
-          className="post-button" // Class CSS cho styling nút
-          onClick={() => navigate('/create-post/audio')} // Chuyển đến trang tạo bài viết âm thanh
-          aria-label="建立音訊貼文" // Nhãn trợ năng cho screen reader
-        >
-          建立音訊貼文 {/* Nút tạo bài viết âm thanh */}
-        </button>
+
+      {/* ✅ BOTTOM NAVIGATION - THÊM TRỰC TIẾP */}
+      <div className="bottom-navigation">
+        <CircleButton
+          provider="Home"
+          iconSrc={Home}
+          onClick={handleHome}
+          size="medium"
+          ariaLabel="首頁"
+        />
+        <CircleButton
+          provider="Search"
+          iconSrc={Search}
+          onClick={handleSearch}
+          size="medium"
+          ariaLabel="搜尋"
+        />
+        <CircleButton
+          provider="Add"
+          iconSrc={Add}
+          onClick={handleCreatePost}
+          size="medium"
+          ariaLabel="新增貼文"
+          className="nav-active"  // ✅ Active state vì đang ở trang create
+        />
+        <CircleButton
+          provider="Profile"
+          iconSrc={Profile}
+          onClick={handleProfile}
+          size="medium"
+          ariaLabel="個人資料"
+        />
+        <CircleButton
+          provider="Nova"
+          iconSrc={Nova}
+          onClick={handleLogout}
+          size="medium"
+          ariaLabel="nova小天使"
+        />
       </div>
     </div>
   );
 };
 
-export default CreatePostScreen; // Xuất component để sử dụng ở nơi khác
+export default CreatePostScreen;

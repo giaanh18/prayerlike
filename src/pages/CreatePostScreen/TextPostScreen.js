@@ -1,112 +1,233 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import ApiService from '../../services/api';
-import './TextPostScreen.css';  // Import file CSS cho component này
+import CircleButton from '../../components/CircleButton/CircleButton';
+import './TextPostScreen.css';
 
-const TextPostScreen = ({ user }) => { // Component nhận props user
-  const navigate = useNavigate(); // Hook để điều hướng giữa các trang
-  const location = useLocation(); // Hook để lấy thông tin từ trang trước
+// ✅ Import icons đúng định dạng .png
+import Home from '../../assets/icons/Homeicon.png';
+import Search from '../../assets/icons/Searchicon.png';
+import Add from '../../assets/icons/Addicon.png';
+import Profile from '../../assets/icons/Profileicon.png';
+import Nova from '../../assets/icons/Nova.png';
 
-  // Lấy dữ liệu được truyền từ trang trước (nếu có)
-  const transcriptFromAudio = location.state?.transcript || ''; // Văn bản từ âm thanh
-  const cameFromAudio = location.state?.fromAudioRecord || false; // Có phải từ ghi âm không
-  const recordId = location.state?.recordId; // ID của bản ghi âm
-  const audioUrl = location.state?.audioUrl; // URL của file âm thanh
+const TextPostScreen = ({ user }) => {
+  const navigate = useNavigate();
+  const location = useLocation();
 
-  const [content, setContent] = useState(transcriptFromAudio); // State lưu nội dung bài viết
-  const [statusMessage, setStatusMessage] = useState(''); // State lưu thông báo trạng thái
+  // ✅ Lấy transcript từ AudioPostScreen
+  const transcriptFromAudio = location.state?.initialContent || 
+                               location.state?.transcript || '';
+  const cameFromAudio = location.state?.fromAudio || 
+                        location.state?.fromAudioRecord || false;
+  const recordId = location.state?.recordId;
+  const audioUrl = location.state?.audioUrl;
 
-  // Effect chạy khi component mount hoặc location.state thay đổi
+  // ✅ State
+  const [title, setTitle] = useState('');
+  const [content, setContent] = useState(transcriptFromAudio);
+  const [privacy, setPrivacy] = useState('Public');
+  const [category, setCategory] = useState('');
+  const [statusMessage, setStatusMessage] = useState('');
+
+  const charCount = content.length;
+  const maxChars = 500;
+
+  // ✅ Auto-fill content từ audio
   useEffect(() => {
-    if (location.state?.transcript) {
-      setContent(location.state.transcript); // Cập nhật nội dung từ transcript
+    if (transcriptFromAudio) {
+      setContent(transcriptFromAudio);
     }
-  }, [location.state?.initialContent]);
+  }, [transcriptFromAudio]);
 
-  // Hàm xử lý khi người dùng thay đổi nội dung textarea
-  const handleContentChange = (e) => setContent(e.target.value);
+  // ✅ Handle content change
+  const handleContentChange = (e) => {
+    if (e.target.value.length <= maxChars) {
+      setContent(e.target.value);
+    }
+  };
 
-  // Hàm xử lý khi người dùng nhấn nút "送出"
+  // ✅ Handle submit
   const handleSubmit = async () => {
-    if (!content.trim()) { // Kiểm tra nội dung không được rỗng
+    if (!content.trim()) {
       setStatusMessage('內容不能為空');
       return;
     }
-    if (!user || !user.id) { // Kiểm tra người dùng đã đăng nhập
+    if (!user || !user.id) {
       setStatusMessage('使用者未登入，無法發文');
       return;
     }
-    setStatusMessage('發文中...'); // Hiển thị thông báo đang xử lý
+    setStatusMessage('發文中...');
 
     try {
-      // Gọi API để tạo bài viết mới
-      const result = await ApiService.createPost(user.id, content.trim(), 'public');
-      if (result.success) { // Nếu tạo bài viết thành công
+      const result = await ApiService.createPost(
+        user.id, 
+        content.trim(), 
+        privacy.toLowerCase()
+      );
+      
+      if (result.success) {
         setStatusMessage('發文成功！');
         setTimeout(() => {
-          navigate('/main'); // Chuyển về trang chính sau 600ms
+          navigate('/main');
         }, 600);
-      } else { // Nếu tạo bài viết thất bại
+      } else {
         setStatusMessage(`發文失敗: ${result.message || '未知錯誤'}`);
       }
-    } catch (err) { // Xử lý lỗi exception
+    } catch (err) {
       console.error('發文錯誤:', err);
       setStatusMessage('發文時發生錯誤，請稍後再試');
     }
   };
 
-  // Hàm xử lý khi người dùng nhấn nút "取消"
-  const handleCancel = () => navigate('/main');
+  // ✅ Handle cancel
+  const handleCancel = () => {
+    navigate('/create-post');
+  };
+
+  // ✅ Navigation handlers
+  const handleHome = () => navigate('/main');
+  const handleSearch = () => navigate('/tribe');
+  const handleCreatePost = () => navigate('/create-post');
+  const handleProfile = () => navigate('/profile');
+  const handleNova = () => navigate('/notifications');
 
   return (
-    <div className="text-post-screen"> {/* Container chính của component */}
-      {/* Hiển thị thông tin nếu đến từ trang ghi âm */}
-      {cameFromAudio && (
-        <div
-          style={{
-            background: '#eef', // Màu nền xanh nhạt
-            padding: '8px 10px', // Padding trong
-            borderRadius: 6, // Bo góc
-            fontSize: 13, // Kích thước font
-            marginBottom: 10 // Khoảng cách phía dưới
-          }}
-        >
-          已從錄音自動匯入文字 {/* Thông báo đã import từ ghi âm */}
-          {recordId && <span style={{ marginLeft: 8 }}>recordId: {recordId}</span>} {/* Hiển thị ID bản ghi */}
-          {audioUrl && ( // Nếu có URL âm thanh
-            <span style={{ marginLeft: 8 }}>
-              <a href={audioUrl} target="_blank" rel="noreferrer">
-                原音訊 {/* Link đến file âm thanh gốc */}
-              </a>
-            </span>
-          )}
+    <div className="text-post-screen">
+      <div className="text-post-content">
+        
+        {/* ✅ Audio Import Notice */}
+        {cameFromAudio && (
+          <div className="audio-import-notice">
+            ✓ 已從錄音自動匯入文字
+            {recordId && <span style={{ marginLeft: 8 }}>ID: {recordId}</span>}
+            {audioUrl && (
+              <span style={{ marginLeft: 8 }}>
+                <a href={audioUrl} target="_blank" rel="noreferrer">
+                  播放原音訊
+                </a>
+              </span>
+            )}
+          </div>
+        )}
+
+        {/* ✅ Dropdown Row - Căn phải */}
+        <div className="dropdown-row">
+          <div className="dropdown-container">
+            <select 
+              className="dropdown-select privacy-dropdown"
+              value={privacy}
+              onChange={(e) => setPrivacy(e.target.value)}
+            >
+              <option value="Public">Public</option>
+              <option value="Private">Private</option>
+              <option value="Friends">Friends</option>
+            </select>
+          </div>
+
+          <div className="dropdown-container">
+            <select 
+              className="dropdown-select category-dropdown"
+              value={category}
+              onChange={(e) => setCategory(e.target.value)}
+            >
+              <option value="">Category</option>
+              <option value="prayer">Prayer</option>
+              <option value="testimony">Testimony</option>
+              <option value="question">Question</option>
+            </select>
+          </div>
         </div>
-      )}
 
-      {/* Textarea để người dùng nhập nội dung */}
-      <textarea
-        placeholder="請輸入貼文內容" // Placeholder text
-        value={content} // Giá trị hiện tại
-        onChange={handleContentChange} // Hàm xử lý khi thay đổi
-        rows={6} // Số dòng hiển thị
-      />
+        {/* ✅ White Card - Chứa Title + Textarea */}
+        <div className="prayer-card">
+          {/* Title Input */}
+          <input
+            type="text"
+            className="prayer-title"
+            placeholder="title"
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            maxLength={100}
+          />
 
-      {/* Container chứa các nút bấm */}
-      <div style={{ marginTop: 12 }}> {/* Khoảng cách phía trên */}
-        <button onClick={handleSubmit}> {/* Nút gửi bài viết */}
-          送出
-        </button>
-        <button onClick={handleCancel} className="cancel-btn"> {/* Nút hủy */}
-          取消
-        </button>
+          {/* Textarea Wrapper */}
+          <div className="textarea-wrapper">
+            <textarea
+              placeholder="maximum limit is 500 words..."
+              value={content}
+              onChange={handleContentChange}
+              maxLength={maxChars}
+            />
+            <div className="char-count">
+              {charCount}/{maxChars}
+            </div>
+          </div>
+        </div>
+
+        {/* ✅ Status Message */}
+        {statusMessage && (
+          <div className="status-message">
+            {statusMessage}
+          </div>
+        )}
+
+        {/* ✅ Button Row */}
+        <div className="button-row">
+          <button onClick={handleCancel}>
+            取消
+          </button>
+          <button 
+            onClick={handleSubmit}
+            disabled={!content.trim() || statusMessage === '發文中...'}
+          >
+            發布
+          </button>
+        </div>
+
       </div>
 
-      {/* Hiển thị thông báo trạng thái (nếu có) */}
-      {statusMessage && (
-        <p style={{ fontSize: 14, marginTop: 12 }}>{statusMessage}</p>
-      )}
+      {/* ✅ BOTTOM NAVIGATION */}
+      <div className="bottom-navigation">
+        <CircleButton
+          provider="Home"
+          iconSrc={Home}
+          onClick={handleHome}
+          size="medium"
+          ariaLabel="首頁"
+        />
+        <CircleButton
+          provider="Search"
+          iconSrc={Search}
+          onClick={handleSearch}
+          size="medium"
+          ariaLabel="搜尋"
+        />
+        <CircleButton
+          provider="Add"
+          iconSrc={Add}
+          onClick={handleCreatePost}
+          size="medium"
+          ariaLabel="新增貼文"
+          className="nav-active"
+        />
+        <CircleButton
+          provider="Profile"
+          iconSrc={Profile}
+          onClick={handleProfile}
+          size="medium"
+          ariaLabel="個人資料"
+        />
+        <CircleButton
+          provider="Nova"
+          iconSrc={Nova}
+          onClick={handleNova}
+          size="medium"
+          ariaLabel="通知"
+        />
+      </div>
     </div>
   );
 };
 
-export default TextPostScreen; // Xuất component để sử dụng ở nơi khác
+export default TextPostScreen;
