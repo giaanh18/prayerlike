@@ -1,7 +1,7 @@
 /* ./src/components/CircleButton/CircleButton.css */
 .circle-button {
-  width: 50px; /* ✅ 從 60px 改為 50px（縮小約 10pt） */
-  height: 50px; /* ✅ 從 60px 改為 50px */
+  width: 50px; 
+  height: 50px;
   border-radius: 50%;
   border: none;
   background-color: #fff;
@@ -10,8 +10,8 @@
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  transition: all 0.3s ease;
-  margin: 0 4px; /* ✅ 減少間距以適應底部導覽 */
+  transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  margin: 0 4px;
 }
 
 .circle-button:hover {
@@ -30,40 +30,40 @@
 }
 
 .circle-button-icon {
-  width: 22px; /* ✅ 從 24px 改為 22px */
-  height: 22px; /* ✅ 從 24px 改為 22px */
+  width: 22px;
+  height: 22px;
   object-fit: contain;
 }
 
 /* 尺寸變化 */
 .circle-button-small {
-  width: 40px; /* ✅ 從 48px 改為 40px */
-  height: 40px; /* ✅ 從 48px 改為 40px */
+  width: 40px;
+  height: 40px; 
 }
 
 .circle-button-small .circle-button-icon {
-  width: 18px; /* ✅ 從 20px 改為 18px */
-  height: 18px; /* ✅ 從 20px 改為 18px */
+  width: 18px;
+  height: 18px;
 }
 
 .circle-button-medium {
-  width: 50px; /* ✅ 從 60px 改為 50px */
-  height: 50px; /* ✅ 從 60px 改為 50px */
+  width: 50px; 
+  height: 50px;
 }
 
 .circle-button-medium .circle-button-icon {
-  width: 22px; /* ✅ 從 24px 改為 22px */
-  height: 22px; /* ✅ 從 24px 改為 22px */
+  width: 22px; 
+  height: 22px; 
 }
 
 .circle-button-large {
-  width: 62px; /* ✅ 從 72px 改為 62px */
-  height: 62px; /* ✅ 從 72px 改為 62px */
+  width: 62px;
+  height: 62px; 
 }
 
 .circle-button-large .circle-button-icon {
-  width: 26px; /* ✅ 從 28px 改為 26px */
-  height: 26px; /* ✅ 從 28px 改為 26px */
+  width: 26px; 
+  height: 26px;
 }
 
 /* ==================== 底部導覽專用樣式 ==================== */
@@ -71,7 +71,7 @@
 .bottom-navigation .circle-button {
   background-color: rgba(255, 255, 255, 0.9);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-  margin: 0 2px; /* 更緊密的間距 */
+  margin: 0 4px; 
 }
 
 .bottom-navigation .circle-button:hover {
@@ -85,7 +85,14 @@
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.15);
 }
 
-/* 新增按鈕特殊樣式 */
+.bottom-navigation .circle-button.active-tab {
+  background-color: #FFDE97 !important;
+  transform: scale(1.15);
+  z-index: 10;
+}
+
+
+/* 新增按鈕特殊樣式 (未激活時為灰色) */
 .bottom-navigation .circle-button[aria-label*="Add"],
 .bottom-navigation .circle-button-large {
   background: #D9D9D9; /* ✅ ĐỔI SANG XÁM */
@@ -154,17 +161,4 @@
     width: 22px;
     height: 22px;
   }
-}
-/* ==================== NÚT 首頁 MÀU VÀNG ==================== */
-/* Target nút 首頁 cụ thể */
-.bottom-navigation .circle-button[aria-label="首頁"] {
-  background-color: #FFDE97 !important;
-}
-
-.bottom-navigation .circle-button[aria-label="首頁"]:hover {
-  background-color: #FFD580 !important; /* ✅ Vàng đậm hơn khi hover */
-}
-
-.bottom-navigation .circle-button[aria-label="首頁"]:active {
-  background-color: #FFCC66 !important; /* ✅ Vàng đậm khi click */
 }

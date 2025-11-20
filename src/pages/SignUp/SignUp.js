@@ -285,6 +285,12 @@ const SignUp = ({ onSignUpComplete, onReturnToLogin }) => {
     // handleFinalComplete 函式現在不再被 handleStep6Next 呼叫，可以移除或保留
     // const handleFinalComplete = async () => { ... };
 
+    // 🚀 **新增邏輯：檢查 USER ID 和 NAME 是否輸入**
+    const isFormReady = 
+        formData.userId.trim().length >= 3 && 
+        /^[a-zA-Z0-9_-]+$/.test(formData.userId) &&
+        formData.name.trim().length >= 2;
+
     // ========================================
     // 🎨 RENDER STEPS
     // ========================================
@@ -337,11 +343,17 @@ const SignUp = ({ onSignUpComplete, onReturnToLogin }) => {
                 </div>
                 <ActionButton
                     onClick={handleNext}
-                    variant="primary"
                     size="medium"
                     className="create-account-button"
-                    disabled={isSubmitting || isLoading}
+                    // 🚀 **修改點 3：按鈕禁用條件**
+                    disabled={!isFormReady || isSubmitting || isLoading}
                     loading={isSubmitting || isLoading}
+                    // 🚀 **修改點 4：根據啟用狀態設定背景色，強制覆蓋禁用樣式**
+                    style={{ 
+                        backgroundColor: isFormReady ? '#FFF9EC' : '#D9D9D9',
+                        color: isFormReady ? '#000000' : '#999999',
+                        border: 'none'
+                    }}
                 >
                     Create account
                 </ActionButton>

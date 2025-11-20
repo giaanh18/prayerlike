@@ -1,3 +1,4 @@
+/* src/pages/SignUp/steps/Step6_TribeSelection.css */
 /* ===== CONTAINER ===== */
 .tribe-selection-container {
   width: 100%;
@@ -78,7 +79,6 @@
 }
 
 /* ===== TRIBES GRID (2x3) ===== */
-/* ===== TRIBES GRID (2x3) ===== */
 .tribes-selection-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -96,7 +96,7 @@
   justify-content: center;
   gap: 10px;
   padding: 15px;
-  background: transparent;
+  background: #999999;
   border: 3px solid transparent;
   border-radius: 15px;
   cursor: pointer;
@@ -110,9 +110,9 @@
 }
 
 .tribe-item.selected {
-  border-color: transparent;
-  background: rgba(212, 165, 116, 0.15);
-  box-shadow: none;
+  border-color: #d4a574;
+  background: #FFF9EC; 
+  box-shadow: 0 0 15px rgba(255, 249, 236, 0.5);
 }
 
 .tribe-coin {
@@ -142,7 +142,7 @@
   font-size: 14px;
   font-weight: 600;
   text-align: center;
-  color: white;
+  color: #000000;
   letter-spacing: 0.5px;
 }
 
@@ -219,19 +219,20 @@
 }
 
 .continue-btn {
-  background: rgba(255, 255, 255, 0.9);
-  color: #1a1a3e;
+  background: #FFF9EC !important; 
+  color: #000000 !important;
+  opacity: 1 !important;
 }
 
 .continue-btn:hover {
-  background: white;
+  background: #FFF5D6 !important;
   transform: translateY(-2px);
-  box-shadow: 0 4px 15px rgba(255, 255, 255, 0.3);
+  box-shadow: 0 4px 15px rgba(255, 249, 236, 0.5);
 }
 
 .skip-btn {
   background: transparent;
-  color: #000000; /* ← ĐỔI SANG ĐEN */
+  color: #000000; /* ← 保持黑色 */
   border: none;
   font-size: 14px;
   font-weight: 400;
@@ -345,6 +346,232 @@
 .cancel-btn:hover {
   background: rgba(255, 255, 255, 0.2);
 }
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 768px) {
+  .tribes-selection-grid {
+    gap: 15px;
+  }
+
+  .tribe-coin {
+    width: 70px;
+    height: 70px;
+  }
+
+  .tribe-label {
+    font-size: 12px;
+  }
+}
+
+@media (max-width: 480px) {
+  .tribe-coin {
+    width: 60px;
+    height: 60px;
+  }
+
+  .tribe-label {
+    font-size: 11px;
+  }
+
+  .main-title {
+    font-size: 16px;
+  }
+
+  .sub-title {
+    font-size: 14px;
+  }
+}
+/* ===== ✅ WARNING MODAL - MÀU NỀN CHÍNH XÁC ===== */
+.warning-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(180deg, 
+    #142049 0%,      /* Xanh navy đậm (trên) */
+    #2a3a5c 15%,
+    #3d4f6f 30%,
+    #566882 45%,
+    #6f7f95 60%,
+    #848484 75%,     /* Xám (giữa) */
+    #a89d7e 85%,
+    #c9b87f 92%,
+    #FFDF9E 100%     /* Vàng nhạt (dưới) */
+  );
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 20px;
+}
+
+.warning-modal-new {
+  width: 100%;
+  max-width: 420px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 35px;
+  padding: 0 20px; /* ✅ THÊM */
+}
+
+
+.modal-title {
+  font-size: 24px;
+  font-weight: 400;
+  color: #FFFFFF !important;
+  text-align: center;
+  margin: 0;
+  font-family: 'Noto Serif', serif;
+  letter-spacing: 1.5px;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  transform: translateY(-50px); /* ✅ THÊM - ĐẨY CHỮ LÊN TRÊN */
+}
+
+
+
+
+.modal-card {
+  background: #F5F5DC;
+  border-radius: 16px;
+  padding: 28px 24px;
+  width: 100%;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25);
+}
+
+.card-title {
+  font-size: 18px;
+  font-weight: 700;              /* Bold cho tiêu đề */
+  color: #000000;
+  text-align: center;
+  margin: 0 0 12px 0;
+  letter-spacing: 1.2px;
+  line-height: 1.3;
+  font-family: 'Noto Serif', serif; /* ✅ THÊM */
+}
+
+.card-subtitle {
+  font-size: 14px;
+  color: #000000;
+  text-align: center;
+  margin: 0 0 4px 0;
+  font-weight: 400;              /* ✅ Regular */
+  line-height: 1.4;
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 5px;
+  font-family: 'Noto Serif', serif; /* ✅ THÊM */
+}
+
+.highlight-tribe {
+  color: #D4AF37;
+  font-weight: 700;              /* Bold cho tên tribe */
+  font-size: 15px;
+  line-height: inherit;
+  font-family: 'Noto Serif', serif; /* ✅ THÊM */
+}
+
+.card-warning {
+  font-size: 12px;
+  font-weight: 700;              /* Bold */
+  color: #000000;
+  text-align: center;
+  margin: 0 0 16px 0;
+  letter-spacing: 0.8px;
+  line-height: 1.3;
+  font-family: 'Noto Serif', serif; /* ✅ THÊM */
+}
+
+.warning-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 14px;
+  color: #000000;
+  font-weight: 400;              /* ✅ Regular */
+  line-height: 1.4;
+  font-family: 'Noto Serif', serif; /* ✅ THÊM */
+}
+
+.final-text {
+  font-size: 14px;
+  font-weight: 600;              /* Semi-bold */
+  color: #000000;
+  text-align: center;
+  margin: 12px 0 4px 0;
+  line-height: 1.4;
+  font-family: 'Noto Serif', serif; /* ✅ THÊM */
+}
+
+.think-text {
+  font-size: 13px;
+  color: #000000;
+  text-align: center;
+  margin: 0;
+  font-style: italic;
+  font-weight: 400;              /* ✅ Regular */
+  line-height: 1.4;
+  font-family: 'Noto Serif', serif; /* ✅ THÊM */
+}
+
+
+.modal-buttons {
+  display: flex;
+  gap: 18px;
+  width: 100%;
+  max-width: 340px;
+  margin: 0 auto; /* ✅ CĂN GIỮA */
+  justify-content: center; /* ✅ CĂN GIỮA */
+}
+
+.cancel-btn-new,
+.agree-btn-new {
+  flex: 1;
+  padding: 13px 28px;
+  border-radius: 10px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  border: none;
+  transition: all 0.3s;
+  text-transform: lowercase;
+  font-family: 'Noto Serif', serif;
+  text-align: center; /* ✅ CĂN GIỮA CHỮ */
+}
+
+.cancel-btn-new {
+  background: #F5F5DC;
+  color: #000000;
+  border: 2px solid #9B8B6F;
+}
+
+.cancel-btn-new:hover {
+  background: #EAEAC8;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.agree-btn-new {
+  background: #D4AF37;
+  color: #000000;
+  border: 2px solid #B8941F;
+  font-weight: 700;
+}
+
+.agree-btn-new:hover {
+  background: #C19B2A;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(212, 175, 55, 0.4);
+}
+
+.cancel-btn-new:active,
+.agree-btn-new:active {
+  transform: translateY(0);
+}
+
+
 
 /* ===== RESPONSIVE ===== */
 @media (max-width: 768px) {
@@ -736,7 +963,7 @@
 .back-btn:disabled,
 .cancel-btn-new:disabled,
 .agree-btn-new:disabled {
-  opacity: 0.5;
+  opacity: 0.5 !important;
   cursor: not-allowed;
   pointer-events: none;
 }

@@ -1,4 +1,4 @@
-// ./src/pages/SignUp/steps/Step1_UserInfo
+// ./src/pages/SignUp/steps/Step1_UserInfo.js
 
 import React from 'react';
 import { Form, Input, Button, Select } from 'antd';

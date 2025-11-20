@@ -1,10 +1,12 @@
-import React, { useState, useEffect } from 'react';
+// ./src/pages/CreatePostScreen/TextPostScreen.js
+
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import ApiService from '../../services/api';
 import CircleButton from '../../components/CircleButton/CircleButton';
 import './TextPostScreen.css';
 
-// ✅ Import icons đúng định dạng .png
+// Icon imports
 import Home from '../../assets/icons/Homeicon.png';
 import Search from '../../assets/icons/Searchicon.png';
 import Add from '../../assets/icons/Addicon.png';
@@ -15,133 +17,194 @@ const TextPostScreen = ({ user }) => {
   const navigate = useNavigate();
   const location = useLocation();
 
-  // ✅ Lấy transcript từ AudioPostScreen
-  const transcriptFromAudio = location.state?.initialContent || 
-                               location.state?.transcript || '';
-  const cameFromAudio = location.state?.fromAudio || 
-                        location.state?.fromAudioRecord || false;
+  // ✅ 接收來自 AudioPostScreen 的資料
+  const transcriptFromAudio = location.state?.transcript || 
+                               location.state?.initialContent || '';
+  const cameFromAudio = location.state?.fromAudio || false;
   const recordId = location.state?.recordId;
-  const audioUrl = location.state?.audioUrl;
 
-  // ✅ State
+  // State
   const [title, setTitle] = useState('');
   const [content, setContent] = useState(transcriptFromAudio);
-  const [privacy, setPrivacy] = useState('Public');
-  const [category, setCategory] = useState('');
+  
+  // Dropdown Values
+  const [privacy, setPrivacy] = useState('Privacy Choices'); 
+  const [category, setCategory] = useState('Prayer Category'); 
+  
+  // Dropdown Open/Close State
+  const [isPrivacyOpen, setIsPrivacyOpen] = useState(false);
+  const [isCategoryOpen, setIsCategoryOpen] = useState(false);
+
   const [statusMessage, setStatusMessage] = useState('');
+
+  // Ref for click outside
+  const privacyRef = useRef(null);
+  const categoryRef = useRef(null);
 
   const charCount = content.length;
   const maxChars = 500;
 
-  // ✅ Auto-fill content từ audio
+  // 當 transcriptFromAudio 有值時，更新 content
   useEffect(() => {
     if (transcriptFromAudio) {
+      console.log("📝 收到轉錄文字，自動填入:", transcriptFromAudio);
       setContent(transcriptFromAudio);
     }
   }, [transcriptFromAudio]);
 
-  // ✅ Handle content change
+  // 點擊外部關閉選單
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (privacyRef.current && !privacyRef.current.contains(event.target)) {
+        setIsPrivacyOpen(false);
+      }
+      if (categoryRef.current && !categoryRef.current.contains(event.target)) {
+        setIsCategoryOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
+
   const handleContentChange = (e) => {
     if (e.target.value.length <= maxChars) {
       setContent(e.target.value);
     }
   };
 
-  // ✅ Handle submit
   const handleSubmit = async () => {
     if (!content.trim()) {
-      setStatusMessage('內容不能為空');
+      setStatusMessage('Content cannot be empty');
       return;
     }
     if (!user || !user.id) {
-      setStatusMessage('使用者未登入，無法發文');
+      setStatusMessage('User not logged in');
       return;
     }
-    setStatusMessage('發文中...');
+
+    // 準備 Category (API 必填)
+    const finalCategory = (category === 'Prayer Category' || category === '') ? 'Personal & Family' : category;
+    
+    setStatusMessage('Posting...');
 
     try {
+      // 建構符合 PostCreate Schema 的 Payload
+      const postPayload = {
+        content: content.trim(),
+        category: finalCategory,
+        uuid: null 
+      };
+
+      console.log("🚀 發送貼文 Payload:", postPayload);
+
       const result = await ApiService.createPost(
         user.id, 
-        content.trim(), 
-        privacy.toLowerCase()
+        postPayload
       );
       
       if (result.success) {
-        setStatusMessage('發文成功！');
+        setStatusMessage('Success!');
         setTimeout(() => {
           navigate('/main');
         }, 600);
       } else {
-        setStatusMessage(`發文失敗: ${result.message || '未知錯誤'}`);
+        setStatusMessage(`Failed: ${result.message || 'Unknown error'}`);
       }
     } catch (err) {
-      console.error('發文錯誤:', err);
-      setStatusMessage('發文時發生錯誤，請稍後再試');
+      console.error('Error:', err);
+      setStatusMessage('Error occurred, please try again');
     }
   };
 
-  // ✅ Handle cancel
   const handleCancel = () => {
     navigate('/create-post');
   };
 
-  // ✅ Navigation handlers
+  // Navigation
   const handleHome = () => navigate('/main');
   const handleSearch = () => navigate('/tribe');
   const handleCreatePost = () => navigate('/create-post');
   const handleProfile = () => navigate('/profile');
   const handleNova = () => navigate('/notifications');
 
+  // 選項資料
+  const privacyOptions = ['Public', 'Family', 'Tribe', 'Individual'];
+  const categoryOptions = ['Personal & Family', 'Church & Ministry', 'Kingdom Prayer', 'Tribe Prayer'];
+
   return (
     <div className="text-post-screen">
       <div className="text-post-content">
         
-        {/* ✅ Audio Import Notice */}
         {cameFromAudio && (
           <div className="audio-import-notice">
-            ✓ 已從錄音自動匯入文字
+            ✓ Imported from audio
             {recordId && <span style={{ marginLeft: 8 }}>ID: {recordId}</span>}
-            {audioUrl && (
-              <span style={{ marginLeft: 8 }}>
-                <a href={audioUrl} target="_blank" rel="noreferrer">
-                  播放原音訊
-                </a>
-              </span>
-            )}
           </div>
         )}
 
-        {/* ✅ Dropdown Row - Căn phải */}
+        {/* Dropdown Row */}
         <div className="dropdown-row">
-          <div className="dropdown-container">
-            <select 
-              className="dropdown-select privacy-dropdown"
-              value={privacy}
-              onChange={(e) => setPrivacy(e.target.value)}
+          
+          {/* Privacy Dropdown */}
+          <div className="custom-dropdown" ref={privacyRef}>
+            <div 
+              className="dropdown-trigger" 
+              onClick={() => setIsPrivacyOpen(!isPrivacyOpen)}
             >
-              <option value="Public">Public</option>
-              <option value="Private">Private</option>
-              <option value="Friends">Friends</option>
-            </select>
+              {privacy}
+              <span className={`arrow ${isPrivacyOpen ? 'up' : 'down'}`}>▼</span>
+            </div>
+            {isPrivacyOpen && (
+              <div className="dropdown-menu">
+                {privacyOptions.map((option) => (
+                  <div 
+                    key={option} 
+                    className={`dropdown-item ${privacy === option ? 'selected' : ''}`}
+                    onClick={() => {
+                      setPrivacy(option);
+                      setIsPrivacyOpen(false);
+                    }}
+                  >
+                    {option}
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
 
-          <div className="dropdown-container">
-            <select 
-              className="dropdown-select category-dropdown"
-              value={category}
-              onChange={(e) => setCategory(e.target.value)}
+          {/* Category Dropdown */}
+          <div className="custom-dropdown" ref={categoryRef}>
+            <div 
+              className="dropdown-trigger" 
+              onClick={() => setIsCategoryOpen(!isCategoryOpen)}
             >
-              <option value="">Category</option>
-              <option value="prayer">Prayer</option>
-              <option value="testimony">Testimony</option>
-              <option value="question">Question</option>
-            </select>
+              {category}
+              <span className={`arrow ${isCategoryOpen ? 'up' : 'down'}`}>▼</span>
+            </div>
+            {isCategoryOpen && (
+              <div className="dropdown-menu">
+                {categoryOptions.map((option) => (
+                  <div 
+                    key={option} 
+                    className={`dropdown-item ${category === option ? 'selected' : ''}`}
+                    onClick={() => {
+                      setCategory(option);
+                      setIsCategoryOpen(false);
+                    }}
+                  >
+                    {option}
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
+
         </div>
 
-        {/* ✅ White Card - Chứa Title + Textarea */}
+        {/* Prayer Card */}
         <div className="prayer-card">
-          {/* Title Input */}
           <input
             type="text"
             className="prayer-title"
@@ -151,10 +214,9 @@ const TextPostScreen = ({ user }) => {
             maxLength={100}
           />
 
-          {/* Textarea Wrapper */}
           <div className="textarea-wrapper">
             <textarea
-              placeholder="maximum limit is 500 words..."
+              placeholder="maximum limit is 500 words"
               value={content}
               onChange={handleContentChange}
               maxLength={maxChars}
@@ -165,65 +227,69 @@ const TextPostScreen = ({ user }) => {
           </div>
         </div>
 
-        {/* ✅ Status Message */}
         {statusMessage && (
           <div className="status-message">
             {statusMessage}
           </div>
         )}
 
-        {/* ✅ Button Row */}
+        {/* Buttons */}
         <div className="button-row">
-          <button onClick={handleCancel}>
-            取消
+          <button 
+            className="action-btn"
+            onClick={handleSubmit}
+            disabled={!content.trim() || statusMessage === 'Posting...'}
+          >
+            post
           </button>
           <button 
-            onClick={handleSubmit}
-            disabled={!content.trim() || statusMessage === '發文中...'}
+            className="action-btn"
+            onClick={handleCancel}
           >
-            發布
+            cancel
           </button>
         </div>
 
       </div>
 
-      {/* ✅ BOTTOM NAVIGATION */}
+      {/* Bottom Navigation */}
       <div className="bottom-navigation">
         <CircleButton
           provider="Home"
           iconSrc={Home}
           onClick={handleHome}
           size="medium"
-          ariaLabel="首頁"
+          ariaLabel="Home"
         />
         <CircleButton
           provider="Search"
           iconSrc={Search}
           onClick={handleSearch}
           size="medium"
-          ariaLabel="搜尋"
+          ariaLabel="Search"
         />
         <CircleButton
           provider="Add"
           iconSrc={Add}
           onClick={handleCreatePost}
           size="medium"
-          ariaLabel="新增貼文"
+          ariaLabel="Add Post"
           className="nav-active"
+          isActive={true} 
         />
         <CircleButton
           provider="Profile"
           iconSrc={Profile}
           onClick={handleProfile}
           size="medium"
-          ariaLabel="個人資料"
+          ariaLabel="Profile"
         />
         <CircleButton
           provider="Nova"
           iconSrc={Nova}
           onClick={handleNova}
           size="medium"
-          ariaLabel="通知"
+          ariaLabel="Notifications"
         />
       </div>
     </div>

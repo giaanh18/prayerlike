@@ -2,9 +2,12 @@
 
 // ==================== 🔧 API BASE URLS ====================
 
-// ✅ Sử dụng proxy (không hardcode domain)
-const POSTS_API_BASE_URL = '/cms';  // Proxy đến zien.54ucl.com/cms
-const AUTH_API_BASE_URL = '/auth';  // Proxy đến pray-api.yalinelena.church/auth
+// ✅ 設定新的主要 API 網域
+const API_BASE_URL = 'https://pray-api.yalinelena.church';
+
+// 貼文與內容相關 API 路徑
+const POSTS_API_URL = `${API_BASE_URL}/api`;
+const AUTH_API_URL = `${API_BASE_URL}/auth`;
 
 // ==================== 🔧 UTILITY CLASSES ====================
 
@@ -162,19 +165,15 @@ const ApiService = {
     }
   },
 
-  // ==================== 🆕 AUTH API ====================
+  // ==================== 🆕 AUTH API (保持原有邏輯) ====================
 
   /**
    * ✅ Login bằng email
-   * @param {string} email - Email người dùng
-   * @param {string} successUrl - URL redirect sau khi login thành công
-   * @returns {Promise<Object>}
    */
   loginWithEmail: async (email, successUrl = null) => {
     const performanceStart = performance.now();
 
     try {
-      // Validate email
       if (!email || !email.trim()) {
         throw new ApiError('Email không được để trống', 400);
       }
@@ -185,23 +184,18 @@ const ApiService = {
       }
 
       const redirectUrl = successUrl || `${window.location.origin}/auth/callback`;
-      const url = `${AUTH_API_BASE_URL}/${encodeURIComponent(email)}/login?success_url=${encodeURIComponent(redirectUrl)}`;
+      const url = `${AUTH_API_URL}/${encodeURIComponent(email)}/login?success_url=${encodeURIComponent(redirectUrl)}`;
 
       console.log(`🔐 Đăng nhập bằng email: ${email}`);
-      console.log(`📍 Redirect URL: ${redirectUrl}`);
 
       const { data } = await ApiService.makeRequest(url, {
         method: 'GET',
-        headers: {
-          'accept': 'application/json'
-        },
+        headers: { 'accept': 'application/json' },
         maxRetries: 2,
         timeout: 30000
       });
 
       const performanceEnd = performance.now();
-
-      console.log('✅ Email đăng nhập đã được gửi:', data);
 
       return {
         success: true,
@@ -212,23 +206,10 @@ const ApiService = {
 
     } catch (error) {
       console.error('❌ Đăng nhập thất bại:', error);
-
       let errorMessage = 'Không thể gửi email đăng nhập';
+      if (error.statusCode === 400) errorMessage = error.message || 'Dữ liệu không hợp lệ';
+      else if (error.statusCode === 404) errorMessage = 'Không tìm thấy người dùng';
       
-      if (error.statusCode === 400) {
-        errorMessage = error.message || 'Dữ liệu không hợp lệ';
-      } else if (error.statusCode === 404) {
-        errorMessage = 'Không tìm thấy người dùng';
-      } else if (error.statusCode === 422) {
-        errorMessage = 'Email không hợp lệ';
-      } else if (error.statusCode === 429) {
-        errorMessage = 'Quá nhiều yêu cầu. Vui lòng thử lại sau.';
-      } else if (error.statusCode >= 500) {
-        errorMessage = 'Lỗi máy chủ. Vui lòng thử lại sau.';
-      } else if (error.statusCode === 0) {
-        errorMessage = 'Không thể kết nối đến máy chủ';
-      }
-
       return {
         success: false,
         message: errorMessage,
@@ -240,163 +221,84 @@ const ApiService = {
   },
 
   /**
-   * ✅ Lấy danh sách Auth Providers (ĐÃ FIX FORMAT)
-   * @returns {Promise<Object>}
+   * ✅ Lấy danh sách Auth Providers
    */
   getAuthProviders: async () => {
     try {
-      console.log('📋 Lấy danh sách Auth Providers...');
-
-      const { data } = await ApiService.makeRequest(`${AUTH_API_BASE_URL}/providers`, {
+      const { data } = await ApiService.makeRequest(`${AUTH_API_URL}/providers`, {
         method: 'GET',
-        headers: {
-          'accept': 'application/json'
-        },
+        headers: { 'accept': 'application/json' },
         timeout: 10000
       });
 
-      console.log('📦 Raw providers data:', data);
-
-      // ✅ CONVERT FORMAT: {"google": true, "apple": true} 
-      //    => [{name: "google", display_name: "Google", enabled: true}, ...]
-      
       let providers = [];
-      
       if (data && typeof data === 'object' && !Array.isArray(data)) {
-        // Format: {"google": true, "apple": true, "facebook": true}
         providers = Object.entries(data).map(([key, enabled]) => ({
           name: key.toLowerCase(),
           display_name: key.charAt(0).toUpperCase() + key.slice(1),
           enabled: enabled === true,
           type: 'oauth'
         }));
-        
-        console.log('✅ Converted providers:', providers);
       } else if (Array.isArray(data)) {
-        // Nếu backend đã trả về array
         providers = data;
       }
 
-      return {
-        success: true,
-        providers: providers,
-        message: 'Lấy danh sách providers thành công'
-      };
-
+      return { success: true, providers: providers, message: 'Lấy danh sách providers thành công' };
     } catch (error) {
-      console.error('❌ Lấy providers thất bại:', error);
-
-      return {
-        success: false,
-        providers: [],
-        message: error.message || 'Lấy providers thất bại',
-        error: error.message
-      };
+      return { success: false, providers: [], message: error.message, error: error.message };
     }
   },
 
   /**
    * ✅ Lấy thông tin Session
-   * @returns {Promise<Object>}
    */
   getAuthSession: async () => {
     try {
-      console.log('🔍 Kiểm tra session...');
-
-      const { data } = await ApiService.makeRequest(`${AUTH_API_BASE_URL}/session`, {
+      const { data } = await ApiService.makeRequest(`${AUTH_API_URL}/session`, {
         method: 'GET',
-        headers: {
-          'accept': 'application/json'
-        },
-        credentials: 'include', // Gửi cookies
+        headers: { 'accept': 'application/json' },
+        credentials: 'include',
         timeout: 10000
       });
 
-      console.log('✅ Session:', data);
-
-      return {
-        success: true,
-        session: data,
-        user: data?.user || null,
-        message: 'Lấy session thành công'
-      };
-
+      return { success: true, session: data, user: data?.user || null, message: 'Lấy session thành công' };
     } catch (error) {
-      console.error('❌ Lấy session thất bại:', error);
-
-      // Nếu 401 = chưa đăng nhập
       if (error.statusCode === 401) {
-        return {
-          success: false,
-          session: null,
-          user: null,
-          message: 'Chưa đăng nhập',
-          requireLogin: true
-        };
+        return { success: false, session: null, user: null, message: 'Chưa đăng nhập', requireLogin: true };
       }
-
-      return {
-        success: false,
-        session: null,
-        user: null,
-        message: error.message || 'Lấy session thất bại',
-        error: error.message
-      };
+      return { success: false, session: null, user: null, message: error.message, error: error.message };
     }
   },
 
   /**
    * ✅ Logout
-   * @returns {Promise<Object>}
    */
   logout: async () => {
     try {
-      console.log('🚪 Đăng xuất...');
-
-      await ApiService.makeRequest(`${AUTH_API_BASE_URL}/logout`, {
+      await ApiService.makeRequest(`${AUTH_API_URL}/logout`, {
         method: 'POST',
-        headers: {
-          'accept': 'application/json'
-        },
+        headers: { 'accept': 'application/json' },
         credentials: 'include'
       });
-
-      // Xóa dữ liệu local
       StorageService.removeItem('currentUser');
       StorageService.removeItem('userData');
       StorageService.removeItem('isAuthenticated');
       StorageService.removeItem('pendingUser');
-
-      console.log('✅ Đăng xuất thành công');
-
-      return {
-        success: true,
-        message: 'Đăng xuất thành công'
-      };
-
+      return { success: true, message: 'Đăng xuất thành công' };
     } catch (error) {
-      console.error('❌ Đăng xuất thất bại:', error);
-
-      // Vẫn xóa dữ liệu local
-      StorageService.removeItem('currentUser');
-      StorageService.removeItem('userData');
-      StorageService.removeItem('isAuthenticated');
-      StorageService.removeItem('pendingUser');
-
-      return {
-        success: true, // Vẫn return success
-        message: 'Đã xóa dữ liệu local'
-      };
+      return { success: true, message: 'Đã xóa dữ liệu local' };
     }
   },
 
-  // ==================== 📝 POSTS API ====================
+  // ==================== 📝 POSTS & INTERACTION API (Updated to New Spec) ====================
   
   /**
-   * ✅ Lấy danh sách posts
+   * ✅ 4. 查詢貼文分頁 (Get Posts Page)
+   * Method: GET /api/page
+   * Params: userid, event, category, viewer_userid, page, limit
    */
-  getPosts: async (page = 1, limit = 10, forceRefresh = false) => {
-    const cacheKey = `posts_${page}_${limit}`;
+  getPosts: async (page = 1, limit = 10, forceRefresh = false, filters = {}) => {
+    const cacheKey = `posts_${page}_${limit}_${JSON.stringify(filters)}`;
 
     if (!forceRefresh && cache.has(cacheKey)) {
       console.log('📦 Sử dụng cache cho posts');
@@ -404,291 +306,257 @@ const ApiService = {
     }
 
     try {
-      console.log(`📝 Lấy posts (page: ${page}, limit: ${limit})`);
+      const currentUserId = ApiService.getCurrentUserId();
+      
+      // 建構查詢參數
+      const params = new URLSearchParams({
+        page: page,
+        limit: limit,
+        viewer_userid: currentUserId || '',
+        ...filters // 可傳入 event, category, userid
+      });
 
-      const { data } = await ApiService.makeRequest(
-        `${POSTS_API_BASE_URL}/posts?page=${page}&limit=${limit}`,
-        {
-          method: 'GET',
-          maxRetries: 2
-        }
-      );
+      const url = `${POSTS_API_URL}/page?${params.toString()}`;
+      console.log(`📝 Lấy posts from: ${url}`);
 
-      const result = {
-        success: true,
-        posts: Array.isArray(data) ? data : data?.posts || [],
-        pagination: data?.pagination || { page, limit, total: 0 },
-        message: 'Lấy posts thành công'
-      };
+      const { data } = await ApiService.makeRequest(url, {
+        method: 'GET',
+        maxRetries: 2
+      });
 
-      cache.set(cacheKey, result);
-      setTimeout(() => cache.delete(cacheKey), 60000); // Cache 1 phút
+      if (data && data.status === 'success' && data.data) {
+        const result = {
+          success: true,
+          posts: data.data.posts || [], 
+          pagination: data.data.pageinfo || {},
+          filters: data.data.filter || {},
+          message: data.message || 'Lấy posts thành công'
+        };
 
-      return result;
+        cache.set(cacheKey, result);
+        setTimeout(() => cache.delete(cacheKey), 60000); // Cache 1 min
+        return result;
+      } else {
+         throw new ApiError(data?.message || 'Format response không hợp lệ', 500);
+      }
 
     } catch (error) {
       console.error('❌ Lấy posts thất bại:', error);
-
-      return {
-        success: false,
-        posts: [],
-        message: error.message || 'Lấy posts thất bại',
-        error: error.message
-      };
+      return { success: false, posts: [], message: error.message, error: error.message };
     }
   },
 
   /**
-   * ✅ Tạo post mới
+   * ✅ 1. 新增貼文 (Create Post)
+   * Method: POST /api/posts
+   * Body: userid, content, category (enum), uuid (optional)
    */
-  createPost: async (userId, postDataOrContent, privacy = 'public') => {
+  createPost: async (userId, postDataOrContent, privacy = 'Personal & Family') => {
     try {
       let postData;
-
+      
+      // 處理參數重載 (可以直接傳物件或分開傳)
       if (typeof postDataOrContent === 'string') {
         postData = {
           userid: userId,
           content: postDataOrContent,
-          privacy: privacy
+          category: privacy, // 注意：舊程式碼的 privacy 對應新的 category
+          uuid: null
         };
       } else {
         postData = {
           userid: userId,
+          category: 'Personal & Family', // Default
+          uuid: null,
           ...postDataOrContent
         };
       }
 
       console.log('📝 Tạo post mới:', postData);
 
-      const { data } = await ApiService.makeRequest(`${POSTS_API_BASE_URL}/posts`, {
+      const { data } = await ApiService.makeRequest(`${POSTS_API_URL}/posts`, {
         method: 'POST',
         body: JSON.stringify(postData)
       });
 
-      // Xóa cache
       cache.clear();
 
+      // 回傳結構位於 data.data
       return {
         success: true,
-        post: data,
-        message: 'Tạo post thành công'
+        post: data.data,
+        message: data.message || 'Tạo post thành công'
       };
 
     } catch (error) {
       console.error('❌ Tạo post thất bại:', error);
-
-      return {
-        success: false,
-        message: error.message || 'Tạo post thất bại',
-        error: error.message
-      };
+      return { success: false, message: error.message, error: error.message };
     }
   },
 
   /**
-   * ✅ Thêm comment
+   * ✅ 2. 新增留言 (Create Comment)
+   * Method: POST /api/comment
+   * Body: userid, content, docid
    */
-  addComment: async ({ userid, content, sn }) => {
+  addComment: async ({ userid, content, sn, docid }) => {
     try {
-      if (!userid || !content || !sn) {
+      // 兼容舊代碼傳入 sn 的情況，但 API 需要 docid
+      if (!userid || !content || (!docid && !sn)) {
         throw new ApiError('Thiếu thông tin bắt buộc', 400);
       }
 
-      console.log(`💬 Thêm comment cho post ${sn}`);
+      // 若只有 sn，需確保調用方已修改為傳入 docid，此處假設 docid 已傳入
+      const targetId = docid || sn; 
 
-      const { data } = await ApiService.makeRequest(`${POSTS_API_BASE_URL}/comments`, {
+      console.log(`💬 Thêm comment cho post ${targetId}`);
+
+      const { data } = await ApiService.makeRequest(`${POSTS_API_URL}/comment`, {
         method: 'POST',
-        body: JSON.stringify({ userid, content, sn })
+        body: JSON.stringify({
+          userid,
+          content,
+          docid: targetId 
+        })
       });
 
-      // Xóa cache
       cache.clear();
 
       return {
         success: true,
-        comment: data,
-        message: 'Thêm comment thành công'
+        comment: data.data?.comment,
+        message: data.message || 'Thêm comment thành công'
       };
 
     } catch (error) {
       console.error('❌ Thêm comment thất bại:', error);
-
-      return {
-        success: false,
-        message: error.message || 'Thêm comment thất bại',
-        error: error.message
-      };
+      return { success: false, message: error.message, error: error.message };
     }
   },
 
   /**
-   * ✅ Lấy comments của post
+   * ✅ 3. Amen 與收回 Amen (Toggle Amen)
+   * Method: POST /api/posts/{docid}/amen
+   * Body: userid
+   * Note: 初次點擊為 Amen，第二次則為收回 (Toggle)
    */
-  getComments: async (postSn) => {
+  likePost: async (docid, userId) => {
     try {
-      console.log(`💬 Lấy comments cho post ${postSn}`);
+      console.log(`❤️ Toggle Amen post ${docid}`);
 
       const { data } = await ApiService.makeRequest(
-        `${POSTS_API_BASE_URL}/posts/${postSn}/comments`,
-        {
-          method: 'GET'
-        }
-      );
-
-      return {
-        success: true,
-        comments: Array.isArray(data) ? data : data?.comments || [],
-        message: 'Lấy comments thành công'
-      };
-
-    } catch (error) {
-      console.error('❌ Lấy comments thất bại:', error);
-
-      return {
-        success: false,
-        comments: [],
-        message: error.message || 'Lấy comments thất bại',
-        error: error.message
-      };
-    }
-  },
-
-  /**
-   * ✅ Like post
-   */
-  likePost: async (postSn, userId) => {
-    try {
-      console.log(`❤️ Like post ${postSn}`);
-
-      const { data } = await ApiService.makeRequest(
-        `${POSTS_API_BASE_URL}/posts/${postSn}/like`,
+        `${POSTS_API_URL}/posts/${docid}/amen`,
         {
           method: 'POST',
           body: JSON.stringify({ userid: userId })
         }
       );
 
-      // Xóa cache
+      cache.clear();
+
+      // data.data 包含 updated amen_count 和 amened status
+      return {
+        success: true,
+        data: data.data, 
+        message: data.message || 'Amen 成功'
+      };
+
+    } catch (error) {
+      console.error('❌ Amen thất bại:', error);
+      return { success: false, message: error.message, error: error.message };
+    }
+  },
+
+  /**
+   * ✅ 5. 新增 Witness (Create Witness)
+   * Method: POST /api/witness
+   * Body: userid, content, parent_docid
+   */
+  createWitness: async (userId, content, parentDocid) => {
+    try {
+      console.log(`✨ Create Witness for ${parentDocid}`);
+
+      const { data } = await ApiService.makeRequest(`${POSTS_API_URL}/witness`, {
+        method: 'POST',
+        body: JSON.stringify({
+          userid: userId,
+          content: content,
+          parent_docid: parentDocid
+        })
+      });
+
       cache.clear();
 
       return {
         success: true,
-        data: data,
-        message: 'Like thành công'
+        witness: data.data?.witness,
+        message: data.message || '見證新增成功'
       };
-
     } catch (error) {
-      console.error('❌ Like thất bại:', error);
-
-      return {
-        success: false,
-        message: error.message || 'Like thất bại',
-        error: error.message
-      };
-    }
-  },
-
-  // ==================== 🧪 TEST FUNCTIONS ====================
-
-  /**
-   * ✅ Test Auth API
-   */
-  testAuthAPI: async () => {
-    console.log('🧪 Bắt đầu test Auth API...');
-
-    const results = {
-      providers: null,
-      session: null,
-      login: null
-    };
-
-    try {
-      // Test 1: Lấy providers
-      console.log('🧪 Test 1: Lấy providers');
-      results.providers = await ApiService.getAuthProviders();
-
-      // Test 2: Kiểm tra session
-      console.log('🧪 Test 2: Kiểm tra session');
-      results.session = await ApiService.getAuthSession();
-
-      // Test 3: Test login (dùng email test)
-      console.log('🧪 Test 3: Test login');
-      results.login = await ApiService.loginWithEmail(
-        'test@example.com',
-        `${window.location.origin}/auth/callback`
-      );
-
-      const successCount = Object.values(results).filter(r => r && r.success).length;
-
-      console.log(`✅ Test hoàn thành: ${successCount}/3 thành công`);
-
-      return {
-        success: successCount > 0,
-        message: `Auth API test hoàn thành: ${successCount}/3 thành công`,
-        results: results
-      };
-
-    } catch (error) {
-      console.error('❌ Test Auth API thất bại:', error);
-      return {
-        success: false,
-        message: `Test thất bại: ${error.message}`,
-        error: error.message,
-        results: results
-      };
+      console.error('❌ Create Witness failed:', error);
+      return { success: false, message: error.message, error: error.message };
     }
   },
 
   /**
-   * ✅ Test Posts API
+   * ✅ 6. 查詢 Witness 列表 (Get Witness List)
+   * Method: GET /api/witness-list
+   * Params: page, limit
    */
-  testPostsAPI: async () => {
-    console.log('🧪 Bắt đầu test Posts API...');
-
-    const results = {
-      getPosts: null,
-      createPost: null,
-      addComment: null
-    };
-
+  getWitnessList: async (page = 1, limit = 10) => {
     try {
-      // Test 1: Lấy posts
-      console.log('🧪 Test 1: Lấy posts');
-      results.getPosts = await ApiService.getPosts(1, 5);
+      const params = new URLSearchParams({ page, limit });
+      const url = `${POSTS_API_URL}/witness-list?${params.toString()}`;
+      
+      const { data } = await ApiService.makeRequest(url, { method: 'GET' });
 
-      // Test 2: Tạo post (nếu có user)
-      const userId = ApiService.getCurrentUserId();
-      if (userId) {
-        console.log('🧪 Test 2: Tạo post');
-        results.createPost = await ApiService.createPost(
-          userId,
-          'Test post từ API Service',
-          'public'
-        );
+      if (data && data.status === 'success' && data.data) {
+        return {
+          success: true,
+          witnesses: data.data.witnesses || [],
+          pagination: data.data.pageinfo || {},
+          message: data.message
+        };
       }
-
-      const successCount = Object.values(results).filter(r => r && r.success).length;
-
-      console.log(`✅ Test hoàn thành: ${successCount}/2 thành công`);
-
-      return {
-        success: successCount > 0,
-        message: `Posts API test hoàn thành: ${successCount}/2 thành công`,
-        results: results
-      };
-
+      throw new ApiError('Invalid format');
     } catch (error) {
-      console.error('❌ Test Posts API thất bại:', error);
-      return {
-        success: false,
-        message: `Test thất bại: ${error.message}`,
-        error: error.message,
-        results: results
-      };
+      console.error('❌ Get Witness List failed:', error);
+      return { success: false, witnesses: [], message: error.message };
     }
   },
 
-  // ==================== 🔧 USER UTILITY FUNCTIONS ====================
+  /**
+   * ⚠️ 獲取評論 (Compatibility)
+   * 新規格無專屬 Get Comment 接口，使用 /api/page 並帶入 event='comment' 模擬。
+   * 如果後端不支援 parent_docid 篩選，這部分可能需要在前端做過濾。
+   */
+  getComments: async (postDocid) => {
+    try {
+      console.log(`💬 獲取評論 for ${postDocid}`);
+      // 嘗試使用 getPosts 帶入 event 篩選
+      const result = await ApiService.getPosts(1, 50, false, { 
+        event: 'comment'
+      });
+
+      if (result.success) {
+        // 前端過濾：確保只回傳該貼文的評論 (假設後端暫不支援 parent_docid 參數)
+        // 注意：若 API 支援 ?parent_docid=xxx 則可直接加入 filters
+        const filteredComments = result.posts.filter(c => c.parent_docid === postDocid);
+        return {
+          success: true,
+          comments: filteredComments,
+          message: 'Lấy comments thành công'
+        };
+      }
+      return { success: false, comments: [] };
+
+    } catch (error) {
+      console.error('❌ Lấy comments thất bại:', error);
+      return { success: false, comments: [], message: error.message };
+    }
+  },
+
+  // ==================== 🔧 USER UTILITY FUNCTIONS (保持不變) ====================
 
   getCurrentUserId: () => {
     try {
@@ -699,7 +567,6 @@ const ApiService = {
       }
       return null;
     } catch (error) {
-      console.error('❌ Get user ID failed:', error);
       return null;
     }
   },
@@ -712,7 +579,6 @@ const ApiService = {
       }
       return null;
     } catch (error) {
-      console.error('❌ Get current user failed:', error);
       return null;
     }
   },
@@ -743,13 +609,15 @@ export {
   ApiService,
   StorageService,
   ApiError,
-  POSTS_API_BASE_URL,
-  AUTH_API_BASE_URL
+  API_BASE_URL,
+  POSTS_API_URL,
+  AUTH_API_URL
 };
 
 // ==================== 📊 LOGGING ====================
 
-console.log('🎉 API Service đã load!');
+console.log('🎉 API Service đã load! (Updated for New Specs)');
+console.log('📦 API Base URL:', API_BASE_URL);
 console.log('📦 Available APIs:');
 console.log('');
 console.log('🔐 Auth API:');
@@ -758,16 +626,14 @@ console.log('   • getAuthProviders()');
 console.log('   • getAuthSession()');
 console.log('   • logout()');
 console.log('');
-console.log('📝 Posts API:');
-console.log('   • getPosts(page, limit, forceRefresh)');
-console.log('   • createPost(userId, content, privacy)');
-console.log('   • addComment({ userid, content, sn })');
-console.log('   • getComments(postSn)');
-console.log('   • likePost(postSn, userId)');
-console.log('');
-console.log('🧪 Test Functions:');
-console.log('   • testAuthAPI()');
-console.log('   • testPostsAPI()');
+console.log('📝 Posts API (Unified Format):');
+console.log('   • getPosts(page, limit, filters) -> returns raw { docid, amen_count, ... }');
+console.log('   • createPost(userId, content, category)');
+console.log('   • addComment({ userid, content, docid })');
+console.log('   • getComments(postDocid) [Simulated via /page]');
+console.log('   • likePost(docid, userId) [Toggle Amen]');
+console.log('   • createWitness(userId, content, parentDocid)');
+console.log('   • getWitnessList(page, limit)');
 console.log('');
 console.log('🔧 Utilities:');
 console.log('   • getCurrentUser()');

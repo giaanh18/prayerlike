@@ -1,3 +1,4 @@
+/* ./src/pages/SignUp/steps/Step2_Terms.css */
 .step2-container {
   width: 100%;
   max-width: 320px;
@@ -210,33 +211,46 @@
   bottom: 20px;
   left: 50%;
   transform: translateX(-50%);
-  width: 290px; /* ✅ GIẢM TỪ 310px → 250px */
+  width: 290px; 
   max-width: calc(100% - 40px);
   display: flex;
   justify-content: center;
   z-index: 999;
 }
 
-.continue-button {
+/* 🚀 **修改點 1：提高主樣式權重，確保顏色被應用於非禁用狀態** */
+.action-button.continue-button {
   width: 100%;
-  max-width: 250px; /* ✅ GIẢM TỪ 310px → 250px */
-  height: 48px !important; /* ✅ GIỮ NGUYÊN CHIỀU CAO */
-  border-radius: 24px !important;
+  max-width: 250px;
+  height: 48px !important; 
+  border-radius: 8px !important;
   font-size: 15px !important;
   font-weight: 600 !important;
   letter-spacing: 0.5px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  
+  /* 確保非禁用時的顏色 */
   background-color: #FFF9EC !important;
   color: #000000 !important;
   border: none !important;
 }
 
-.continue-button:hover:not(:disabled) {
+/* 🚀 **修改點 2：提高 Hover 樣式權重** */
+.action-button.continue-button:hover:not(:disabled) {
   transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(255, 249, 236, 0.4);
+  background-color: #FFF9EC !important; 
 }
 
-.continue-button:disabled {
+/* 🚀 **修改點 3：提高 Active 樣式權重** */
+.action-button.continue-button:active:not(:disabled) {
+  transform: translateY(0);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
+  background-color: #FFF9EC !important;
+}
+
+/* 🚀 **修改點 4：提高 Disabled 樣式權重，維持灰色表示禁用** */
+.action-button.continue-button:disabled {
   background: #e0e0e0 !important;
   color: #999 !important;
   cursor: not-allowed;
@@ -250,7 +264,8 @@
     bottom: 16px;
   }
 
-  .continue-button {
+  /* 🚀 **修改點 5：媒體查詢內的按鈕樣式使用高權重選擇器** */
+  .action-button.continue-button {
     height: 46px !important;
     max-width: 100%;
   }

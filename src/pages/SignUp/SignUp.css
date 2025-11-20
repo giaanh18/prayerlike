@@ -55,7 +55,8 @@
 /* ========================================
    🔘 CREATE ACCOUNT BUTTON - FIXED BOTTOM
    ======================================== */
-.create-account-button {
+/* 🚀 **修改點 1：提高選擇器權重，確保覆蓋 ActionButton 基礎樣式** */
+.action-button.create-account-button {
   position: fixed;
   bottom: 20px;
   left: 50%;
@@ -63,29 +64,45 @@
   width: 310px;
   max-width: calc(100% - 40px);
   height: 48px !important;
+  
+  /* 強制應用目標顏色 */
   background-color: #FFF9EC !important;
   color: #000000 !important;
+  
   font-size: 15px !important;
   font-weight: 600 !important;
-  border-radius: 24px !important;
+  border-radius: 8px !important;
   box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
   z-index: 999;
   transition: all 0.3s ease;
 }
 
-/* ✅ Hover effect - giữ nguyên vị trí */
-.create-account-button:hover:not(:disabled) {
+/* 🚀 **修改點 2：Hover effect - 使用高權重選擇器** */
+.action-button.create-account-button:hover:not(:disabled) {
   transform: translateX(-50%) !important;
+  background-color: #FFF9EC !important; /* 確保 hover 時維持米黃色 */
   box-shadow: 0 4px 20px rgba(255, 249, 236, 0.6) !important;
-  filter: brightness(1.05);
+  filter: brightness(0.95); /* 輕微變暗效果 */
 }
 
-/* ✅ Active effect */
-.create-account-button:active:not(:disabled) {
+/* 🚀 **修改點 3：Active effect - 使用高權重選擇器** */
+.action-button.create-account-button:active:not(:disabled) {
   transform: translateX(-50%) !important;
+  background-color: #FFF9EC !important; /* 確保 active 時維持米黃色 */
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15) !important;
-  filter: brightness(0.95);
+  filter: brightness(0.9);
 }
+
+/* 🚀 **修改點 4：Disabled 狀態 - 使用高權重選擇器並強制米黃色底** */
+.action-button.create-account-button:disabled {
+  background-color: #FFF9EC !important; /* 使用米黃色作為底色 */
+  color: #999999 !important; /* 禁用時文字變灰 */
+  opacity: 0.7 !important; /* 透過降低不透明度來表示禁用 */
+  cursor: not-allowed;
+  transform: translateX(-50%) !important;
+}
+
+/* 原始的 .create-account-button 基礎樣式已移除或合併到 .action-button.create-account-button */
 
 /* ========================================
    📱 RESPONSIVE DESIGN
@@ -110,7 +127,8 @@
     height: 8px;
   }
 
-  .create-account-button {
+  /* 🚀 **修改點 5：媒體查詢內的按鈕樣式使用高權重選擇器** */
+  .action-button.create-account-button {
     width: calc(100% - 32px);
     height: 46px !important;
     bottom: 16px;
@@ -154,13 +172,11 @@
 .back-to-login-button {
   background: none;
   border: none;
-  color: #667eea;
-  cursor: pointer;
-  text-decoration: underline;
-  font-size: 14px;
-  padding: 8px 12px;
-  transition: all 0.2s ease;
-  border-radius: 6px;
+  color: '#667eea';
+  cursor: 'pointer';
+  textDecoration: 'underline';
+  fontSize: '14px';
+  padding: '5px 10px'
 }
 
 .back-to-login-button:hover:not(:disabled) {
@@ -322,4 +338,3 @@
   color: #856404;
   font-size: 0.95rem;
 }
-

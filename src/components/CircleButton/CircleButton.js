@@ -8,7 +8,8 @@ const CircleButton = ({
   onClick, 
   size = 'medium',
   disabled = false,
-  ariaLabel // ✅ 新增 aria-label 支援
+  ariaLabel, // ✅ 新增 aria-label 支援
+  isActive = false // ✅ 新增: 接收是否為啟用狀態
 }) => {
   const sizeClasses = {
     small: 'circle-button-small',
@@ -18,7 +19,7 @@ const CircleButton = ({
 
   return (
     <button
-      className={`circle-button ${sizeClasses[size]} ${disabled ? 'disabled' : ''}`}
+      className={`circle-button ${sizeClasses[size]} ${disabled ? 'disabled' : ''} ${isActive ? 'active-tab' : ''}`}
       onClick={onClick}
       disabled={disabled}
       aria-label={ariaLabel || `${provider} 按鈕`}

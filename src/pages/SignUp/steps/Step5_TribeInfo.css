@@ -1,15 +1,18 @@
+/* ./src/pages/SignUp/steps/Step5_TribeInfo.css */
+
 /* ===== TRIBE INFO CONTAINER ===== */
 .tribe-info-container {
   width: 100%;
   max-width: 500px;
   margin: 0 auto;
   padding: 20px;
-  padding-bottom: 30px; /* ← GIẢM TỪ 140px XUỐNG 30px */
+  padding-bottom: 30px;
   display: flex;
   flex-direction: column;
   align-items: center;
   min-height: 80vh;
 }
+
 /* ===== HEADER ===== */
 .tribe-info-header {
   width: 100%;
@@ -18,9 +21,9 @@
 }
 
 .back-btn {
-  position: fixed !important;  /* ✅ Thêm !important để ghi đè */
-  top: 40px !important;        /* ✅ Cách đỉnh màn hình 40px */
-  left: 30px !important;       /* ✅ Cách trái 30px */
+  position: fixed !important;
+  top: 40px !important;
+  left: 30px !important;
   width: 44px;
   height: 44px;
   background: rgba(255, 255, 255, 0.15);
@@ -35,9 +38,8 @@
   cursor: pointer;
   transition: all 0.3s ease;
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
-  z-index: 9999 !important;    /* ✅ Tăng z-index cao */
+  z-index: 9999 !important;
 }
-
 
 .back-btn:hover {
   background: rgba(255, 255, 255, 0.25);
@@ -50,14 +52,13 @@
   transform: translateX(-2px) scale(0.98);
 }
 
-
 .tribe-title-section {
   display: flex;
   flex-direction: column;
-  align-items: center; /* ✅ GIỮ NGUYÊN CENTER */
+  align-items: center;
   gap: 10px;
   margin-top: 20px;
-  width: 100%; /* ✅ THÊM ĐỂ CHIẾM FULL WIDTH */
+  width: 100%;
 }
 
 .choose-text {
@@ -66,17 +67,13 @@
   font-weight: 600;
   letter-spacing: 2px;
   align-self: flex-start;
-  
-  /* ✅ KHUNG CỰC NHỎ */
   border: 1px solid rgba(212, 165, 116, 0.4);
   border-radius: 10px;
   padding: 3px 10px;
   background: rgba(255, 255, 255, 0.05);
   box-shadow: 0 1px 6px rgba(0, 0, 0, 0.15);
-  
-  margin-bottom: -9px; /* ✅ THÊM DÒNG NÀY - KÉO XUỐNG GẦN ICON */
+  margin-bottom: -9px;
 }
-
 
 .spiritual-text {
   color: #d4a574;
@@ -84,8 +81,6 @@
   font-weight: 600;
   letter-spacing: 2px;
   align-self: flex-end;
-  
-  /* ✅ KHUNG CỰC NHỎ */
   border: 1px solid rgba(212, 165, 116, 0.4);
   border-radius: 10px;
   padding: 3px 10px;
@@ -93,22 +88,16 @@
   box-shadow: 0 1px 6px rgba(0, 0, 0, 0.15);
 }
 
-
-
-
-
 .center-icon {
   width: 60px;
   height: 60px;
   background: white;
-  border-radius: 0; /* ✅ ĐỔI TỪ 50% → 0 (HÌNH VUÔNG) */
+  border-radius: 0;
   display: flex;
   align-items: center;
   justify-content: center;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
 }
-
-
 
 .center-icon img {
   width: 40px;
@@ -116,17 +105,16 @@
   object-fit: contain;
 }
 
-/* ===== TRIBES GRID (4 COLUMNS x 3 ROWS - CĂN GIỮA HOÀN HẢO) ===== */
+/* ===== TRIBES GRID ===== */
 .tribes-info-grid {
   display: grid;
   grid-template-columns: repeat(4, 75px);
   gap: 20px 15px;
   width: fit-content;
-  margin: 0 0 30px 0; /* ✅ BỎ AUTO, CHỈ GIỮ 0 */
+  margin: 0 0 30px 0;
   padding: 0;
-  justify-content: start; /* ✅ ĐỔI TỪ center → start */
+  justify-content: start;
 }
-
 
 .tribe-item {
   display: flex;
@@ -203,11 +191,12 @@
   margin-top: auto;
 }
 
+/* 🚀 **修正點：強制背景色為 #FFF9EC (解決 #FFFFFFE6 問題)** */
 .continue-btn {
   width: 100%;
   padding: 15px;
-  background: white;
-  color: #1a2332;
+  background: #FFF9EC !important; /* 強制套用，避免透明度干擾 */
+  color: #000000 !important;      /* 文字黑色 */
   border: none;
   border-radius: 12px;
   font-size: 16px;
@@ -216,11 +205,12 @@
   cursor: pointer;
   transition: all 0.3s;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  opacity: 1 !important;          /* 確保不透明 */
 }
 
 .continue-btn:hover {
-  background: #d4a574;
-  color: white;
+  background: #FFF5D6 !important; /* hover 時稍微深一點 */
+  color: #000000 !important;
   transform: translateY(-2px);
   box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4);
 }
@@ -259,7 +249,6 @@
   padding: 0;
 }
 
-/* ===== HEADER: ICON BÊN TRÁI + TÊN BÊN PHẢI (GIỐNG BỨC 2) ===== */
 .tribe-detail-header-row {
   width: 100%;
   display: flex;
@@ -273,7 +262,7 @@
   height: 140px;
   min-width: 140px;
   background: linear-gradient(135deg, #4a5568 0%, #2d3748 100%);
-  border: 3px solid #6b7280;  /* ✅ Giảm từ 5px → 3px */
+  border: 3px solid #6b7280;
   border-radius: 50%;
   display: flex;
   align-items: center;
@@ -286,23 +275,23 @@
 }
 
 .tribe-detail-icon img {
-  width: 100%;      /* ✅ Chiếm 100% thay vì 85px */
-  height: 100%;     /* ✅ Chiếm 100% thay vì 85px */
-  object-fit: cover; /* ✅ Đổi từ contain → cover */
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
   position: relative;
   z-index: 1;
   filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.3));
 }
-/* ===== TÊN TRIBE TRONG HỘP TRẮNG BÊN PHẢI - NHỎ GỌN HƠN ===== */
+
 .tribe-detail-name {
   flex: 1;
   background: white;
   color: #1a2332;
-  font-size: 20px !important;        /* ✅ GIẢM TỪ 24px → 20px */
+  font-size: 20px !important;
   font-weight: 600;
   margin: 0 !important;
-  padding: 12px 20px !important;     /* ✅ GIẢM TỪ 18px 30px → 12px 20px */
-  border-radius: 12px !important;    /* ✅ GIẢM TỪ 25px → 12px */
+  padding: 12px 20px !important;
+  border-radius: 12px !important;
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
   text-shadow: none;
   text-align: center;
@@ -312,30 +301,25 @@
   justify-content: center;
 }
 
-/* ===== RESPONSIVE - NHỎ HƠN NỮA TRÊN MÀN HÌNH NHỎ ===== */
+/* RESPONSIVE */
 @media (max-width: 480px) {
   .tribe-detail-name {
-    font-size: 18px !important;      /* ✅ GIẢM XUỐNG 18px */
-    padding: 10px 16px !important;   /* ✅ GIẢM PADDING */
+    font-size: 18px !important;
+    padding: 10px 16px !important;
   }
 }
 
 @media (max-width: 380px) {
   .tribe-detail-name {
-    font-size: 16px !important;      /* ✅ GIẢM XUỐNG 16px */
-    padding: 8px 14px !important;    /* ✅ GIẢM PADDING */
+    font-size: 16px !important;
+    padding: 8px 14px !important;
   }
 }
 
-
-
-
-/* ===== MÔ TẢ NGẮN - ẨN ĐI ===== */
 .tribe-detail-description {
   display: none;
 }
 
-/* ===== CARD TRẮNG LỚN CHỨA THÔNG TIN ===== */
 .tribe-detail-info {
   width: 100%;
   background: white;
@@ -380,8 +364,8 @@
   }
 
   .tribe-detail-name {
-    font-size: 24px;      /* ✅ Giảm nhẹ để vừa màn hình */
-    padding: 12px 18px;   /* ✅ Giảm padding */
+    font-size: 24px;
+    padding: 12px 18px;
   }
 
   .tribe-detail-info {
@@ -415,15 +399,15 @@
   }
 
   .tribe-detail-name {
-    font-size: 20px;      /* ✅ Nhỏ hơn nữa */
-    padding: 10px 15px;   /* ✅ Padding nhỏ hơn */
+    font-size: 20px;
+    padding: 10px 15px;
   }
 
   .tribe-detail-info {
     padding: 20px 18px;
   }
 }
-/* ===== ICON TRÒN CHO STEP 5 - TÊN CLASS HOÀN TOÀN MỚI ===== */
+
 .tribe-icon-circle {
   width: 60px !important;
   height: 60px !important;
@@ -442,12 +426,12 @@
   height: 40px !important;
   object-fit: contain !important;
 }
-/* ===== CHỈ CHO ICON Ở HEADER STEP 5 ===== */
+
 .center-icon-round {
   width: 60px;
   height: 60px;
   background: white;
-  border-radius: 50%; /* ✅ HÌNH TRÒN */
+  border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;

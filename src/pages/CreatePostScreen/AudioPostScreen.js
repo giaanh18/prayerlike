@@ -1,7 +1,10 @@
+// ./src/pages/CreatePostScreen/AudioPostScreen.js
 import React, { useState, useRef, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import './AudioPostScreen.css';
 
 function AudioPostScreen({ onClose = () => {}, onUploadSuccess = () => {} }) {
+  const navigate = useNavigate();
   const [recordingState, setRecordingState] = useState('idle');
   const [audioBlob, setAudioBlob] = useState(null);
   const [audioURL, setAudioURL] = useState(null);
@@ -15,14 +18,13 @@ function AudioPostScreen({ onClose = () => {}, onUploadSuccess = () => {} }) {
   const analyserRef = useRef(null);
   const streamRef = useRef(null);
 
-  // Cleanup khi component unmount
+  // Cleanup when component unmounts
   useEffect(() => {
     return () => {
       cleanupResources();
     };
   }, []);
 
-  // 👇 HÀM CLEANUP CHUNG
   const cleanupResources = () => {
     if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
       mediaRecorderRef.current.stop();
@@ -32,9 +34,6 @@ function AudioPostScreen({ onClose = () => {}, onUploadSuccess = () => {} }) {
     }
     if (audioContextRef.current && audioContextRef.current.state !== 'closed') {
       audioContextRef.current.close();
-    }
-    if (audioURL) {
-      URL.revokeObjectURL(audioURL);
     }
   };
 
@@ -120,60 +119,125 @@ function AudioPostScreen({ onClose = () => {}, onUploadSuccess = () => {} }) {
     }
   };
 
+  // ✅ 新增：輪詢機制，等待轉錄完成
+  const pollForTranscript = async (recordId, maxRetries = 10, interval = 2000) => {
+    for (let i = 0; i < maxRetries; i++) {
+      console.log(`⏳ [Polling] 第 ${i + 1} 次檢查轉錄狀態...`);
+      
+      const response = await fetch(`https://xiaohua.54ucl.com:8011/recording/api/v1/transcript/${recordId}`, {
+        method: 'GET'
+      });
+
+      if (!response.ok) {
+        throw new Error(`檢查狀態失敗: ${response.status}`);
+      }
+
+      const data = await response.json();
+      console.log("📥 收到回應:", data);
+
+      if (data.status === 'completed') {
+        return data; // ✅ 成功，回傳完整資料
+      }
+      
+      if (data.status === 'failed') {
+        throw new Error('伺服器回傳轉錄失敗');
+      }
+
+      // 若狀態為 processing，等待後重試
+      await new Promise(resolve => setTimeout(resolve, interval));
+    }
+    throw new Error('等待轉錄逾時');
+  };
+
+  // ✅ 確認並送出流程
   const handleConfirm = async () => {
     setActiveButton('confirm');
     if (!audioBlob) return;
 
     setRecordingState('uploading');
+    setUploadMessage('上傳音訊中...');
     
     try {
+      // --- STEP 1: 上傳音檔 ---
+      console.log("🚀 [Step 1] 開始上傳音檔...");
       const formData = new FormData();
-      formData.append('audio', audioBlob, 'recording.webm');
+      formData.append('file', audioBlob, 'recording.webm');
 
-      const response = await fetch('http://localhost:3000/api/posts/audio', {
+      const uploadResponse = await fetch('https://xiaohua.54ucl.com:8011/recording/api/v1/upload', {
         method: 'POST',
         body: formData,
-        credentials: 'include'
       });
 
-      if (response.ok) {
-        const data = await response.json();
-        setRecordingState('success');
-        setUploadMessage('語音上傳成功！');
-        
-        setTimeout(() => {
-          onUploadSuccess(data.post);
-          cleanupResources();
-          onClose();
-        }, 1500);
-      } else {
-        throw new Error('Upload failed');
+      if (!uploadResponse.ok) {
+        throw new Error(`音訊上傳失敗 Status: ${uploadResponse.status}`);
       }
+
+      const uploadData = await uploadResponse.json();
+      const recordId = uploadData.record_id;
+      if (!recordId) throw new Error('未收到 Record ID');
+
+      console.log("✅ [Step 1] 上傳成功，Record ID:", recordId);
+
+      // --- STEP 2: 輪詢直到取得 transcript ---
+      setUploadMessage('正在轉錄文字 (請稍候)...');
+      
+      // 呼叫輪詢函式
+      const transcriptData = await pollForTranscript(recordId);
+
+      console.log("✅ [Step 2] 轉錄完成，內容:", transcriptData);
+      
+      const finalTranscript = transcriptData.transcript || '';
+      const finalAudioUrl = transcriptData.audio_url || '';
+
+      setRecordingState('success');
+      setUploadMessage('轉錄成功！');
+
+      // --- STEP 3: 跳轉 ---
+      console.log("🚀 [Step 3] 跳轉至 TextPostScreen，攜帶文字:", finalTranscript);
+      
+      cleanupResources(); 
+
+      const navigationState = { 
+        transcript: finalTranscript,
+        initialContent: finalTranscript, 
+        audioUrl: finalAudioUrl,
+        recordId: recordId,
+        fromAudio: true
+      };
+
+      navigate('/create-post/text', { state: navigationState });
+
+      if (onUploadSuccess) onUploadSuccess(transcriptData);
+      if (onClose) onClose();
+
     } catch (error) {
-      console.error('Error uploading audio:', error);
+      console.error('❌ 錯誤:', error);
       setRecordingState('error');
-      setUploadMessage('上傳失敗，請重試');
+      setUploadMessage(`處理失敗: ${error.message}`);
       setActiveButton(null);
     }
   };
 
-  // 👇 SỬA LẠI HÀM NÀY
   const handleCancel = () => {
-    console.log('🔴 Nhấn nút Hủy'); // Debug log
     setActiveButton('cancel');
     cleanupResources();
-    onClose(); // 👈 GỌI NGAY LẬP TỨC
+    onClose();
   };
 
   const handleReRecord = () => {
+    console.log("🔄 重置錄音狀態");
     setActiveButton(null);
+    
     if (audioURL) {
       URL.revokeObjectURL(audioURL);
     }
+    
     setAudioBlob(null);
     setAudioURL(null);
     setRecordingState('idle');
     setHasAudioInput(false);
+    
+    audioChunksRef.current = [];
   };
 
   const renderButtons = () => {
@@ -287,7 +351,7 @@ function AudioPostScreen({ onClose = () => {}, onUploadSuccess = () => {} }) {
       return (
         <div className="upload-status">
           <div className="spinner"></div>
-          <div>上傳中...</div>
+          <div>{uploadMessage}</div>
         </div>
       );
     }
@@ -311,7 +375,6 @@ function AudioPostScreen({ onClose = () => {}, onUploadSuccess = () => {} }) {
 
   return (
     <div className="voice-overlay" onClick={(e) => {
-      // 👇 SỬA LẠI ĐIỀU KIỆN CLICK OUTSIDE
       if (e.target === e.currentTarget) {
         handleCancel();
       }

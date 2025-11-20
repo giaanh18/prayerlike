@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react'; // ✅ 引入 useState
 import { useNavigate } from 'react-router-dom';
 import CircleButton from '../../components/CircleButton/CircleButton';
 import './CreatePostScreen.css';
@@ -12,30 +12,37 @@ import Nova from '../../assets/icons/Nova.png';
 
 const CreatePostScreen = ({ onLogout }) => {
   const navigate = useNavigate();
+  
+  // ✅ 新增: 頁籤狀態管理，進入此頁面時預設 "Add" 為激活狀態
+  const [activeTab, setActiveTab] = useState('Add');
 
   // ✅ Handler functions
   const handleCreatePost = () => {
     console.log('🆕 Already on create post page');
-    // Có thể scroll to top hoặc refresh
+    setActiveTab('Add'); // 確保保持在 Add 狀態
   };
 
   const handleHome = () => {
     console.log('🏠 Navigate to home');
-    navigate('/');
+    setActiveTab('Home'); // 視覺上切換
+    navigate('/'); // 跳轉回首頁
   };
 
   const handleSearch = () => {
     console.log('🔍 Search clicked');
+    setActiveTab('Search'); // 視覺上切換
     alert('功能開發中');
   };
 
   const handleProfile = () => {
     console.log('👤 Profile clicked');
+    setActiveTab('Profile'); // 視覺上切換
     alert('功能開發中');
   };
 
   const handleLogout = async () => {
     console.log('🚪 Logout clicked');
+    setActiveTab('Nova'); // 視覺上切換
     if (onLogout) {
       await onLogout();
     }
@@ -75,12 +82,13 @@ const CreatePostScreen = ({ onLogout }) => {
         </div>
       </div>
 
-      {/* ✅ BOTTOM NAVIGATION - THÊM TRỰC TIẾP */}
+      {/* ✅ BOTTOM NAVIGATION - 使用 isActive 控制黃色樣式 */}
       <div className="bottom-navigation">
         <CircleButton
           provider="Home"
           iconSrc={Home}
           onClick={handleHome}
+          isActive={activeTab === 'Home'} // ✅ 判斷狀態
           size="medium"
           ariaLabel="首頁"
         />
@@ -88,6 +96,7 @@ const CreatePostScreen = ({ onLogout }) => {
           provider="Search"
           iconSrc={Search}
           onClick={handleSearch}
+          isActive={activeTab === 'Search'} // ✅ 判斷狀態
           size="medium"
           ariaLabel="搜尋"
         />
@@ -95,14 +104,15 @@ const CreatePostScreen = ({ onLogout }) => {
           provider="Add"
           iconSrc={Add}
           onClick={handleCreatePost}
+          isActive={activeTab === 'Add'} // ✅ 預設為 true，顯示黃色大按鈕
           size="medium"
           ariaLabel="新增貼文"
-          className="nav-active"  // ✅ Active state vì đang ở trang create
         />
         <CircleButton
           provider="Profile"
           iconSrc={Profile}
           onClick={handleProfile}
+          isActive={activeTab === 'Profile'} // ✅ 判斷狀態
           size="medium"
           ariaLabel="個人資料"
         />
@@ -110,6 +120,7 @@ const CreatePostScreen = ({ onLogout }) => {
           provider="Nova"
           iconSrc={Nova}
           onClick={handleLogout}
+          isActive={activeTab === 'Nova'} // ✅ 判斷狀態
           size="medium"
           ariaLabel="nova小天使"
         />
