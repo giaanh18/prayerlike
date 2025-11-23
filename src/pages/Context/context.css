@@ -19,7 +19,7 @@
   flex-direction: column;
   background: transparent;
   position: relative;
-  padding-bottom: 90px;
+  padding-bottom: 120px !important;
   gap: 0;
   
   /* ✅ 強制佔滿 AppBackground 的寬度 */
@@ -296,7 +296,7 @@
   overflow-y: auto;
   padding: var(--spacing-lg);
   background: #2D3656;
-  padding-bottom: 100px;
+  padding-bottom: 130px !important;
   
   /* ✅ 強制滿寬與彈性佈局 */
   display: flex;
@@ -1055,20 +1055,25 @@
 
 /* ==================== 底部導航列 ==================== */
 .bottom-navigation {
-  position: fixed;
-  bottom: 0;
+  position: fixed !important; /* ⚠️ 強制固定定位 */
+  bottom: 0 !important;       /* ⚠️ 強制貼底 */
   left: 0;
   right: 0;
   display: flex;
   justify-content: space-around;
-  align-items: center;
-  background: #2D3656;
+  align-items: center;        /* 讓按鈕垂直置中 */
+  
+  background: #2D3656;        /* 確保背景色不透明 */
   border-top: 1px solid rgba(255, 255, 255, 0.15);
-  padding: 15px 20px;
-  box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.25);
-  z-index: 1000;
-  height: 80px;
-  animation: slideInFromBottom 0.3s ease;
+  
+  /* ⚠️ 關鍵修改：高度加高至 120px，確保大於按鈕高度 */
+  height: 80px !important;   
+  
+  /* 選擇性：若希望按鈕稍微偏上，可加下方 padding，若希望置中則免 */
+  padding: 0 20px 20px 20px !important; 
+  
+  box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.3);
+  z-index: 9999 !important;   /* ⚠️ 提高層級，避免被其他元件遮蓋 */
 }
 
 /* ==================== 動畫效果 ==================== */
@@ -1403,12 +1408,12 @@
 
 @media (max-width: 768px) {
   .app-container {
-    padding-bottom: 85px;
+    padding-bottom: 120px;
   }
   
   .main-content {
     padding: var(--spacing-md);
-    padding-bottom: 95px;
+    padding-bottom: 120px;
   }
 
   .filter-bar {
@@ -1435,8 +1440,8 @@
   }
   
   .bottom-navigation {
-    height: 75px;
-    padding: 12px 16px;
+    height: 110px; /* 手機版也保持較高的高度 */
+    padding: 10px 16px 20px 16px;
   }
 }
 

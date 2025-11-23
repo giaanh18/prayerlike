@@ -1,7 +1,15 @@
 // ./src/pages/CreatePostScreen/AudioPostScreen.js
 import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import CircleButton from '../../components/CircleButton/CircleButton';
 import './AudioPostScreen.css';
+
+// Icon imports
+import Home from '../../assets/icons/Homeicon.png';
+import Search from '../../assets/icons/Searchicon.png';
+import Add from '../../assets/icons/Addicon.png';
+import Profile from '../../assets/icons/Profileicon.png';
+import Nova from '../../assets/icons/Nova.png';
 
 function AudioPostScreen({ onClose = () => {}, onUploadSuccess = () => {} }) {
   const navigate = useNavigate();
@@ -11,6 +19,9 @@ function AudioPostScreen({ onClose = () => {}, onUploadSuccess = () => {} }) {
   const [hasAudioInput, setHasAudioInput] = useState(false);
   const [uploadMessage, setUploadMessage] = useState('');
   const [activeButton, setActiveButton] = useState(null);
+
+  // ✅ 新增: 頁籤狀態管理，進入此頁面時預設 "Add" 為激活狀態
+  const [activeTab, setActiveTab] = useState('Add');
 
   const mediaRecorderRef = useRef(null);
   const audioChunksRef = useRef([]);
@@ -236,6 +247,32 @@ function AudioPostScreen({ onClose = () => {}, onUploadSuccess = () => {} }) {
     audioChunksRef.current = [];
   };
 
+  // ✅ Navigation Handlers
+  const handleHome = () => {
+    setActiveTab('Home');
+    navigate('/main');
+  };
+
+  const handleSearch = () => {
+    setActiveTab('Search');
+    navigate('/tribe');
+  };
+
+  const handleCreatePost = () => {
+    setActiveTab('Add');
+    navigate('/create-post');
+  };
+
+  const handleProfile = () => {
+    setActiveTab('Profile');
+    navigate('/profile');
+  };
+
+  const handleNova = () => {
+    setActiveTab('Nova');
+    navigate('/notifications');
+  };
+
   const renderButtons = () => {
     if (recordingState === 'idle') {
       return (
@@ -370,13 +407,9 @@ function AudioPostScreen({ onClose = () => {}, onUploadSuccess = () => {} }) {
   };
 
   return (
-    <div className="voice-overlay" onClick={(e) => {
-      if (e.target === e.currentTarget) {
-        handleCancel();
-      }
-    }}>
+    <div className="audio-post-screen">
       
-      {/* ✅ 新增：左上角返回鍵 (樣式與 CreatePostScreen 一致) */}
+      {/* ✅ 左上角返回鍵 */}
       <button 
         className="back-button" 
         onClick={() => navigate('/create-post')} 
@@ -385,18 +418,64 @@ function AudioPostScreen({ onClose = () => {}, onUploadSuccess = () => {} }) {
         ←
       </button>
 
-      <div className="voice-overlay-content">
-        <div className="voice-overlay-header">
-          語音貼文
-        </div>
-        
-        <div className="voice-overlay-body">
-          {renderContent()}
-        </div>
+      <div className="audio-post-content">
+        <div className="content-card">
+          <div className="card-header">
+            語音貼文
+          </div>
+          
+          <div className="card-body">
+            {renderContent()}
+          </div>
 
-        <div className="voice-overlay-buttons">
-          {renderButtons()}
+          <div className="card-buttons">
+            {renderButtons()}
+          </div>
         </div>
+      </div>
+
+      {/* ✅ 底部導航列 */}
+      <div className="bottom-navigation">
+        <CircleButton 
+          provider="Home" 
+          iconSrc={Home} 
+          onClick={handleHome} 
+          isActive={activeTab === 'Home'} 
+          size="medium" 
+          ariaLabel="首頁" 
+        />
+        <CircleButton 
+          provider="Search" 
+          iconSrc={Search} 
+          onClick={handleSearch} 
+          isActive={activeTab === 'Search'} 
+          size="medium" 
+          ariaLabel="搜尋" 
+        />
+        <CircleButton 
+          provider="Add" 
+          iconSrc={Add} 
+          onClick={handleCreatePost} 
+          isActive={activeTab === 'Add'} 
+          size="medium" 
+          ariaLabel="新增貼文" 
+        />
+        <CircleButton 
+          provider="Profile" 
+          iconSrc={Profile} 
+          onClick={handleProfile} 
+          isActive={activeTab === 'Profile'} 
+          size="medium" 
+          ariaLabel="個人資料" 
+        />
+        <CircleButton 
+          provider="Nova" 
+          iconSrc={Nova} 
+          onClick={handleNova} 
+          isActive={activeTab === 'Nova'} 
+          size="medium" 
+          ariaLabel="nova小天使" 
+        />
       </div>
     </div>
   );

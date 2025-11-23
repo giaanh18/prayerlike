@@ -3,7 +3,8 @@
 .text-post-screen {
   min-height: 100vh;
   background: #2D3656;
-  padding: 100px 20px 100px; 
+  /* ✅ 修改底部 padding 為 120px，避免內容被底部導航列遮擋 */
+  padding: 100px 20px 120px;
   box-sizing: border-box;
   display: flex;
   flex-direction: column;
@@ -29,7 +30,7 @@
 }
 
 /* ═══════════════════════════════════════════════════════════
-   🔽 自定義下拉選單 (Custom Dropdowns)
+   🔽 自定義下拉選單
    ═══════════════════════════════════════════════════════════ */
 .dropdown-row {
   display: flex;
@@ -45,7 +46,6 @@
   min-width: 150px;
 }
 
-/* 觸發按鈕 */
 .dropdown-trigger {
   background-color: #FFF9EC;
   height: 42px;
@@ -77,7 +77,6 @@
   transform: rotate(180deg);
 }
 
-/* 下拉選單本體 */
 .dropdown-menu {
   position: absolute;
   top: 50px;
@@ -180,7 +179,7 @@
 }
 
 /* ═══════════════════════════════════════════════════════════
-   🔘 按鈕 (Post / Cancel)
+   🔘 按鈕
    ═══════════════════════════════════════════════════════════ */
 .button-row {
   display: flex;
@@ -216,6 +215,10 @@
   cursor: not-allowed;
 }
 
+.action-btn.submit-btn:not(:disabled) {
+  background-color: #FFDE97;
+}
+
 .status-message {
   text-align: center;
   color: #FFF;
@@ -227,55 +230,15 @@
 }
 
 /* ═══════════════════════════════════════════════════════════
-   📱 底部導覽列
+   ⬅️ 返回按鈕
    ═══════════════════════════════════════════════════════════ */
-.bottom-navigation {
-  position: fixed;
-  bottom: 25px;
-  left: 0;
-  right: 0;
-  height: auto;
-  background: transparent;
-  border: none;
-  display: flex;
-  justify-content: center;
-  gap: 15px;
-  align-items: flex-end;
-  z-index: 1000;
-  padding: 0;
-  pointer-events: none;
-}
-
-.bottom-navigation > * {
-  pointer-events: auto;
-}
-
-/* ═══════════════════════════════════════════════════════════
-   📱 RESPONSIVE (手機版)
-   ═══════════════════════════════════════════════════════════ */
-@media (max-width: 768px) {
-  .text-post-screen {
-    padding: 140px 16px 30px; 
-  }
-  
-  /* 手機版選單寬度微調 */
-  .custom-dropdown {
-    min-width: 140px;
-  }
-  
-  .dropdown-trigger {
-    font-size: 13px;
-    padding: 0 12px;
-  }
-}
-
 .back-button {
   position: absolute;
   top: 32px;
   left: 32px;
   width: 48px;
   height: 48px;
-  background: rgba(255, 255, 255, 0.15); /* 輕微透明 */
+  background: rgba(255, 255, 255, 0.15);
   border: 2px solid rgba(255, 255, 255, 0.3);
   border-radius: 50%;
   color: white;
@@ -287,9 +250,8 @@
   justify-content: center;
   transition: all 0.3s ease;
   backdrop-filter: blur(10px);
-  z-index: 2000; /* 確保在最上層 */
+  z-index: 2000;
   
-  /* 移除預設效果 */
   -webkit-tap-highlight-color: transparent;
   outline: none;
   user-select: none;
@@ -307,19 +269,64 @@
   transform: translateX(-1px) scale(0.95);
 }
 
-.back-button:focus,
-.back-button:focus-visible {
+.back-button:focus {
   outline: none !important;
-  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.2);
 }
 
 .back-button:disabled {
   opacity: 0.5;
   cursor: not-allowed;
-  pointer-events: none;
 }
 
-/* 📱 RWD 手機版調整 */
+/* ═══════════════════════════════════════════════════════════
+   📱 底部導覽列 (✅ 完全複製 MainApp context.css 的樣式)
+   ═══════════════════════════════════════════════════════════ */
+.bottom-navigation {
+  position: fixed !important; 
+  bottom: 0 !important;       
+  left: 0;
+  right: 0;
+  display: flex;
+  justify-content: space-around;
+  align-items: center;        
+  
+  background: #2D3656;        
+  border-top: 1px solid rgba(255, 255, 255, 0.15);
+  
+  /* ✅ 統一高度為 80px */
+  height: 80px !important;   
+  padding: 0 20px 20px 20px !important; 
+  
+  box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.3);
+  z-index: 9999 !important;   
+  
+  pointer-events: auto !important; 
+}
+
+/* ═══════════════════════════════════════════════════════════
+   📱 RESPONSIVE (手機版) - 統一參數
+   ═══════════════════════════════════════════════════════════ */
+@media (max-width: 768px) {
+  .text-post-screen {
+    padding: 140px 16px 120px; 
+  }
+  
+  .custom-dropdown {
+    min-width: 140px;
+  }
+  
+  .dropdown-trigger {
+    font-size: 13px;
+    padding: 0 12px;
+  }
+  
+  /* ✅ 手機版高度統一為 110px */
+  .bottom-navigation {
+    height: 110px !important; 
+    padding: 10px 16px 20px 16px !important;
+  }
+}
+
 @media (max-width: 480px) {
   .back-button {
     width: 40px;
@@ -329,10 +336,9 @@
     left: 20px;
   }
   
-  .text-post-screen {
+  /* ✅ 小手機版高度統一為 70px */
+  .bottom-navigation {
+    height: 70px !important;
+    padding: 10px 12px !important;
   }
-}
-
-.action-btn.submit-btn:not(:disabled) {
-  background-color: #FFDE97;
 }

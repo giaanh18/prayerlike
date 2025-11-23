@@ -39,6 +39,9 @@ const TextPostScreen = ({ user }) => {
   // 控制送出狀態
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // ✅ 頁籤狀態管理
+  const [activeTab, setActiveTab] = useState('Add');
+
   // Refs
   const privacyRef = useRef(null);
   const categoryRef = useRef(null);
@@ -76,7 +79,6 @@ const TextPostScreen = ({ user }) => {
     }
   };
 
-  // ==================== 🔧 核心修改區域 START ====================
   const handleSubmit = async () => {
     if (isSubmittingRef.current) {
         console.log("⏳ 重複點擊攔截：正在送出中...");
@@ -139,19 +141,37 @@ const TextPostScreen = ({ user }) => {
       setIsSubmitting(false);
     }
   };
-  // ==================== 🔧 核心修改區域 END ====================
 
   const handleCancel = () => {
     if (isSubmitting) return; 
     navigate('/create-post');
   };
 
-  // Navigation
-  const handleHome = () => navigate('/main');
-  const handleSearch = () => navigate('/tribe');
-  const handleCreatePost = () => navigate('/create-post');
-  const handleProfile = () => navigate('/profile');
-  const handleNova = () => navigate('/notifications');
+  // ✅ Navigation Handlers
+  const handleHome = () => {
+    setActiveTab('Home');
+    navigate('/main');
+  };
+
+  const handleSearch = () => {
+    setActiveTab('Search');
+    navigate('/tribe');
+  };
+
+  const handleCreatePost = () => {
+    setActiveTab('Add');
+    navigate('/create-post');
+  };
+
+  const handleProfile = () => {
+    setActiveTab('Profile');
+    navigate('/profile');
+  };
+
+  const handleNova = () => {
+    setActiveTab('Nova');
+    navigate('/notifications');
+  };
 
   const privacyOptions = ['Public', 'Family', 'Tribe', 'Individual'];
   const categoryOptions = ['Personal & Family', 'Church & Ministry', 'Kingdom Prayer', 'Tribe Prayer'];
@@ -159,12 +179,12 @@ const TextPostScreen = ({ user }) => {
   return (
     <div className="text-post-screen">
       
-      {/* ✅ 新增：返回按鈕 (使用 CreatePostScreen 的樣式) */}
+      {/* 返回按鈕 */}
       <button 
         className="back-button" 
         onClick={() => navigate('/create-post')} 
         aria-label="返回上一頁"
-        disabled={isSubmitting} // 防止送出中誤觸
+        disabled={isSubmitting} 
       >
         ←
       </button>
@@ -288,13 +308,48 @@ const TextPostScreen = ({ user }) => {
 
       </div>
 
-      {/* Bottom Navigation */}
+      {/* ✅ 底部導航列 - 修正 ariaLabel 為中文，與 MainApp 統一以確保尺寸正確 */}
       <div className="bottom-navigation">
-        <CircleButton provider="Home" iconSrc={Home} onClick={handleHome} size="medium" ariaLabel="Home" />
-        <CircleButton provider="Search" iconSrc={Search} onClick={handleSearch} size="medium" ariaLabel="Search" />
-        <CircleButton provider="Add" iconSrc={Add} onClick={handleCreatePost} size="medium" ariaLabel="Add Post" className="nav-active" isActive={true} />
-        <CircleButton provider="Profile" iconSrc={Profile} onClick={handleProfile} size="medium" ariaLabel="Profile" />
-        <CircleButton provider="Nova" iconSrc={Nova} onClick={handleNova} size="medium" ariaLabel="Notifications" />
+        <CircleButton 
+          provider="Home" 
+          iconSrc={Home} 
+          onClick={handleHome} 
+          isActive={activeTab === 'Home'} 
+          size="medium" 
+          ariaLabel="首頁" 
+        />
+        <CircleButton 
+          provider="Search" 
+          iconSrc={Search} 
+          onClick={handleSearch} 
+          isActive={activeTab === 'Search'} 
+          size="medium" 
+          ariaLabel="搜尋" 
+        />
+        <CircleButton 
+          provider="Add" 
+          iconSrc={Add} 
+          onClick={handleCreatePost} 
+          isActive={activeTab === 'Add'} 
+          size="medium" 
+          ariaLabel="新增貼文" 
+        />
+        <CircleButton 
+          provider="Profile" 
+          iconSrc={Profile} 
+          onClick={handleProfile} 
+          isActive={activeTab === 'Profile'} 
+          size="medium" 
+          ariaLabel="個人資料" 
+        />
+        <CircleButton 
+          provider="Nova" 
+          iconSrc={Nova} 
+          onClick={handleNova} 
+          isActive={activeTab === 'Nova'} 
+          size="medium" 
+          ariaLabel="nova小天使" 
+        />
       </div>
     </div>
   );
