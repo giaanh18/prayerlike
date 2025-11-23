@@ -351,28 +351,32 @@ const ApiService = {
    * Method: POST /api/posts
    * Body: userid, content, category (enum), uuid (optional)
    */
-  createPost: async (userId, postDataOrContent, privacy = 'Personal & Family') => {
+createPost: async (userId, postDataOrContent, privacy = 'Personal & Family') => {
     try {
       let postData;
       
-      // 處理參數重載 (可以直接傳物件或分開傳)
+      // 處理參數重載
       if (typeof postDataOrContent === 'string') {
+        // 舊模式：只傳字串
         postData = {
           userid: userId,
           content: postDataOrContent,
-          category: privacy, // 注意：舊程式碼的 privacy 對應新的 category
+          category: privacy,
+          privacy: 'public', // 預設
           uuid: null
         };
       } else {
+        // ✅ 新模式：傳入完整物件 (TextPostScreen 使用此模式)
         postData = {
           userid: userId,
-          category: 'Personal & Family', // Default
+          category: 'Personal & Family', // Fallback default
+          privacy: 'public',             // Fallback default
           uuid: null,
-          ...postDataOrContent
+          ...postDataOrContent // 這裡會覆蓋上面的預設值，包含 title, privacy, content
         };
       }
 
-      console.log('📝 Tạo post mới:', postData);
+      console.log('📝 Tạo post mới (Final Payload):', postData);
 
       const { data } = await ApiService.makeRequest(`${POSTS_API_URL}/posts`, {
         method: 'POST',
@@ -381,7 +385,6 @@ const ApiService = {
 
       cache.clear();
 
-      // 回傳結構位於 data.data
       return {
         success: true,
         post: data.data,
@@ -394,6 +397,7 @@ const ApiService = {
     }
   },
 
+  
   /**
    * ✅ 2. 新增留言 (Create Comment)
    * Method: POST /api/comment

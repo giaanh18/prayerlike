@@ -268,3 +268,71 @@
     padding: 0 12px;
   }
 }
+
+.back-button {
+  position: absolute;
+  top: 32px;
+  left: 32px;
+  width: 48px;
+  height: 48px;
+  background: rgba(255, 255, 255, 0.15); /* 輕微透明 */
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-radius: 50%;
+  color: white;
+  font-size: 24px;
+  font-weight: bold;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+  backdrop-filter: blur(10px);
+  z-index: 2000; /* 確保在最上層 */
+  
+  /* 移除預設效果 */
+  -webkit-tap-highlight-color: transparent;
+  outline: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.back-button:hover {
+  background: rgba(255, 255, 255, 0.25);
+  border-color: rgba(255, 255, 255, 0.5);
+  transform: translateX(-3px);
+}
+
+.back-button:active {
+  background: rgba(255, 255, 255, 0.2);
+  transform: translateX(-1px) scale(0.95);
+}
+
+.back-button:focus,
+.back-button:focus-visible {
+  outline: none !important;
+  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.2);
+}
+
+.back-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+/* 📱 RWD 手機版調整 */
+@media (max-width: 480px) {
+  .back-button {
+    width: 40px;
+    height: 40px;
+    font-size: 20px;
+    top: 20px;
+    left: 20px;
+  }
+  
+  .text-post-screen {
+  }
+}
+
+.action-btn.submit-btn:not(:disabled) {
+  background-color: #FFDE97;
+}

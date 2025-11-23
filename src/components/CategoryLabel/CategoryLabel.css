@@ -100,17 +100,13 @@
   transition: none !important;
 }
 
-/* ========================================
-   🎨 ĐỔI MÀU CHO PERSONAL & FAMILY
-   ======================================== */
-.category-buttons .category-item:first-child .category-label {
-  background: linear-gradient(135deg, #FFDE97 0%, #FFD580 100%) !important;
+.category-label-wrapper.active .category-label {
+  background: linear-gradient(135deg, #FFDE97) !important;
 }
 
-.category-buttons .category-item:first-child .category-label-arrow {
-  border-bottom-color: #FFDE97 !important;
+.category-label-wrapper.active .category-label-arrow {
+  border-bottom: 5px solid #FFDE97 !important; 
 }
-
 /* ========================================
    🎯 HOVER EFFECT
    ======================================== */
@@ -376,6 +372,3 @@
   transition: none !important;
 }
 
-/* ========================================
-   END OF FILE
-   ======================================== */

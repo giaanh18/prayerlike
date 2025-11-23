@@ -63,7 +63,6 @@ const tribeIdMap = {
   12: { name: 'Benjamin', icon: benjaminIcon },
 };
 
-// ==================== Component Dropdown 隱私設定 ====================
 const PrivacyDropdown = ({ onChange, initialValue = 'public' }) => {
   const [selected, setSelected] = useState(initialValue);
   const [isOpen, setIsOpen] = useState(false);
@@ -113,7 +112,6 @@ const PrivacyDropdown = ({ onChange, initialValue = 'public' }) => {
   );
 };
 
-// ==================== Component 評論 ====================
 const Comment = ({ comment, onReply, onEdit, onDelete, onLike, currentUserId, postDocid }) => {
   const [isReplying, setIsReplying] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
@@ -129,7 +127,6 @@ const Comment = ({ comment, onReply, onEdit, onDelete, onLike, currentUserId, po
 
     setLoadingReplies(true);
     try {
-      // 暫時透過 getComments 獲取
       const result = await ApiService.getComments(postDocid);
       if (result.success) {
         const commentReplies = result.comments.filter(
@@ -389,7 +386,7 @@ const Comment = ({ comment, onReply, onEdit, onDelete, onLike, currentUserId, po
   );
 };
 
-// ==================== Component 貼文（擴展版） ====================
+// ... (Post Component - 省略以節省篇幅，請保留原程式碼) ...
 const Post = ({ post, allPosts, onLike, onComment }) => {
   const [isLiking, setIsLiking] = useState(false);
   const [isCommenting, setIsCommenting] = useState(false);
@@ -401,14 +398,13 @@ const Post = ({ post, allPosts, onLike, onComment }) => {
   const [loadingComments, setLoadingComments] = useState(false);
 
   // ========== 📝 使用 useRef 防止快速連點 ==========
-  const isLikingRef = useRef(false); // 同步鎖
+  const isLikingRef = useRef(false);
 
   // 管理按讚狀態與數量
   const [likeCount, setLikeCount] = useState(post.likes || 0);
   const [hasLiked, setHasLiked] = useState(post.isLiked || false);
 
   // 當 props 的資料更新時（例如重新整理），同步更新本地 State
-  // 注意：使用 !== undefined 確保 0 也會被設置
   useEffect(() => {
     if (post.likes !== undefined) setLikeCount(post.likes);
     if (post.isLiked !== undefined) setHasLiked(post.isLiked);
@@ -427,7 +423,6 @@ const Post = ({ post, allPosts, onLike, onComment }) => {
     setLoadingComments(true);
 
     try {
-      // 從 allPosts (Raw Data) 中篩選出屬於此 Post 的留言 (parent_docid == post.id)
       const allReplies = allPosts.filter(p => p.parent_docid === post.id);
       const pageSize = 10;
       const startIndex = (page - 1) * pageSize;
@@ -456,7 +451,6 @@ const Post = ({ post, allPosts, onLike, onComment }) => {
 
   const handleToggleCommentForm = () => {
     if (!showCommentForm) {
-      // 展開時載入留言
       if (comments.length === 0) {
         loadComments(1, false);
         setCommentPage(1);
@@ -558,33 +552,40 @@ const Post = ({ post, allPosts, onLike, onComment }) => {
     </div>
   );
 
-  // ========== 📝 修改 handleLike 邏輯：使用 Ref 防止連點 ==========
+  // ========== 📝 修改 handleLike 邏輯：本地計算 (Optimistic UI) ==========
   const handleLike = async () => {
-    // 1. 使用 Ref 進行同步檢查，若正在請求則直接阻擋
     if (isLikingRef.current) return;
-    
-    // 2. 設定鎖定狀態
     isLikingRef.current = true;
-    setIsLiking(true); // 用於觸發 UI loading 樣式
+    
+    const prevLiked = hasLiked;
+    const prevCount = likeCount;
+
+    const newLiked = !prevLiked;
+    const newCount = newLiked ? prevCount + 1 : Math.max(0, prevCount - 1);
+
+    setHasLiked(newLiked);
+    setLikeCount(newCount);
 
     try {
-      // 3. 調用 Toggle API
       const result = await ApiService.likePost(post.id, currentUserId);
       
-      if (result.success && result.data) {
-        // 4. 使用 API 回傳的準確數據更新 UI
-        const { amen_count, amened } = result.data;
-        setHasLiked(amened);
-        setLikeCount(amen_count);
+      if (result.success) {
+        const finalCount = result.data?.amen_count !== undefined ? result.data.amen_count : newCount;
+        const finalLiked = result.data?.amened !== undefined ? result.data.amened : newLiked;
+
+        if (finalCount !== newCount) setLikeCount(finalCount);
         
         if (onLike) {
-          onLike(post.id);
+          onLike(post.id, finalLiked, finalCount);
         }
+      } else {
+        throw new Error(result.message || 'API Error');
       }
     } catch (error) {
       console.error('Like error:', error);
+      setHasLiked(prevLiked);
+      setLikeCount(prevCount);
     } finally {
-      // 5. 解鎖
       isLikingRef.current = false;
       setIsLiking(false);
     }
@@ -638,12 +639,14 @@ const Post = ({ post, allPosts, onLike, onComment }) => {
           <div className="post-author">{post.author}</div>
           <div className="post-time">{post.time || post.datetime || '剛剛'}</div>
         </div>
+        
         <div className="post-privacy-badge">
-          {post.privacy === 'public' && <span>🌐 公開</span>}
-          {post.privacy === 'family' && <span>👪 家族</span>}
-          {post.privacy === 'tribe' && <span>👥 支派</span>}
-          {post.privacy === 'private' && <span>🔒 私人</span>}
+          {(!post.privacy || post.privacy === 'public') && <span>🌐 Public</span>}
+          {post.privacy === 'family' && <span>👪 Family</span>}
+          {post.privacy === 'tribe' && <span>👥 Tribe</span>}
+          {(post.privacy === 'individual' || post.privacy === 'private') && <span>🔒 Individual</span>}
         </div>
+        
       </div>
 
       <div className="post-content">
@@ -682,24 +685,19 @@ const Post = ({ post, allPosts, onLike, onComment }) => {
       )}
 
       <div className="post-actions">
-        {/* ========== 📝 Amen 按鈕顯示與互動 ========== */}
         <button
           className={`action-button ${isLiking ? 'loading' : ''} ${hasLiked ? 'liked' : ''}`}
           onClick={handleLike}
-          // 重要：這裡不設定 disabled={isLiking}，因為 handleLike 內部已有 Ref 鎖
-          // 這樣可以保持按鈕樣式為 loading 但防止再次觸發邏輯
         >
           <span className="action-icon"></span>
           {isLiking ? 'Processing...' : (hasLiked ? `Amened (${likeCount})` : `Amen (${likeCount})`)}
         </button>
 
-        {/* ========== 📝 Pray for me 按鈕顯示 ========== */}
         <button
           className="action-button"
           onClick={handleToggleCommentForm}
         >
           <span className="action-icon"></span>
-          {/* 顯示實際留言數量，若無則為 0 */}
           pray for me ({post.calculatedComments || 0})
         </button>
 
@@ -792,7 +790,7 @@ const MainApp = ({ user, onLogout }) => {
   const navigate = useNavigate();
   
   // ========== 1️⃣ State 定義 ==========
-  const [activeTab, setActiveTab] = useState('Home'); // ✅ 新增: 頁籤狀態管理，預設為 Home
+  const [activeTab, setActiveTab] = useState('Home');
   const [showTribeDetail, setShowTribeDetail] = useState(false);
   const [posts, setPosts] = useState([]);
   const [allPosts, setAllPosts] = useState([]);
@@ -800,6 +798,9 @@ const MainApp = ({ user, onLogout }) => {
   const [loading, setLoading] = useState(false);
   const [notificationCount] = useState(0);
   const [coinAmount] = useState(200000);
+  
+  // ✅ 新增：用來追蹤目前選取的分類 (API 篩選用)
+  const [selectedCategory, setSelectedCategory] = useState(null);
 
   // ========== 2️⃣ 支派資訊處理 ==========
   const userTribeId = user?.tribe;
@@ -816,27 +817,21 @@ const MainApp = ({ user, onLogout }) => {
   }
 
   // ========== 3️⃣ 所有事件處理函數 ==========
-  
   const handleTribeLogoClick = () => {
     console.log('🏛️ 支派 Logo 被點擊');
     setShowTribeDetail(true);
   };
 
-  // ✅ 新增: 通用的 Tab 切換處理
   const handleTabChange = (tabName) => {
     setActiveTab(tabName);
     console.log(`切換到頁籤: ${tabName}`);
-    
-    // 特殊邏輯：如果是 Home，則回到頂部
     if (tabName === 'Home') {
        window.scrollTo({ top: 0, behavior: 'smooth' });
     }
-    // 可以在這裡加入更多路由導航邏輯
-    // navigate(`/${tabName.toLowerCase()}`);
   };
 
   const handleLogout = async () => {
-    setActiveTab('Nova'); // ✅ 點擊 Nova 時設為激活
+    setActiveTab('Nova');
     try {
       console.log('🚪 使用者登出...');
       setPosts([]);
@@ -850,14 +845,14 @@ const MainApp = ({ user, onLogout }) => {
   };
 
   const handleCreatePost = () => {
-    setActiveTab('Add'); // ✅ 點擊 Add 時設為激活
+    setActiveTab('Add');
     navigate('/create-post', { replace: true });
   };
 
   const handleNotificationClick = () => {};
   const handleCoinClick = () => {};
   const handleLogoClick = () => { 
-    handleTabChange('Home'); // 點擊 Logo 視同點擊 Home
+    handleTabChange('Home');
   };
 
   const getFilteredPosts = () => {
@@ -865,12 +860,17 @@ const MainApp = ({ user, onLogout }) => {
     return posts.filter(post => post.privacy === privacyFilter);
   };
 
-  const handleLikePost = (postId) => {
-    // 這裡僅更新本地狀態以備不時之需，主要邏輯已移至 Post 元件內
+  const handleLikePost = (postId, newLikedStatus, newCount) => {
     setPosts(prevPosts =>
       prevPosts.map(post =>
         post.id === postId
-          ? { ...post, likes: (post.likes || 0) + 1 } 
+          ? { 
+              ...post, 
+              likes: newCount, 
+              isLiked: newLikedStatus, 
+              amen_count: newCount,
+              amened: newLikedStatus
+            } 
           : post
       )
     );
@@ -892,9 +892,10 @@ const MainApp = ({ user, onLogout }) => {
 
   const handleRefreshPosts = async () => {
     setLoading(true);
+    setSelectedCategory(null);
     try {
       ApiService.clearCache();
-      await fetchPosts(); 
+      await fetchPosts(null); 
     } catch (error) {
       console.error('💥 重新載入貼文錯誤:', error);
     } finally {
@@ -902,44 +903,50 @@ const MainApp = ({ user, onLogout }) => {
     }
   };
 
-  const getDemoPosts = useCallback(() => [
-    // (Demo Posts 內容保持不變)
-  ], [user?.name]);
+  const handleCategoryClick = (category) => {
+    console.log(`📂 切換分類至: ${category}`);
+    const newCategory = selectedCategory === category ? null : category;
+    setSelectedCategory(newCategory);
+    fetchPosts(newCategory);
+  };
 
-  // ========== 5️⃣ fetchPosts (核心修改) ==========
-  const fetchPosts = useCallback(async () => {
+  const getDemoPosts = useCallback(() => [], [user?.name]);
+
+  const fetchPosts = useCallback(async (categoryOverride) => {
     setLoading(true);
     try {
       console.log('📡 從API取得貼文...');
 
-      let result = await ApiService.getPosts(1, 50, true);
+      const categoryToFetch = categoryOverride !== undefined ? categoryOverride : selectedCategory;
+
+      const filters = {};
+      if (categoryToFetch) {
+        filters.category = categoryToFetch;
+      }
+
+      let result = await ApiService.getPosts(1, 50, true, filters);
 
       if (result && result.success && result.posts && result.posts.length > 0) {
         console.log('✅ 貼文取得成功:', result.posts);
 
         const commentsCountMap = {};
-        // 統計留言數
         result.posts.forEach(p => {
           if (p.parent_docid) {
             commentsCountMap[p.parent_docid] = (commentsCountMap[p.parent_docid] || 0) + 1;
           }
         });
 
-        // 只顯示主貼文 (無 parent_docid)
         const filteredPosts = result.posts.filter(post => !post.parent_docid && post.docid);
 
         const transformedPosts = filteredPosts.map(post => ({
-          // ==================== 📝 資料映射 ====================
           id: post.docid,
           sn: post.sn,
-          // 確保即使是 0 也能正確顯示，防止 undefined
           likes: post.amen_count !== undefined ? post.amen_count : 0, 
           isLiked: post.amened || false, 
           calculatedComments: commentsCountMap[post.docid] || 0,
-          // =================================================
           title: post.title || '',
           content: post.content || '',
-          privacy: mapCategoryToPrivacy(post.category),
+          privacy: post.privacy ? post.privacy.toLowerCase() : mapCategoryToPrivacy(post.category),
           author: post.author || post.userid || user?.name || '匿名用戶',
           time: post.datetime || '剛剛',
           image: post.image || null,
@@ -951,27 +958,27 @@ const MainApp = ({ user, onLogout }) => {
         setAllPosts(result.posts); 
       } else {
         console.log('⚠️ API 回應為空或失敗，使用演示資料');
-        setPosts(getDemoPosts());
+        setPosts([]); 
+        setAllPosts([]);
       }
     } catch (error) {
       console.error('💥 取得貼文時發生錯誤:', error);
-      setPosts(getDemoPosts());
+      setPosts([]);
     } finally {
       setLoading(false);
     }
-  }, [getDemoPosts, user?.name]);
+  }, [getDemoPosts, user?.name, selectedCategory]);
 
-  // ========== 6️⃣ useEffect ==========
   useEffect(() => {
     console.log('🏠 MainApp 載入，使用者:', user);
     fetchPosts();
-  }, [fetchPosts]); 
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); 
 
   const handleCloseTribeDetail = () => {
     setShowTribeDetail(false);
   };
 
-  // ========== 7️⃣ 條件渲染 ==========
   if (showTribeDetail) {
     if (userTribeId === null || userTribeId === undefined) {
       return <NoTribeDetail onBack={handleCloseTribeDetail} />;
@@ -986,7 +993,6 @@ const MainApp = ({ user, onLogout }) => {
     );
   }
 
-  // ========== 8️⃣ 主畫面渲染 ==========
   const filteredPosts = getFilteredPosts();
 
   return (
@@ -1021,28 +1027,71 @@ const MainApp = ({ user, onLogout }) => {
 
         <hr className="divider-line" />
 
+        {/* ========== ✅ 關鍵修正：將 onClick 移至父容器 category-item 上 ========== */}
         <div className="category-buttons">
-           {/* 分類按鈕保持不變 */}
-           <div className="category-item">
+           <div 
+             className="category-item" 
+             onClick={() => handleCategoryClick('Personal & Family')}
+           >
             <RectButton
               image={family_and_personal}
               imageAlt="Personal & Family"
-              onClick={() => console.log('Personal & Family')}
+              // 移除 onClick
               size="medium"
+              isActive={selectedCategory === 'Personal & Family'}
             />
-            <CategoryLabel text="Personal & Family" enableMarquee={true} speed={8} />
+            <CategoryLabel 
+              text="Personal & Family" 
+              isActive={selectedCategory === 'Personal & Family'} 
+            />
           </div>
-          <div className="category-item">
-             <RectButton image={church} imageAlt="Church & Ministry" onClick={() => console.log('Church & Ministry')} size="medium" />
-             <CategoryLabel text="Church & Ministry" enableMarquee={true} speed={8} />
+          <div 
+             className="category-item"
+             onClick={() => handleCategoryClick('Church & Ministry')}
+           >
+             <RectButton 
+               image={church} 
+               imageAlt="Church & Ministry" 
+               // 移除 onClick
+               size="medium" 
+               isActive={selectedCategory === 'Church & Ministry'}
+             />
+             <CategoryLabel 
+               text="Church & Ministry" 
+               isActive={selectedCategory === 'Church & Ministry'}
+             />
           </div>
-          <div className="category-item">
-             <RectButton image={kingdom} imageAlt="Kingdom Prayer" onClick={() => console.log('Kingdom Prayer')} size="medium" />
-             <CategoryLabel text="Kingdom Prayer" enableMarquee={true} speed={8} />
+          <div 
+             className="category-item"
+             onClick={() => handleCategoryClick('Kingdom Prayer')}
+           >
+             <RectButton 
+               image={kingdom} 
+               imageAlt="Kingdom Prayer" 
+               // 移除 onClick
+               size="medium" 
+               isActive={selectedCategory === 'Kingdom Prayer'}
+             />
+             <CategoryLabel 
+               text="Kingdom Prayer" 
+               isActive={selectedCategory === 'Kingdom Prayer'}
+             />
           </div>
-          <div className="category-item">
-             <RectButton image={tribe} imageAlt="Tribes Prayer" onClick={() => console.log('Tribes Prayer')} size="medium" />
-             <CategoryLabel text="Tribe Prayer" enableMarquee={true} speed={8} />
+          <div 
+             className="category-item"
+             onClick={() => handleCategoryClick('Tribe Prayer')}
+           >
+             <RectButton 
+               image={tribe} 
+               imageAlt="Tribes Prayer" 
+               // 移除 onClick
+               size="medium" 
+               isActive={selectedCategory === 'Tribe Prayer'}
+             />
+             <CategoryLabel 
+               text="Tribe Prayer" 
+               isActive={selectedCategory === 'Tribe Prayer'}
+             />
           </div>
         </div>
         
@@ -1059,8 +1108,9 @@ const MainApp = ({ user, onLogout }) => {
           </div>
         </div>
 
-        <div className="main-content">
-          <div className="posts-container">
+        {/* ========== 確保容器高度穩定，防止跑版 ========== */}
+        <div className="main-content" style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: '50vh', alignItems: 'stretch' }}>
+          <div className="posts-container" style={{ flex: 1, width: '100%' }}>
             {loading && (
               <div className="loading-container">
                 <div className="loading-spinner"></div>
@@ -1084,14 +1134,17 @@ const MainApp = ({ user, onLogout }) => {
               <div className="no-posts">
                 <div className="no-posts-icon">📭</div>
                 <h4>沒有符合此隱私設定的貼文</h4>
-                <p>嘗試切換到其他隱私設定查看現有貼文</p>
+                <p>
+                  {selectedCategory 
+                    ? `目前分類：${selectedCategory} 尚無資料` 
+                    : '嘗試切換到其他隱私設定查看現有貼文'}
+                </p>
               </div>
             ) : null}
           </div>
         </div>
 
         <div className="bottom-navigation">
-           {/* ✅ 修改: 加入 isActive 與 onClick 切換邏輯 */}
            <CircleButton 
              provider="Home" 
              iconSrc={Home} 

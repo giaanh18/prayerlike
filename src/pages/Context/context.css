@@ -12,7 +12,7 @@
   --shadow-heavy: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
-/* ==================== 主容器 ==================== */
+/* ==================== 主容器 (修正重點：強制滿寬) ==================== */
 .app-container {
   min-height: 100vh;
   display: flex;
@@ -21,6 +21,11 @@
   position: relative;
   padding-bottom: 90px;
   gap: 0;
+  
+  /* ✅ 強制佔滿 AppBackground 的寬度 */
+  width: 100% !important;
+  max-width: 100% !important;
+  box-sizing: border-box;
 }
 
 /* ==================== User Header ==================== */
@@ -29,6 +34,8 @@
   padding: 16px 20px;
   margin-bottom: 0;
   border-radius: 0;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 /* 排除掉User Info 的字，避免全部都改成白色 */
@@ -85,15 +92,16 @@
   gap: 30px !important;
   padding: 16px 20px !important;
   background: #2D3656 !important;
+  
+  /* ✅ 強制滿寬 */
   width: 100% !important;
   box-sizing: border-box !important;
+  
   flex-wrap: nowrap !important;
   overflow: visible !important;
   margin: 0 !important;
 }
 
-
-/* ==================== Category Item ==================== */
 .category-item {
   display: flex !important;
   flex-direction: column !important;
@@ -109,27 +117,22 @@
   flex-shrink: 0 !important;
 }
 
-
-/* RectButton 基礎樣式 */
 .category-buttons .category-item > button,
 .category-buttons .category-item > [role="button"],
 .category-buttons .category-item .RectButton {
   all: unset !important;
   box-sizing: border-box !important;
-  
   width: 54px !important;
   min-width: 54px !important;
   max-width: 54px !important;
   height: 54px !important;
   min-height: 54px !important;
   max-height: 54px !important;
-  
   display: flex !important;
   flex-direction: column !important;
   align-items: center !important;
   justify-content: center !important;
   gap: 6px !important;
-  
   padding: 10px 6px !important;
   background: #FFF9EC !important;
   border: none !important;
@@ -154,7 +157,6 @@
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08) !important;
 }
 
-/* 按鈕內的圖標 */
 .category-buttons .category-item > button > *:first-child,
 .category-buttons .category-item .RectButton > *:first-child,
 .category-buttons .category-item > button img,
@@ -168,25 +170,21 @@
   max-width: 30px !important;
   min-height: 30px !important;
   max-height: 30px !important;
-  
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
   line-height: 1 !important;
-  
   margin: 0 auto !important;
   padding: 0 !important;
   flex-shrink: 0 !important;
-  
   object-fit: contain !important;
 }
 
-/* 激活狀態 */
 .category-buttons .category-item > button.active,
 .category-buttons .category-item .RectButton.active,
 .category-buttons .category-item > button[aria-selected="true"],
 .category-buttons .category-item .RectButton[aria-selected="true"] {
-  background: #FFE8B3 !important;
+  background: #FFDE97 !important;
   box-shadow: 0 3px 8px rgba(107, 78, 46, 0.2) !important;
   border: 2px solid #6B4E2E !important;
 }
@@ -201,17 +199,14 @@
   backdrop-filter: none;
   border-top: none;
   border-bottom: none;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .filter-controls {
   display: flex;
   gap: var(--spacing-sm);
   flex-wrap: wrap;
-}
-
-.privacy-filter-container {
-  display: flex;
-  align-items: center;
 }
 
 /* ==================== 隱私下拉選單 ==================== */
@@ -268,14 +263,8 @@
 }
 
 @keyframes dropdownSlideIn {
-  from {
-    opacity: 0;
-    transform: translateY(-10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 .dropdown-option {
@@ -301,24 +290,52 @@
   font-weight: bold;
 }
 
-/* ==================== 主要內容區域 ==================== */
+/* ==================== 主要內容區域 (修正重點) ==================== */
 .main-content {
   flex: 1;
   overflow-y: auto;
   padding: var(--spacing-lg);
   background: #2D3656;
   padding-bottom: 100px;
+  
+  /* ✅ 強制滿寬與彈性佈局 */
+  display: flex;
+  flex-direction: column;
+  align-items: stretch !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
 }
 
-/* ==================== 貼文容器 ==================== */
+/* ==================== 貼文容器 (修正重點) ==================== */
 .posts-container {
-  width: 100%;
+  /* ✅ 強制 100% 寬度 */
+  width: 100% !important;
+  min-width: 100% !important;
+  
+  /* ✅ 確保 padding 不會讓寬度超過 100% */
+  box-sizing: border-box !important;
+  
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  
+  /* ✅ 確保 feed 拉伸 */
+  align-items: stretch !important;
 }
 
 .posts-feed {
   display: flex;
   flex-direction: column;
   gap: var(--spacing-lg);
+  
+  /* ✅ 確保子元素 100% 寬度 */
+  width: 100% !important;
+  min-width: 100% !important;
+  
+  /* ✅ 確保卡片拉伸填滿 */
+  align-items: stretch !important;
+  box-sizing: border-box !important;
+  padding: 0 !important;
 }
 
 /* ==================== 載入狀態 ==================== */
@@ -329,6 +346,8 @@
   justify-content: center;
   padding: var(--spacing-xl);
   color: #FFFFFF;
+  flex: 1;
+  width: 100%;
 }
 
 .loading-spinner {
@@ -357,6 +376,8 @@
   border-radius: 16px;
   color: #FFFFFF;
   text-align: center;
+  width: 100% !important;
+  box-sizing: border-box !important;
 }
 
 .no-posts-icon {
@@ -374,7 +395,7 @@
   color: rgba(255, 255, 255, 0.8);
 }
 
-/* ==================== 貼文卡片 ==================== */
+/* ==================== 貼文卡片 (修正重點) ==================== */
 .post-card {
   background: #FFFFFF;
   border-radius: 16px;
@@ -382,6 +403,20 @@
   box-shadow: var(--shadow-medium);
   transition: all 0.3s ease;
   animation: fadeIn 0.5s ease;
+  
+  /* ✅ 強制卡片寬度 100% */
+  width: 100% !important;
+  min-width: 100% !important;
+  max-width: 100% !important;
+  box-sizing: border-box !important;
+  
+  /* ✅ 清除外邊距，避免縮小 */
+  margin: 0 !important;
+  
+  /* ✅ Flex 屬性修正 */
+  flex-grow: 1;
+  flex-shrink: 0;
+  align-self: stretch;
 }
 
 .post-header {
@@ -780,7 +815,6 @@
   cursor: not-allowed;
 }
 
-/* ==================== 評論編輯表單 ==================== */
 .comment-edit-form {
   margin-top: var(--spacing-sm);
 }
@@ -835,7 +869,6 @@
   background: #CCCCCC;
 }
 
-/* ==================== 評論回覆表單 ==================== */
 .comment-reply-form {
   margin-top: var(--spacing-md);
   padding: var(--spacing-md);
@@ -894,7 +927,6 @@
   background: #CCCCCC;
 }
 
-/* ==================== 評論回覆列表 ==================== */
 .comment-replies {
   margin-top: var(--spacing-md);
   padding-left: var(--spacing-lg);
@@ -908,7 +940,6 @@
   font-size: 13px;
 }
 
-/* ==================== 轉錄面板 ==================== */
 .transcript-panel {
   margin-top: var(--spacing-md);
   padding: var(--spacing-md);
@@ -1031,8 +1062,7 @@
   display: flex;
   justify-content: space-around;
   align-items: center;
-  background: rgba(45, 54, 86, 0.95);
-  backdrop-filter: blur(10px);
+  background: #2D3656;
   border-top: 1px solid rgba(255, 255, 255, 0.15);
   padding: 15px 20px;
   box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.25);
@@ -1080,51 +1110,6 @@
 
 ::-webkit-scrollbar-thumb:hover {
   background: rgba(255, 255, 255, 0.5);
-}
-
-/* ==================== 輔助類別 ==================== */
-.text-center {
-  text-align: center;
-}
-
-.text-muted {
-  color: #666666;
-}
-
-.mt-sm {
-  margin-top: var(--spacing-sm);
-}
-
-.mt-md {
-  margin-top: var(--spacing-md);
-}
-
-.mt-lg {
-  margin-top: var(--spacing-lg);
-}
-
-.mb-sm {
-  margin-bottom: var(--spacing-sm);
-}
-
-.mb-md {
-  margin-bottom: var(--spacing-md);
-}
-
-.mb-lg {
-  margin-bottom: var(--spacing-lg);
-}
-
-.p-sm {
-  padding: var(--spacing-sm);
-}
-
-.p-md {
-  padding: var(--spacing-md);
-}
-
-.p-lg {
-  padding: var(--spacing-lg);
 }
 
 /* ==================== 響應式設計 - 簡化版 ==================== */
@@ -2328,3 +2313,5 @@ select:focus-visible {
     animation: none !important;
   }
 }
+
+

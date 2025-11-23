@@ -215,14 +215,14 @@
   border: 1px solid #ef4444;
 }
 
-/* ==================== BUTTONS ==================== */
+/* ==================== BUTTONS (修正重點) ==================== */
 .voice-overlay-buttons {
   display: flex;
   gap: 12px;
   margin-top: 8px;
 }
 
-/* ✅ TẤT CẢ CÁC NÚT - MÀU KEM BAN ĐẦU */
+/* 1. 基礎按鈕樣式 */
 .btn-start-recording,
 .btn-stop-recording,
 .btn-confirm,
@@ -235,44 +235,53 @@
   font-weight: 500;
   cursor: pointer;
   transition: all 0.2s ease;
-  background: #FFF9EC; /* 👈 Màu kem ban đầu */
-  color: #2d3561;
-  border: 1px solid rgba(45, 53, 97, 0.1);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
-/* ✅ KHI HOVER - Chuyển sang màu vàng */
+/* 2. ✅ 正向操作按鈕 (開始錄音、確認送出) - 預設為亮黃色 #FFDE97 */
+.btn-start-recording,
+.btn-confirm {
+  background: #FFDE97 !important; /* 這裡改為黃色 */
+  color: #2d3561;
+  border: 1px solid #E8C570;
+  font-weight: 600; 
+}
+
+/* 正向按鈕 Hover 效果 */
 .btn-start-recording:hover:not(:disabled),
-.btn-stop-recording:hover:not(:disabled),
-.btn-confirm:hover:not(:disabled),
-.btn-cancel:hover:not(:disabled) {
-  background: #FFDE97;
+.btn-confirm:hover:not(:disabled) {
+  background: #F5D085 !important;
   transform: translateY(-2px);
   box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
 }
 
-/* ✅ KHI ĐƯỢC CHỌN (.active) - GIỮ MÀU VÀNG */
-.btn-start-recording.active,
-.btn-stop-recording.active,
-.btn-confirm.active,
-.btn-cancel.active {
-  background: #FFDE97 !important; /* 👈 GIỮ MÀU VÀNG */
-  transform: translateY(0);
-  box-shadow: 0 0 0 4px rgba(255, 222, 151, 0.4);
+/* 3. ⚪ 次要/負向操作按鈕 (取消、停止、重新錄製) - 維持米色 #FFF9EC */
+.btn-stop-recording,
+.btn-cancel {
+  background: #FFF9EC !important;
+  color: #2d3561;
+  border: 1px solid rgba(45, 53, 97, 0.1);
 }
 
-/* ✅ KHI ACTIVE/FOCUS - Giữ màu vàng */
+/* 次要按鈕 Hover 效果 */
+.btn-stop-recording:hover:not(:disabled),
+.btn-cancel:hover:not(:disabled) {
+  background: #F2EBD9 !important; 
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
+}
+
+/* 4. Active (點擊中) 效果 */
 .btn-start-recording:active:not(:disabled),
 .btn-stop-recording:active:not(:disabled),
 .btn-confirm:active:not(:disabled),
 .btn-cancel:active:not(:disabled) {
-  background: #FFDE97;
   transform: translateY(0);
   outline: none;
-  box-shadow: 0 0 0 4px rgba(255, 222, 151, 0.4);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
-/* ✅ KHI DISABLED */
+/* 5. Disabled 狀態 */
 .btn-start-recording:disabled,
 .btn-stop-recording:disabled,
 .btn-confirm:disabled,
@@ -280,21 +289,51 @@
   opacity: 0.5;
   cursor: not-allowed;
   transform: none;
+  background: #E0E0E0 !important; /* 禁用時變灰 */
 }
 
-/* ==================== BOTTOM NAVIGATION ==================== */
-.bottom-navigation {
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  background-color: #2D3656;
-  padding: 20px 0;
+/* ═══════════════════════════════════════════════════════════
+   ⬅️ 新增：返回按鈕樣式
+   ═══════════════════════════════════════════════════════════ */
+.back-button {
+  position: absolute;
+  top: 32px;
+  left: 32px;
+  width: 48px;
+  height: 48px;
+  background: rgba(255, 255, 255, 0.15);
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-radius: 50%;
+  color: white;
+  font-size: 24px;
+  font-weight: bold;
+  cursor: pointer;
   display: flex;
-  justify-content: space-around;
   align-items: center;
-  z-index: 1000;
-  border-top: 1px solid #1e2538;
+  justify-content: center;
+  transition: all 0.3s ease;
+  backdrop-filter: blur(10px);
+  z-index: 2000; /* 確保在最上層 */
+  
+  -webkit-tap-highlight-color: transparent;
+  outline: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.back-button:hover {
+  background: rgba(255, 255, 255, 0.25);
+  border-color: rgba(255, 255, 255, 0.5);
+  transform: translateX(-3px);
+}
+
+.back-button:active {
+  background: rgba(255, 255, 255, 0.2);
+  transform: translateX(-1px) scale(0.95);
+}
+
+.back-button:focus {
+  outline: none !important;
 }
 
 /* ==================== RESPONSIVE ==================== */
@@ -313,5 +352,14 @@
   .btn-confirm,
   .btn-cancel {
     width: 100%;
+  }
+
+  /* 手機版返回鍵調整 */
+  .back-button {
+    width: 40px;
+    height: 40px;
+    font-size: 20px;
+    top: 20px;
+    left: 20px;
   }
 }

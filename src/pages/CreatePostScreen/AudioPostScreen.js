@@ -119,7 +119,7 @@ function AudioPostScreen({ onClose = () => {}, onUploadSuccess = () => {} }) {
     }
   };
 
-  // ✅ 新增：輪詢機制，等待轉錄完成
+  // 輪詢轉錄結果
   const pollForTranscript = async (recordId, maxRetries = 10, interval = 2000) => {
     for (let i = 0; i < maxRetries; i++) {
       console.log(`⏳ [Polling] 第 ${i + 1} 次檢查轉錄狀態...`);
@@ -136,20 +136,18 @@ function AudioPostScreen({ onClose = () => {}, onUploadSuccess = () => {} }) {
       console.log("📥 收到回應:", data);
 
       if (data.status === 'completed') {
-        return data; // ✅ 成功，回傳完整資料
+        return data; 
       }
       
       if (data.status === 'failed') {
         throw new Error('伺服器回傳轉錄失敗');
       }
 
-      // 若狀態為 processing，等待後重試
       await new Promise(resolve => setTimeout(resolve, interval));
     }
     throw new Error('等待轉錄逾時');
   };
 
-  // ✅ 確認並送出流程
   const handleConfirm = async () => {
     setActiveButton('confirm');
     if (!audioBlob) return;
@@ -158,7 +156,6 @@ function AudioPostScreen({ onClose = () => {}, onUploadSuccess = () => {} }) {
     setUploadMessage('上傳音訊中...');
     
     try {
-      // --- STEP 1: 上傳音檔 ---
       console.log("🚀 [Step 1] 開始上傳音檔...");
       const formData = new FormData();
       formData.append('file', audioBlob, 'recording.webm');
@@ -178,10 +175,8 @@ function AudioPostScreen({ onClose = () => {}, onUploadSuccess = () => {} }) {
 
       console.log("✅ [Step 1] 上傳成功，Record ID:", recordId);
 
-      // --- STEP 2: 輪詢直到取得 transcript ---
       setUploadMessage('正在轉錄文字 (請稍候)...');
       
-      // 呼叫輪詢函式
       const transcriptData = await pollForTranscript(recordId);
 
       console.log("✅ [Step 2] 轉錄完成，內容:", transcriptData);
@@ -192,7 +187,6 @@ function AudioPostScreen({ onClose = () => {}, onUploadSuccess = () => {} }) {
       setRecordingState('success');
       setUploadMessage('轉錄成功！');
 
-      // --- STEP 3: 跳轉 ---
       console.log("🚀 [Step 3] 跳轉至 TextPostScreen，攜帶文字:", finalTranscript);
       
       cleanupResources(); 
@@ -221,7 +215,9 @@ function AudioPostScreen({ onClose = () => {}, onUploadSuccess = () => {} }) {
   const handleCancel = () => {
     setActiveButton('cancel');
     cleanupResources();
-    onClose();
+    // 若是全頁面模式，跳轉回上一頁
+    navigate('/create-post');
+    if (onClose) onClose();
   };
 
   const handleReRecord = () => {
@@ -379,6 +375,16 @@ function AudioPostScreen({ onClose = () => {}, onUploadSuccess = () => {} }) {
         handleCancel();
       }
     }}>
+      
+      {/* ✅ 新增：左上角返回鍵 (樣式與 CreatePostScreen 一致) */}
+      <button 
+        className="back-button" 
+        onClick={() => navigate('/create-post')} 
+        aria-label="返回上一頁"
+      >
+        ←
+      </button>
+
       <div className="voice-overlay-content">
         <div className="voice-overlay-header">
           語音貼文
