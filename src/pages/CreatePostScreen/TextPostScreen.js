@@ -127,7 +127,7 @@ const TextPostScreen = ({ user }) => {
       if (result.success) {
         setStatusMessage('Success!');
         setTimeout(() => {
-          navigate('/main');
+          navigate('/main', {state: { category: finalCategory }});
         }, 600);
       } else {
         setStatusMessage(`Failed: ${result.message || 'Unknown error'}`);

@@ -194,7 +194,7 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: var(--spacing-md) var(--spacing-lg);
+  padding: 15px 12px 0 12px;
   background: #2D3656;
   backdrop-filter: none;
   border-top: none;

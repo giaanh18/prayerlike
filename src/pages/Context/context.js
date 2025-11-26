@@ -1,6 +1,6 @@
 // ./src/pages/Context/Context.js
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation} from 'react-router-dom';
 import ApiService from '../../services/api';
 import TRANSCRIPT_API from '../../services/TranscriptAPI';
 
@@ -14,7 +14,6 @@ import CircleButton from '../../components/CircleButton/CircleButton';
 import CategoryLabel from '../../components/CategoryLabel/CategoryLabel';
 import TribeDetail from './steps/TribeDetail';
 import NoTribeDetail from './steps/NoTribeDetail';
-
 
 // 導入圖片資源
 import family_and_personal from '../../assets/icons/family_and_personal.png';
@@ -68,11 +67,11 @@ const PrivacyDropdown = ({ onChange, initialValue = 'public' }) => {
   const [isOpen, setIsOpen] = useState(false);
 
   const options = [
-    { id: 'all', label: '全部', icon: '🔍' },
-    { id: 'public', label: '公開', icon: '🌐' },
-    { id: 'family', label: '家族', icon: '👪' },
-    { id: 'tribe', label: '支派', icon: '👥' },
-    { id: 'private', label: '自己', icon: '🔒' }
+    { id: 'all', label: '全部', icon: '' },
+    { id: 'public', label: '公開', icon: '' },
+    { id: 'family', label: '家族', icon: '' },
+    { id: 'tribe', label: '支派', icon: '' },
+    { id: 'private', label: '自己', icon: '' }
   ];
 
   const selectedOption = options.find(option => option.id === selected);
@@ -386,7 +385,6 @@ const Comment = ({ comment, onReply, onEdit, onDelete, onLike, currentUserId, po
   );
 };
 
-// ... (Post Component - 省略以節省篇幅，請保留原程式碼) ...
 const Post = ({ post, allPosts, onLike, onComment }) => {
   const [isLiking, setIsLiking] = useState(false);
   const [isCommenting, setIsCommenting] = useState(false);
@@ -397,14 +395,11 @@ const Post = ({ post, allPosts, onLike, onComment }) => {
   const [hasMoreComments, setHasMoreComments] = useState(false);
   const [loadingComments, setLoadingComments] = useState(false);
 
-  // ========== 📝 使用 useRef 防止快速連點 ==========
   const isLikingRef = useRef(false);
 
-  // 管理按讚狀態與數量
   const [likeCount, setLikeCount] = useState(post.likes || 0);
   const [hasLiked, setHasLiked] = useState(post.isLiked || false);
 
-  // 當 props 的資料更新時（例如重新整理），同步更新本地 State
   useEffect(() => {
     if (post.likes !== undefined) setLikeCount(post.likes);
     if (post.isLiked !== undefined) setHasLiked(post.isLiked);
@@ -417,7 +412,6 @@ const Post = ({ post, allPosts, onLike, onComment }) => {
 
   const currentUserId = ApiService.getCurrentUserId();
 
-  // ========== 📝 載入評論邏輯 ==========
   const loadComments = (page = 1, append = false) => {
     if (loadingComments) return;
     setLoadingComments(true);
@@ -552,7 +546,6 @@ const Post = ({ post, allPosts, onLike, onComment }) => {
     </div>
   );
 
-  // ========== 📝 修改 handleLike 邏輯：本地計算 (Optimistic UI) ==========
   const handleLike = async () => {
     if (isLikingRef.current) return;
     isLikingRef.current = true;
@@ -641,10 +634,10 @@ const Post = ({ post, allPosts, onLike, onComment }) => {
         </div>
         
         <div className="post-privacy-badge">
-          {(!post.privacy || post.privacy === 'public') && <span>🌐 Public</span>}
-          {post.privacy === 'family' && <span>👪 Family</span>}
-          {post.privacy === 'tribe' && <span>👥 Tribe</span>}
-          {(post.privacy === 'individual' || post.privacy === 'private') && <span>🔒 Individual</span>}
+          {(!post.privacy || post.privacy === 'public') && <span>Public</span>}
+          {post.privacy === 'family' && <span>Family</span>}
+          {post.privacy === 'tribe' && <span>Tribe</span>}
+          {(post.privacy === 'individual' || post.privacy === 'private') && <span>Individual</span>}
         </div>
         
       </div>
@@ -788,8 +781,10 @@ const Post = ({ post, allPosts, onLike, onComment }) => {
 // ==================== 主應用元件 ====================
 const MainApp = ({ user, onLogout }) => {
   const navigate = useNavigate();
+  const location = useLocation();
+
+  const initialCategory = location.state?.category || 'Personal & Family';
   
-  // ========== 1️⃣ State 定義 ==========
   const [activeTab, setActiveTab] = useState('Home');
   const [showTribeDetail, setShowTribeDetail] = useState(false);
   const [posts, setPosts] = useState([]);
@@ -799,10 +794,11 @@ const MainApp = ({ user, onLogout }) => {
   const [notificationCount] = useState(0);
   const [coinAmount] = useState(200000);
   
-  // ✅ 新增：用來追蹤目前選取的分類 (API 篩選用)
-  const [selectedCategory, setSelectedCategory] = useState(null);
+  const [selectedCategory, setSelectedCategory] = useState(initialCategory);
+  
+  // 新增：檢視模式狀態 ('original' 或 'witness')
+  const [viewMode, setViewMode] = useState('original');
 
-  // ========== 2️⃣ 支派資訊處理 ==========
   const userTribeId = user?.tribe;
   let tribeNameProp;
   let tribeLogoProp;
@@ -816,7 +812,6 @@ const MainApp = ({ user, onLogout }) => {
     tribeLogoProp = tribeData?.icon || null;
   }
 
-  // ========== 3️⃣ 所有事件處理函數 ==========
   const handleTribeLogoClick = () => {
     console.log('🏛️ 支派 Logo 被點擊');
     setShowTribeDetail(true);
@@ -892,10 +887,10 @@ const MainApp = ({ user, onLogout }) => {
 
   const handleRefreshPosts = async () => {
     setLoading(true);
-    setSelectedCategory(null);
+    // 注意：這裡不再將 selectedCategory 設為 null，以保持分類選取狀態
     try {
       ApiService.clearCache();
-      await fetchPosts(null); 
+      await fetchPosts(selectedCategory); // 依據當前選取的分類重新載入
     } catch (error) {
       console.error('💥 重新載入貼文錯誤:', error);
     } finally {
@@ -905,9 +900,14 @@ const MainApp = ({ user, onLogout }) => {
 
   const handleCategoryClick = (category) => {
     console.log(`📂 切換分類至: ${category}`);
-    const newCategory = selectedCategory === category ? null : category;
-    setSelectedCategory(newCategory);
-    fetchPosts(newCategory);
+    
+    // 修改：如果點擊已選取的分類，不做任何改變 (防止取消選取)
+    if (selectedCategory === category) {
+        return;
+    }
+    
+    setSelectedCategory(category);
+    fetchPosts(category);
   };
 
   const getDemoPosts = useCallback(() => [], [user?.name]);
@@ -971,7 +971,7 @@ const MainApp = ({ user, onLogout }) => {
 
   useEffect(() => {
     console.log('🏠 MainApp 載入，使用者:', user);
-    fetchPosts();
+    fetchPosts(initialCategory);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); 
 
@@ -1027,7 +1027,6 @@ const MainApp = ({ user, onLogout }) => {
 
         <hr className="divider-line" />
 
-        {/* ========== ✅ 關鍵修正：將 onClick 移至父容器 category-item 上 ========== */}
         <div className="category-buttons">
            <div 
              className="category-item" 
@@ -1036,9 +1035,8 @@ const MainApp = ({ user, onLogout }) => {
             <RectButton
               image={family_and_personal}
               imageAlt="Personal & Family"
-              // 移除 onClick
               size="medium"
-              isActive={selectedCategory === 'Personal & Family'}
+              active={selectedCategory === 'Personal & Family'}
             />
             <CategoryLabel 
               text="Personal & Family" 
@@ -1046,52 +1044,49 @@ const MainApp = ({ user, onLogout }) => {
             />
           </div>
           <div 
-             className="category-item"
-             onClick={() => handleCategoryClick('Church & Ministry')}
-           >
-             <RectButton 
-               image={church} 
-               imageAlt="Church & Ministry" 
-               // 移除 onClick
-               size="medium" 
-               isActive={selectedCategory === 'Church & Ministry'}
-             />
-             <CategoryLabel 
-               text="Church & Ministry" 
-               isActive={selectedCategory === 'Church & Ministry'}
-             />
+              className="category-item"
+              onClick={() => handleCategoryClick('Church & Ministry')}
+            >
+              <RectButton 
+                image={church} 
+                imageAlt="Church & Ministry" 
+                size="medium" 
+                active={selectedCategory === 'Church & Ministry'}
+              />
+              <CategoryLabel 
+                text="Church & Ministry" 
+                isActive={selectedCategory === 'Church & Ministry'}
+              />
           </div>
           <div 
-             className="category-item"
-             onClick={() => handleCategoryClick('Kingdom Prayer')}
-           >
-             <RectButton 
-               image={kingdom} 
-               imageAlt="Kingdom Prayer" 
-               // 移除 onClick
-               size="medium" 
-               isActive={selectedCategory === 'Kingdom Prayer'}
-             />
-             <CategoryLabel 
-               text="Kingdom Prayer" 
-               isActive={selectedCategory === 'Kingdom Prayer'}
-             />
+              className="category-item"
+              onClick={() => handleCategoryClick('Kingdom Prayer')}
+            >
+              <RectButton 
+                image={kingdom} 
+                imageAlt="Kingdom Prayer" 
+                size="medium" 
+                active={selectedCategory === 'Kingdom Prayer'}
+              />
+              <CategoryLabel 
+                text="Kingdom Prayer" 
+                isActive={selectedCategory === 'Kingdom Prayer'}
+              />
           </div>
           <div 
-             className="category-item"
-             onClick={() => handleCategoryClick('Tribe Prayer')}
-           >
-             <RectButton 
-               image={tribe} 
-               imageAlt="Tribes Prayer" 
-               // 移除 onClick
-               size="medium" 
-               isActive={selectedCategory === 'Tribe Prayer'}
-             />
-             <CategoryLabel 
-               text="Tribe Prayer" 
-               isActive={selectedCategory === 'Tribe Prayer'}
-             />
+              className="category-item"
+              onClick={() => handleCategoryClick('Tribe Prayer')}
+            >
+              <RectButton 
+                image={tribe} 
+                imageAlt="Tribes Prayer" 
+                size="medium" 
+                active={selectedCategory === 'Tribe Prayer'}
+              />
+              <CategoryLabel 
+                text="Tribe Prayer" 
+                isActive={selectedCategory === 'Tribe Prayer'}
+              />
           </div>
         </div>
         
@@ -1099,16 +1094,34 @@ const MainApp = ({ user, onLogout }) => {
         
         <div className="filter-bar">
           <div className="filter-controls">
-            <RectButton icon="" onClick={handleRefreshPosts} disabled={loading} size="small" variant="secondary">
+            <RectButton 
+              icon="" 
+              onClick={() => {
+                setViewMode('original');
+                handleRefreshPosts();
+              }} 
+              disabled={loading} 
+              size="small" 
+              variant="secondary"
+              active={viewMode === 'original'} // 加入 active 判斷
+            >
               {loading ? '載入中...' : 'Original Post'}
             </RectButton>
-            <RectButton icon="" onClick={() => console.log('Show Comments')} size="small" variant="secondary">
+            <RectButton 
+              icon="" 
+              onClick={() => {
+                setViewMode('witness');
+                console.log('Show Comments');
+              }} 
+              size="small" 
+              variant="secondary"
+              active={viewMode === 'witness'} // 加入 active 判斷
+            >
               Witness Wall
             </RectButton>
           </div>
         </div>
 
-        {/* ========== 確保容器高度穩定，防止跑版 ========== */}
         <div className="main-content" style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: '50vh', alignItems: 'stretch' }}>
           <div className="posts-container" style={{ flex: 1, width: '100%' }}>
             {loading && (
@@ -1144,43 +1157,69 @@ const MainApp = ({ user, onLogout }) => {
           </div>
         </div>
 
+        {/* ✅ BOTTOM NAVIGATION - NÚT 2 LÀ PRAYER HUB */}
         <div className="bottom-navigation">
+           {/* Nút 1: Home */}
            <CircleButton 
              provider="Home" 
              iconSrc={Home} 
-             onClick={() => handleTabChange('Home')} 
+             onClick={() => {
+               console.log('🏠 Home clicked');
+               handleTabChange('Home');
+             }}
              isActive={activeTab === 'Home'}
              size="medium" 
              ariaLabel="首頁" 
            />
+           
+           {/* Nút 2: Prayer Hub ✅ */}
            <CircleButton 
-             provider="Search" 
+             provider="PrayerHub" 
              iconSrc={Search} 
-             onClick={() => handleTabChange('Search')} 
-             isActive={activeTab === 'Search'}
+             onClick={() => {
+               console.log('🙏 Prayer Hub clicked');
+               setActiveTab('PrayerHub');
+               navigate('/prayer-hub');
+             }}
+             isActive={activeTab === 'PrayerHub'}
              size="medium" 
-             ariaLabel="搜尋" 
+             ariaLabel="Prayer Hub" 
            />
+           
+           {/* Nút 3: Add */}
            <CircleButton 
              provider="Add" 
              iconSrc={Add} 
-             onClick={handleCreatePost} 
+             onClick={() => {
+               console.log('➕ Add clicked');
+               handleCreatePost();
+             }}
              isActive={activeTab === 'Add'}
              size="medium" 
              ariaLabel="新增貼文" 
            />
+           
+           {/* Nút 4: Search (đã dời từ nút 2) */}
            <CircleButton 
-             provider="Profile" 
+             provider="Search" 
              iconSrc={Profile} 
-             onClick={() => handleTabChange('Profile')} 
-             isActive={activeTab === 'Profile'}
+             onClick={() => {
+               console.log('🔍 Search clicked');
+               handleTabChange('Search');
+             }}
+             isActive={activeTab === 'Search'}
              size="medium" 
-             ariaLabel="個人資料" 
+             ariaLabel="搜尋" 
            />
+           
+           {/* Nút 5: Nova */}
            <CircleButton 
              provider="Nova" 
              iconSrc={Nova} 
-             onClick={handleLogout} 
+             onClick={() => {
+               console.log('🚪 Logout clicked');
+               handleLogout();
+             }}
              isActive={activeTab === 'Nova'}
              size="medium" 
              ariaLabel="nova小天使" 

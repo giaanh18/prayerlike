@@ -259,7 +259,9 @@
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
+/* ✅ 修改：開始錄音、停止錄音、確認按鈕都使用相同的黃色系 */
 .btn-start-recording,
+.btn-stop-recording,
 .btn-confirm {
   background: #FFDE97 !important;
   color: #2d3561;
@@ -268,20 +270,20 @@
 }
 
 .btn-start-recording:hover:not(:disabled),
+.btn-stop-recording:hover:not(:disabled),
 .btn-confirm:hover:not(:disabled) {
   background: #F5D085 !important;
   transform: translateY(-2px);
   box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
 }
 
-.btn-stop-recording,
+/* ✅ 取消按鈕保持淺色系 */
 .btn-cancel {
   background: #FFF9EC !important;
   color: #2d3561;
   border: 1px solid rgba(45, 53, 97, 0.1);
 }
 
-.btn-stop-recording:hover:not(:disabled),
 .btn-cancel:hover:not(:disabled) {
   background: #F2EBD9 !important; 
   transform: translateY(-2px);
