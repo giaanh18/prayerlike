@@ -1,7 +1,3 @@
-// src/services/api.js
-
-// ==================== 🔧 API BASE URLS ====================
-
 // ✅ 設定新的主要 API 網域
 const API_BASE_URL = 'https://pray-api.yalinelena.church';
 
@@ -227,6 +223,7 @@ const ApiService = {
     try {
       const { data } = await ApiService.makeRequest(`${AUTH_API_URL}/providers`, {
         method: 'GET',
+        credentials: 'include',
         headers: { 'accept': 'application/json' },
         timeout: 10000
       });
@@ -321,6 +318,7 @@ const ApiService = {
 
       const { data } = await ApiService.makeRequest(url, {
         method: 'GET',
+        credentials: 'include', // ✅ THÊM credentials
         maxRetries: 2
       });
 
@@ -351,7 +349,7 @@ const ApiService = {
    * Method: POST /api/posts
    * Body: userid, content, category (enum), uuid (optional)
    */
-createPost: async (userId, postDataOrContent, privacy = 'Personal & Family') => {
+  createPost: async (userId, postDataOrContent, privacy = 'Personal & Family') => {
     try {
       let postData;
       
@@ -380,6 +378,7 @@ createPost: async (userId, postDataOrContent, privacy = 'Personal & Family') => 
 
       const { data } = await ApiService.makeRequest(`${POSTS_API_URL}/posts`, {
         method: 'POST',
+        credentials: 'include', // ✅ THÊM credentials
         body: JSON.stringify(postData)
       });
 
@@ -417,6 +416,7 @@ createPost: async (userId, postDataOrContent, privacy = 'Personal & Family') => 
 
       const { data } = await ApiService.makeRequest(`${POSTS_API_URL}/comment`, {
         method: 'POST',
+        credentials: 'include',
         body: JSON.stringify({
           userid,
           content,
@@ -452,6 +452,7 @@ createPost: async (userId, postDataOrContent, privacy = 'Personal & Family') => 
         `${POSTS_API_URL}/posts/${docid}/amen`,
         {
           method: 'POST',
+          credentials: 'include',
           body: JSON.stringify({ userid: userId })
         }
       );
@@ -482,6 +483,7 @@ createPost: async (userId, postDataOrContent, privacy = 'Personal & Family') => 
 
       const { data } = await ApiService.makeRequest(`${POSTS_API_URL}/witness`, {
         method: 'POST',
+        credentials: 'include', // ✅ THÊM DÒNG NÀY - FIX LỖI 401
         body: JSON.stringify({
           userid: userId,
           content: content,
@@ -512,7 +514,10 @@ createPost: async (userId, postDataOrContent, privacy = 'Personal & Family') => 
       const params = new URLSearchParams({ page, limit });
       const url = `${POSTS_API_URL}/witness-list?${params.toString()}`;
       
-      const { data } = await ApiService.makeRequest(url, { method: 'GET' });
+      const { data } = await ApiService.makeRequest(url, { 
+        method: 'GET',
+        credentials: 'include' // ✅ THÊM DÒNG NÀY
+      });
 
       if (data && data.status === 'success' && data.data) {
         return {
@@ -620,7 +625,7 @@ export {
 
 // ==================== 📊 LOGGING ====================
 
-console.log('🎉 API Service đã load! (Updated for New Specs)');
+console.log('🎉 API Service đã load! (Updated for New Specs + Fixed 401)');
 console.log('📦 API Base URL:', API_BASE_URL);
 console.log('📦 Available APIs:');
 console.log('');
@@ -636,8 +641,8 @@ console.log('   • createPost(userId, content, category)');
 console.log('   • addComment({ userid, content, docid })');
 console.log('   • getComments(postDocid) [Simulated via /page]');
 console.log('   • likePost(docid, userId) [Toggle Amen]');
-console.log('   • createWitness(userId, content, parentDocid)');
-console.log('   • getWitnessList(page, limit)');
+console.log('   • createWitness(userId, content, parentDocid) ✅ FIXED 401');
+console.log('   • getWitnessList(page, limit) ✅ FIXED 401');
 console.log('');
 console.log('🔧 Utilities:');
 console.log('   • getCurrentUser()');

@@ -1,5 +1,5 @@
 // src/pages/Login/login.js
-import React, { useState, useEffect, useCallback } from 'react'; // ✅ 新增 useCallback, useEffect
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import AuthAPI from '../../services/authApi';
 import useEmailVerification from '../../hooks/useEmailVerification';
