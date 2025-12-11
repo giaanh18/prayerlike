@@ -1,6 +1,8 @@
-/* ./src/components/CircleButton/CircleButton.css */
+/* src/components/CircleButton/CircleButton.css */
+
+/* ==================== 基礎按鈕樣式 ==================== */
 .circle-button {
-  width: 50px; 
+  width: 50px;
   height: 50px;
   border-radius: 50%;
   border: none;
@@ -10,8 +12,10 @@
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-  margin: 0 4px;
+  transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  margin: 0;
+  padding: 0;
+  flex-shrink: 0;
 }
 
 .circle-button:hover {
@@ -35,130 +39,87 @@
   object-fit: contain;
 }
 
-/* 尺寸變化 */
-.circle-button-small {
-  width: 40px;
-  height: 40px; 
-}
+/* 尺寸變體 */
+.circle-button-small { width: 40px; height: 40px; }
+.circle-button-medium { width: 50px; height: 50px; }
+.circle-button-large { width: 62px; height: 62px; }
 
-.circle-button-small .circle-button-icon {
-  width: 18px;
-  height: 18px;
-}
+/* =================================================================
+   🚀 底部導航欄專用樣式 (強制覆蓋，確保所有頁面一致)
+   ================================================================= */
 
-.circle-button-medium {
-  width: 50px; 
-  height: 50px;
-}
-
-.circle-button-medium .circle-button-icon {
-  width: 22px; 
-  height: 22px; 
-}
-
-.circle-button-large {
-  width: 62px;
-  height: 62px; 
-}
-
-.circle-button-large .circle-button-icon {
-  width: 26px; 
-  height: 26px;
-}
-
-/* ==================== 底部導覽專用樣式 ==================== */
-/* 底部導覽中的 CircleButton 樣式 */
+/* 1. 一般按鈕 (Home, Search, Profile, Nova) */
 .bottom-navigation .circle-button {
-  background-color: rgba(255, 255, 255, 0.9);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-  margin: 0 4px; 
+  width: 50px !important;
+  height: 50px !important;
+  background-color: rgba(255, 255, 255, 0.95) !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15) !important;
+  margin: 0 4px !important;
+  border-radius: 50% !important;
+  border: none !important;
 }
 
 .bottom-navigation .circle-button:hover {
-  background-color: #ffffff;
-  transform: translateY(-3px);
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+  background-color: #ffffff !important;
+  transform: translateY(-3px) !important;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2) !important;
 }
 
-.bottom-navigation .circle-button:active {
-  transform: translateY(-1px);
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.15);
+/* 2. 特殊按鈕："新增" (Add) - 根據 Context 原設計，這顆要是灰色且較大 */
+.bottom-navigation .circle-button[aria-label*="Add"],
+.bottom-navigation .circle-button[aria-label*="新增"] {
+  width: 58px !important;
+  height: 58px !important;
+  background-color: #D9D9D9 !important; /* 灰色背景 */
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2) !important;
 }
 
+.bottom-navigation .circle-button[aria-label*="Add"]:hover {
+  background-color: #C0C0C0 !important; /* Hover 時深灰 */
+  transform: translateY(-4px) !important;
+}
+
+/* Add 按鈕的 Icon 顏色處理 (深色圖標) */
+.bottom-navigation .circle-button[aria-label*="Add"] .circle-button-icon {
+  width: 24px !important;
+  height: 24px !important;
+  filter: brightness(0) saturate(100%) opacity(0.7) !important;
+}
+
+/* 3. 激活狀態 (Active Tab) - 黃色 */
 .bottom-navigation .circle-button.active-tab {
   background-color: #FFDE97 !important;
-  transform: scale(1.15);
-  z-index: 10;
+  transform: scale(1.15) !important;
+  z-index: 10 !important;
+  box-shadow: 0 0 15px rgba(255, 222, 151, 0.6) !important;
 }
 
-
-/* 新增按鈕特殊樣式 (未激活時為灰色) */
-.bottom-navigation .circle-button[aria-label*="Add"],
-.bottom-navigation .circle-button-large {
-  background: #D9D9D9; /* ✅ ĐỔI SANG XÁM */
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
-  width: 58px;
-  height: 58px;
+/* Add 按鈕激活時 - 保持大尺寸並變黃 */
+.bottom-navigation .circle-button[aria-label*="Add"].active-tab {
+  background-color: #FFDE97 !important;
+  transform: scale(1.1) translateY(-4px) !important;
 }
 
-.bottom-navigation .circle-button[aria-label*="Add"]:hover,
-.bottom-navigation .circle-button-large:hover {
-  background: #C0C0C0; /* ✅ XÁM ĐẬM KHI HOVER */
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
-  transform: translateY(-4px);
-}
-
-.bottom-navigation .circle-button[aria-label*="Add"] .circle-button-icon,
-.bottom-navigation .circle-button-large .circle-button-icon {
-  filter: brightness(0) saturate(0) brightness(0.3); /* ✅ ICON MÀU ĐEN */
-}
-
-
-/* 響應式調整 */
-@media (max-width: 768px) {
-  .bottom-navigation .circle-button {
-    width: 45px;
-    height: 45px;
-    margin: 0 1px;
-  }
-  
-  .bottom-navigation .circle-button-icon {
-    width: 20px;
-    height: 20px;
-  }
-  
-  .bottom-navigation .circle-button[aria-label*="Add"],
-  .bottom-navigation .circle-button-large {
-    width: 52px;
-    height: 52px;
-  }
-  
-  .bottom-navigation .circle-button-large .circle-button-icon {
-    width: 24px;
-    height: 24px;
-  }
-}
-
+/* =================================================================
+   📱 手機響應式調整 (Mobile Responsive)
+   ================================================================= */
 @media (max-width: 480px) {
+  /* 一般按鈕縮小 */
   .bottom-navigation .circle-button {
-    width: 42px;
-    height: 42px;
-    margin: 0;
+    width: 42px !important;
+    height: 42px !important;
+    margin: 0 2px !important;
   }
   
-  .bottom-navigation .circle-button-icon {
-    width: 18px;
-    height: 18px;
+  .bottom-navigation .circle-button .circle-button-icon {
+    width: 20px !important;
+    height: 20px !important;
   }
-  
+
+  /* Add 按鈕縮小，但仍比其他大 */
   .bottom-navigation .circle-button[aria-label*="Add"],
-  .bottom-navigation .circle-button-large {
-    width: 48px;
-    height: 48px;
-  }
-  
-  .bottom-navigation .circle-button-large .circle-button-icon {
-    width: 22px;
-    height: 22px;
+  .bottom-navigation .circle-button[aria-label*="新增"] {
+    width: 50px !important;
+    height: 50px !important;
   }
 }

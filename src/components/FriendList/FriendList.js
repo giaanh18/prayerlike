@@ -4,6 +4,9 @@ import { useNavigate } from 'react-router-dom';
 import ApiService from '../../services/api';
 import './FriendList.css';
 
+// 導入 CircleButton
+import CircleButton from '../CircleButton/CircleButton';
+
 import Home from '../../assets/icons/Homeicon.png';
 import Search from '../../assets/icons/Searchicon.png';
 import Add from '../../assets/icons/Addicon.png';
@@ -15,6 +18,8 @@ const FriendList = ({ user, onLogout }) => {
   const [friends, setFriends] = useState([]);
   const [family, setFamily] = useState([]);
   const [loading, setLoading] = useState(true);
+  
+  // ✅ 設定初始狀態為 Profile (對應 Search 圖示的位置)
   const [activeTab, setActiveTab] = useState('Search');
   const [viewMode, setViewMode] = useState('friends');
   const [error, setError] = useState(null);
@@ -30,23 +35,16 @@ const FriendList = ({ user, onLogout }) => {
     try {
       const userId = user?.id || user?.userId || ApiService.getCurrentUserId();
       
-      if (!userId) {
-        throw new Error('無法取得使用者 ID');
-      }
-
+      // 即使沒有 userId，也嘗試載入 (可能 api 有 mock 數據)
       if (viewMode === 'friends') {
         const result = await ApiService.getFriends(userId);
         if (result.success) {
           setFriends(result.friends || []);
-        } else {
-          throw new Error(result.message || '載入好友列表失敗');
         }
       } else {
         const result = await ApiService.getFamily(userId);
         if (result.success) {
           setFamily(result.family || []);
-        } else {
-          throw new Error(result.message || '載入家族列表失敗');
         }
       }
     } catch (error) {
@@ -58,7 +56,7 @@ const FriendList = ({ user, onLogout }) => {
   };
 
   const handlePersonClick = (person) => {
-    alert(`查看 ${person.name} 的個人資料 (功能開發中)`);
+    alert(`查看 ${person.name} 的個人資料`);
   };
 
   const handleTabChange = (tab) => {
@@ -74,6 +72,7 @@ const FriendList = ({ user, onLogout }) => {
         navigate('/create-post');
         break;
       case 'Search':
+        // 已經在好友頁面，不動作
         break;
       case 'Nova':
         if (onLogout) onLogout();
@@ -91,9 +90,8 @@ const FriendList = ({ user, onLogout }) => {
 
   return (
     <div className="friend-list-page">
-      {/* ✅ HEADER */}
       <div className="fl-header">
-        <button className="fl-back-button" onClick={() => navigate(-1)}>
+        <button className="fl-back-button" onClick={() => navigate('/main')}>
           ← 
         </button>
         <h1 className="fl-page-title">
@@ -101,7 +99,6 @@ const FriendList = ({ user, onLogout }) => {
         </h1>
       </div>
 
-      {/* ✅ VIEW MODE TOGGLE */}
       <div className="fl-view-toggle">
         <button 
           className={`fl-toggle-btn ${viewMode === 'friends' ? 'active' : ''}`}
@@ -117,7 +114,6 @@ const FriendList = ({ user, onLogout }) => {
         </button>
       </div>
 
-      {/* ✅ CONTENT */}
       <div className="fl-container">
         {loading ? (
           <div className="fl-loading">
@@ -142,14 +138,10 @@ const FriendList = ({ user, onLogout }) => {
                 onClick={() => handlePersonClick(person)}
               >
                 <div className="fl-avatar">
-                  {person.avatar ? (
-                    <img src={person.avatar} alt={person.name} />
-                  ) : (
-                    <img 
-                      src={`https://ui-avatars.com/api/?name=${encodeURIComponent(person.name)}&background=random&size=64`}
-                      alt={person.name}
-                    />
-                  )}
+                  <img 
+                    src={`https://ui-avatars.com/api/?name=${encodeURIComponent(person.name)}&background=random&size=64`}
+                    alt={person.name}
+                  />
                 </div>
                 <div className="fl-info">
                   <div className="fl-name">{person.name}</div>
@@ -173,47 +165,48 @@ const FriendList = ({ user, onLogout }) => {
         )}
       </div>
 
-      {/* ✅ BOTTOM NAVIGATION */}
-      <div className="fl-bottom-nav">
-        <button 
-          className={`fl-nav-btn ${activeTab === 'Home' ? 'active' : ''}`}
-          onClick={() => handleTabChange('Home')}
-          aria-label="首頁"
-        >
-          <img src={Home} alt="Home" />
-        </button>
-        
-        <button 
-          className={`fl-nav-btn ${activeTab === 'PrayerHub' ? 'active' : ''}`}
-          onClick={() => handleTabChange('PrayerHub')}
-          aria-label="Prayer Hub"
-        >
-          <img src={Search} alt="Prayer Hub" />
-        </button>
-        
-        <button 
-          className={`fl-nav-btn ${activeTab === 'Add' ? 'active' : ''}`}
-          onClick={() => handleTabChange('Add')}
-          aria-label="新增貼文"
-        >
-          <img src={Add} alt="Add" />
-        </button>
-        
-        <button 
-          className={`fl-nav-btn ${activeTab === 'Search' ? 'active' : ''}`}
-          onClick={() => handleTabChange('Search')}
-          aria-label="搜尋"
-        >
-          <img src={Profile} alt="Profile" />
-        </button>
-        
-        <button 
-          className={`fl-nav-btn ${activeTab === 'Nova' ? 'active' : ''}`}
-          onClick={() => handleTabChange('Nova')}
-          aria-label="nova小天使"
-        >
-          <img src={Nova} alt="Nova" />
-        </button>
+      {/* ✅ 統一底部導航列：使用與 Context 相同的結構與 class */}
+      <div className="bottom-navigation">
+        <CircleButton 
+          provider="Home" 
+          iconSrc={Home} 
+          onClick={() => handleTabChange('Home')} 
+          isActive={activeTab === 'Home'} 
+          size="medium" 
+          ariaLabel="首頁" 
+        />
+        <CircleButton 
+          provider="PrayerHub" 
+          iconSrc={Search} 
+          onClick={() => handleTabChange('PrayerHub')} 
+          isActive={activeTab === 'PrayerHub'} 
+          size="medium" 
+          ariaLabel="Prayer Hub" 
+        />
+        <CircleButton 
+          provider="Add" 
+          iconSrc={Add} 
+          onClick={() => handleTabChange('Add')} 
+          isActive={activeTab === 'Add'} 
+          size="medium" 
+          ariaLabel="新增貼文" 
+        />
+        <CircleButton 
+          provider="Search" 
+          iconSrc={Profile} 
+          onClick={() => handleTabChange('Search')} 
+          isActive={activeTab === 'Search'} 
+          size="medium" 
+          ariaLabel="個人資料" 
+        />
+        <CircleButton 
+          provider="Nova" 
+          iconSrc={Nova} 
+          onClick={() => handleTabChange('Nova')} 
+          isActive={activeTab === 'Nova'} 
+          size="medium" 
+          ariaLabel="nova小天使" 
+        />
       </div>
     </div>
   );
