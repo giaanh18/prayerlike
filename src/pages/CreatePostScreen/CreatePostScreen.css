@@ -145,11 +145,6 @@
     min-height: 54px;
     border-radius: 8px;
   }
-
-  .bottom-navigation {
-    height: 75px !important;
-    padding: 0 5px 15px 5px !important;
-  }
 }
 
 @media (min-width: 481px) and (max-width: 768px) {
@@ -173,25 +168,30 @@
 }
 
 
-/* ==================== 底部導航列 - 統一標準化 ==================== */
+/* ═══════════════════════════════════════════════════════════
+   📱 底部導覽列 (修正：深藍色、貼底、非懸浮)
+   ═══════════════════════════════════════════════════════════ */
 .bottom-navigation {
-  position: fixed !important;
-  bottom: 0 !important;
-  left: 0 !important;
-  right: 0 !important;
-  width: 100% !important;
-  height: 80px !important;
+  position: fixed;
+  bottom: 0; /* 貼底 */
+  left: 0;
+  right: 0;
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+
+  /* ✅ 深藍色背景 */
+  background: rgba(45, 54, 86, 0.95);
+  backdrop-filter: blur(10px);
+
+  /* ✅ 邊框與陰影 */
+  border-top: 1px solid rgba(255, 255, 255, 0.15);
+  box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.25);
+
+  z-index: 1000;
+  height: 80px;
+  padding: 15px 20px;
   
-  background: #2D3656 !important;
-  border-top: 1px solid rgba(255, 255, 255, 0.15) !important;
-  
-  display: flex !important;
-  justify-content: space-evenly !important; /* 置中關鍵 */
-  align-items: center !important;
-  
-  padding: 0 10px 20px 10px !important;
-  box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.3) !important;
-  z-index: 9999 !important;
-  box-sizing: border-box !important;
-  pointer-events: auto !important;
+  /* ✅ 確保可以點擊 (移除之前的 pointer-events: none) */
+  pointer-events: auto;
 }

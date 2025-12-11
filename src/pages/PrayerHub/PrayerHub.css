@@ -848,23 +848,17 @@
 .bottom-navigation {
   position: fixed !important;
   bottom: 0 !important;
-  left: 0 !important;
-  right: 0 !important;
-  width: 100% !important;
+  left: 0;
+  right: 0;
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  background: #2D3656;
+  border-top: 1px solid rgba(255, 255, 255, 0.15);
   height: 80px !important;
-  
-  background: #2D3656 !important;
-  border-top: 1px solid rgba(255, 255, 255, 0.15) !important;
-  
-  display: flex !important;
-  justify-content: space-evenly !important; /* 置中關鍵 */
-  align-items: center !important;
-  
-  padding: 0 10px 20px 10px !important;
-  box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.3) !important;
+  padding: 0 20px 20px 20px !important;
+  box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.3);
   z-index: 9999 !important;
-  box-sizing: border-box !important;
-  pointer-events: auto !important;
 }
 
 /* ==================== CategoryLabel Styles ==================== */
@@ -1167,8 +1161,8 @@
   }
 
   .bottom-navigation {
-    height: 75px !important;
-    padding: 0 5px 15px 5px !important;
+    height: 70px;
+    padding: 10px 12px;
   }
 
   .witness-wall {
