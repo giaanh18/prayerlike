@@ -1,0 +1,260 @@
+.add-friend-page {
+  min-height: 100vh;
+  background: #2D3656;
+  color: white;
+  padding-bottom: 80px;
+}
+
+/* Header - Compact, không có background riêng */
+.af-header {
+  display: flex;
+  align-items: center;
+  padding: 20px 20px 10px 20px;
+  background: transparent;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.af-back-button {
+  background: none;
+  border: none;
+  color: white;
+  font-size: 28px;
+  cursor: pointer;
+  margin-right: 15px;
+  transition: transform 0.2s;
+}
+
+.af-back-button:hover {
+  transform: translateX(-5px);
+}
+
+.af-page-title {
+  font-size: 18px;
+  font-weight: 600;
+  margin: 0;
+}
+
+/* Search Container - Không có khung, kéo sát lên */
+.af-search-container {
+  display: flex;
+  gap: 10px;
+  padding: 0 20px 20px 20px;
+  background: transparent;
+}
+
+.af-search-input {
+  flex: 1;
+  padding: 12px 16px;
+  border-radius: 25px;
+  border: none;
+  background: white;
+  font-size: 14px;
+  outline: none;
+}
+
+.af-search-input::placeholder {
+  color: #999;
+}
+
+.af-search-button {
+  width: 45px;
+  height: 45px;
+  border-radius: 50%;
+  border: none;
+  background: white;
+  font-size: 20px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.2s;
+  flex-shrink: 0;
+}
+
+.af-search-button:hover {
+  transform: scale(1.1);
+}
+
+/* Search Results */
+.af-search-results {
+  padding: 0 20px;
+  margin-bottom: 30px;
+}
+
+/* Invitations Section */
+.af-invitations-section {
+  padding: 0 20px;
+}
+
+.af-section-title {
+  font-size: 16px;
+  font-weight: 600;
+  margin-bottom: 15px;
+}
+
+/* User Cards */
+.af-user-card,
+.af-invitation-card {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  background: #F5F5F5;
+  border-radius: 15px;
+  padding: 15px;
+  margin-bottom: 12px;
+  color: #2D3656;
+}
+
+.af-user-avatar {
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  overflow: hidden;
+  background: #4A5F8C;
+  flex-shrink: 0;
+}
+
+.af-user-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.af-user-info,
+.af-invitation-info {
+  flex: 1;
+}
+
+.af-user-info h3,
+.af-invitation-info h3 {
+  font-size: 16px;
+  font-weight: 600;
+  margin: 0 0 4px 0;
+}
+
+.af-user-info p,
+.af-invitation-info p {
+  font-size: 14px;
+  color: #666;
+  margin: 0 0 8px 0;
+}
+
+/* Buttons */
+.af-add-button {
+  padding: 8px 20px;
+  border-radius: 20px;
+  border: 1px solid #2D3656;
+  background: #FFD700;
+  color: #2D3656;
+  font-weight: 600;
+  cursor: pointer;
+  font-size: 12px;
+  transition: all 0.3s;
+}
+
+.af-add-button:hover {
+  background: #FFC700;
+  transform: scale(1.05);
+}
+
+.af-sent-badge {
+  padding: 8px 20px;
+  border-radius: 20px;
+  border: 1px solid #666;
+  background: transparent;
+  color: #666;
+  font-size: 12px;
+}
+
+.af-invitation-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+.af-accept-button,
+.af-cancel-button {
+  padding: 8px 20px;
+  border-radius: 20px;
+  border: 1px solid #2D3656;
+  background: white;
+  color: #2D3656;
+  font-weight: 500;
+  cursor: pointer;
+  font-size: 12px;
+  transition: all 0.3s;
+}
+
+.af-accept-button:hover {
+  background: #4A5F8C;
+  color: white;
+  border-color: #4A5F8C;
+}
+
+.af-cancel-button {
+  background: #F0F0F0;
+}
+
+.af-cancel-button:hover {
+  background: #E0E0E0;
+}
+
+/* Bottom Navigation */
+.add-friend-page .bottom-navigation {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  background: #3A4565;
+  padding: 15px 0;
+  border-top: 1px solid #4A5F8C;
+  z-index: 100;
+}
+/* ✅ Loading State - MINIMAL STYLE */
+.af-loading {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 40px 20px;
+  color: #8B9DC3;
+  font-size: 14px;
+}
+
+/* ✅ Empty State - MINIMAL STYLE */
+.af-empty-state {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 60px 20px;
+  text-align: center;
+  color: #8B9DC3;
+  font-size: 14px;
+}
+
+/* ✅ Sent Badge - GIỐNG STYLE CŨ */
+.af-sent-badge {
+  background: #4A5F8C;
+  color: white;
+  padding: 8px 16px;
+  border-radius: 20px;
+  font-size: 14px;
+  font-weight: 500;
+  text-transform: lowercase;
+}
+
+/* ✅ Disabled Search Button */
+.af-search-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.af-search-input:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+

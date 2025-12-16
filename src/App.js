@@ -11,6 +11,7 @@ import TextPostScreen from './pages/CreatePostScreen/TextPostScreen';
 import AudioPostScreen from './pages/CreatePostScreen/AudioPostScreen';
 import PrayerHub from './pages/PrayerHub/PrayerHub';
 import FriendList from './components/FriendList/FriendList'; // ✅ SỬA ĐƯỜNG DẪN TỪ pages → components
+import AddFriend from './pages/AddFriend/AddFriend'; // ✅ PHẢI CÓ DÒNG NÀY
 
 import './App.css';
 
@@ -210,6 +211,16 @@ function AppRoutes() {
         element={
           <ProtectedRoute>
             <FriendList user={user} onLogout={handleLogout} />
+          </ProtectedRoute>
+        }
+      />
+
+      {/* ✅✅✅ THÊM ROUTE MỚI - Add Friend page (Tìm kiếm & thêm bạn) */}
+      <Route
+        path="/addfriend"
+        element={
+          <ProtectedRoute>
+            <AddFriend user={user} onLogout={handleLogout} />
           </ProtectedRoute>
         }
       />

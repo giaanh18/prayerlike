@@ -1,3 +1,4 @@
+// export default UserHeader;
 // ./src/components/UserHeader/UserHeader.js
 import React from 'react';
 import './UserHeader.css';
@@ -9,10 +10,11 @@ const UserHeader = ({
   tribeName,
   familyIcon,
   blessingIcon,
+  blessingText = "LOGOUT",  // ✅ THÊM PROP MỚI VỚI DEFAULT VALUE
   onNotificationClick,
   onCoinClick,
   onLogoClick,
-  onTribeLogoClick, // ✅ 新增這個 prop
+  onTribeLogoClick,
   onFamilyClick,
   onBlessingClick,
   notificationCount = 0
@@ -90,12 +92,11 @@ const UserHeader = ({
 
       {/* 第二行: 部落 Logo | 2 個圓形按鈕 */}
       <div className="header-row-2">
-        {/* ✅✅✅ 【修改】將 onClick 從 onLogoClick 改為 onTribeLogoClick */}
         <button 
           className="tribe-section"
-          onClick={onTribeLogoClick || onLogoClick} // ✅ 優先使用 onTribeLogoClick，否則使用 onLogoClick
+          onClick={onTribeLogoClick || onLogoClick}
           aria-label={`${displayTribeName.toUpperCase()} Tribe`}
-          style={{ cursor: tribeLogo ? 'pointer' : 'default' }} // ✅ 有 logo 時顯示手型游標
+          style={{ cursor: tribeLogo ? 'pointer' : 'default' }}
         >
           <div 
             className="tribe-logo-circle" 
@@ -133,15 +134,20 @@ const UserHeader = ({
             )}
           </button>
 
-          {/* Blessing 按鈕 */}
+          {/* ✅✅✅ Blessing/Logout 按鈕 - CONDITIONAL RENDER */}
           <button 
-            className="tribe-action-btn"
+            className={blessingText ? "tribe-action-btn logout-button" : "tribe-action-btn"}
             onClick={onBlessingClick}
-            title="Blessings & Luck"
+            title={blessingText || "Blessings & Luck"}
           >
-            {blessingIcon ? (
+            {blessingText ? (
+              // ✅ HIỂN THỊ TEXT NẾU CÓ blessingText
+              <span className="logout-text">{blessingText}</span>
+            ) : blessingIcon ? (
+              // ✅ HIỂN THỊ ICON NẾU KHÔNG CÓ TEXT NHƯNG CÓ ICON
               <img src={blessingIcon} alt="Blessing" className="tribe-action-icon-img" />
             ) : (
+              // ✅ HIỂN THỊ DEFAULT SVG NẾU KHÔNG CÓ CẢ TEXT VÀ ICON
               <svg viewBox="0 0 24 24" className="tribe-action-icon">
                 <path d="M17.5 12C19.43 12 21 10.43 21 8.5C21 6.57 19.43 5 17.5 5C16.37 5 15.37 5.54 14.74 6.38L12 9.88L9.26 6.38C8.63 5.54 7.63 5 6.5 5C4.57 5 3 6.57 3 8.5C3 10.43 4.57 12 6.5 12C7.21 12 7.87 11.79 8.42 11.43L12 14.5L15.58 11.43C16.13 11.79 16.79 12 17.5 12ZM6.5 7C7.33 7 8 7.67 8 8.5C8 9.33 7.33 10 6.5 10C5.67 10 5 9.33 5 8.5C5 7.67 5.67 7 6.5 7ZM17.5 7C18.33 7 19 7.67 19 8.5C19 9.33 18.33 10 17.5 10C16.67 10 16 9.33 16 8.5C16 7.67 16.67 7 17.5 7ZM12 16L7 20H17L12 16Z" fill="currentColor"/>
               </svg>

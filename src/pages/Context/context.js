@@ -1512,7 +1512,15 @@ const MainApp = ({ user, onLogout }) => {
   const handleLogoClick = () => { 
     handleTabChange('Home');
   };
-
+  const handleFamilyClick = () => {
+    console.log('👨‍👩‍👧‍👦 Navigate to Friends List');
+    navigate('/friends');
+  };
+    // ✅ THÊM HÀM NÀY
+  const handleBlessingClick = () => {
+    console.log('🍀 Blessings & Luck clicked - Logout');
+    handleLogout();
+  };
   const getFilteredPosts = () => {
     if (privacyFilter === 'all') return posts;
     return posts.filter(post => post.privacy === privacyFilter);
@@ -1715,12 +1723,14 @@ const handleWitnessCreated = async (postId) => {
           tribeLogo={tribeLogoProp}
           tribeName={tribeNameProp}
           familyIcon={Mdi}
-          blessingIcon={Fluent}
           notificationCount={notificationCount}
           onNotificationClick={handleNotificationClick}
           onCoinClick={handleCoinClick}
           onLogoClick={handleLogoClick}
           onTribeLogoClick={handleTribeLogoClick}
+          onFamilyClick={handleFamilyClick} // ✅ THÊM PROP NÀY
+          onBlessingClick={handleBlessingClick} // ✅ THÊM DÒNG NÀY
+
         />
 
         <div className="top-action-bar">
@@ -1937,7 +1947,7 @@ const handleWitnessCreated = async (postId) => {
           onClick={() => {
             console.log('👥 Navigate to Friends List');
             setActiveTab('Search');
-            navigate('/friends'); // ✅ THÊM DÒNG NÀY
+            navigate('/addfriend'); // ✅ CHUYỂN ĐẾN ADD FRIEND
           }}
           isActive={activeTab === 'Search'}
           size="medium" 
@@ -1950,7 +1960,7 @@ const handleWitnessCreated = async (postId) => {
             iconSrc={Nova} 
             onClick={() => {
               console.log('🚪 Logout clicked');
-              handleLogout();
+              
             }}
             isActive={activeTab === 'Nova'}
             size="medium" 

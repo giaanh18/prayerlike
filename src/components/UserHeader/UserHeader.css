@@ -2,10 +2,10 @@
 
 .user-header {
   width: 100%;
-  background: #2D3656 !important; /* ✅ XÓA gradient, chỉ dùng màu đơn */
+  background: #2D3656 !important;
   padding: 16px 20px;
   border-radius: 0;
-  box-shadow: none; /* ✅ Xóa shadow để đồng nhất */
+  box-shadow: none;
   display: flex;
   flex-direction: column;
   gap: 16px;
@@ -13,9 +13,8 @@
   z-index: 100;
   min-height: 140px;
   overflow: visible;
-  border: none; /* ✅ Đảm bảo không có border */
+  border: none;
 }
-
 
 /* ==================== DÒNG 1: AVATAR + TÊN | NOTIFICATION + COINS ==================== */
 
@@ -50,7 +49,7 @@
 
 .user-name-tag {
   background: #FFFFFF;
-  color: #000000;  /* ✅ 黑色文字 */
+  color: #000000;
   font-size: 15px;
   font-weight: 600;
   padding: 6px 16px;
@@ -114,7 +113,7 @@
 }
 
 .coin-display {
-  background: #FFF9EC !important;  /* ✅ Màu kem sáng */
+  background: #FFF9EC !important;
   border: none;
   border-radius: 24px;
   padding: 8px 16px;
@@ -123,21 +122,17 @@
   gap: 8px;
   cursor: pointer;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-  transition: transform 0.2s ease;
+  transition: transform 0.2s ease, background 0.2s ease;
   outline: none;
 }
 
 .coin-display:hover {
   transform: scale(1.05);
-  background: #F5EDDC !important;  /* ✅ Màu tối hơn khi hover */
+  background: #F5EDDC !important;
 }
 
 .coin-display:focus {
   outline: none;
-}
-
-.coin-display:hover {
-  transform: scale(1.05);
 }
 
 .coin-icon {
@@ -149,7 +144,7 @@
 .coin-amount {
   font-size: 16px;
   font-weight: 700;
-  color: #000000 !important;  /* ✅ Màu đen */
+  color: #000000 !important;
 }
 
 /* ==================== DÒNG 2: LOGO REUBEN | 2 ICON TRÒN ==================== */
@@ -164,7 +159,7 @@
   min-height: 60px;
 }
 
-/* Left: Logo + Text - ✅ BẮT BUỘC KHÔNG CÓ KHUNG */
+/* Left: Logo + Text */
 .tribe-section {
   display: flex;
   align-items: center;
@@ -177,8 +172,6 @@
   transition: opacity 0.2s ease;
   position: relative;
   z-index: 102;
-  
-  /* ✅ XÓA TẤT CẢ VIỀN/KHUNG */
   outline: none !important;
   box-shadow: none !important;
   -webkit-appearance: none;
@@ -232,37 +225,29 @@
   z-index: 102;
 }
 
+/* ✅ BASE STYLE CHO TẤT CẢ BUTTONS */
 .tribe-action-btn {
-  width: 44px !important;
-  height: 44px !important;
-  min-width: 44px !important;      /* ✅ Thêm min-width */
-  min-height: 44px !important;     /* ✅ Thêm min-height */
-  max-width: 44px !important;      /* ✅ Thêm max-width */
-  max-height: 44px !important;     /* ✅ Thêm max-height */
-  border-radius: 50% !important;
-  padding: 0 !important;           /* ✅ Loại bỏ padding */
+  width: 52px !important;
+  height: 52px !important;
+  min-width: 52px !important;
+  min-height: 52px !important;
+  max-width: 52px !important;
+  max-height: 52px !important;
+  background: #FFF9EC !important;
+  border: none;
+  border-radius: 50%;
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  transition: transform 0.2s ease, background 0.2s ease;
+  position: relative;
+  z-index: 103;
+  outline: none;
+  padding: 0 !important;
+  overflow: hidden;
 }
-
-/* Icon bên trong - TĂNG SIZE */
-.tribe-action-btn svg,
-.tribe-action-btn img,
-.tribe-action-btn::before,
-.tribe-action-btn::after {
-  width: 36px !important;          /* ✅ Tăng từ 24px → 28px */
-  height: 36px !important;
-  max-width: 36px !important;
-  max-height: 36px !important;
-}
-
-/* Nếu icon là text/emoji */
-.tribe-action-btn {
-  font-size: 20px !important;      /* ✅ Cho emoji/text icon */
-}
-
-
 
 .tribe-action-btn:focus {
   outline: none;
@@ -270,16 +255,57 @@
 
 .tribe-action-btn:hover {
   transform: scale(1.1);
+  background: #F5EDDC !important;
 }
 
 .tribe-action-btn:active {
   transform: scale(0.95);
 }
 
+/* Icon bên trong */
+.tribe-action-btn svg,
+.tribe-action-btn img {
+  width: 36px !important;
+  height: 36px !important;
+  max-width: 36px !important;
+  max-height: 36px !important;
+}
+
 .tribe-action-icon {
   width: 28px;
   height: 28px;
   color: #8B6F47;
+}
+
+.tribe-action-icon-img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+/* ✅✅✅ LOGOUT BUTTON - SPECIAL STYLE */
+.tribe-action-btn.logout-button {
+  /* Override size để fit text */
+  width: auto !important;
+  min-width: 70px !important;
+  max-width: none !important;
+  padding: 0 16px !important;
+  border-radius: 26px !important; /* Pill shape */
+}
+
+.tribe-action-btn.logout-button:hover {
+  background: #F5EDDC !important;
+  transform: scale(1.05);
+}
+
+.logout-text {
+  color: #000000 !important;
+  font-size: 11px !important;
+  font-weight: 700 !important;
+  letter-spacing: 1px !important;
+  text-transform: uppercase !important;
+  white-space: nowrap !important;
+  text-shadow: none !important;
 }
 
 /* ==================== RESPONSIVE ==================== */
@@ -313,8 +339,32 @@
   }
 
   .tribe-action-btn {
-    width: 46px;
-    height: 46px;
+    width: 46px !important;
+    height: 46px !important;
+    min-width: 46px !important;
+    min-height: 46px !important;
+    max-width: 46px !important;
+    max-height: 46px !important;
+  }
+
+  .tribe-action-btn svg,
+  .tribe-action-btn img {
+    width: 32px !important;
+    height: 32px !important;
+  }
+
+  /* ✅ LOGOUT RESPONSIVE */
+  .tribe-action-btn.logout-button {
+    width: auto !important;
+    min-width: 65px !important;
+    max-width: none !important;
+    padding: 0 14px !important;
+    border-radius: 23px !important;
+  }
+
+  .logout-text {
+    font-size: 10px !important;
+    letter-spacing: 0.8px !important;
   }
 }
 
@@ -363,46 +413,36 @@
   }
 
   .tribe-action-btn {
-    width: 42px;
-    height: 42px;
+    width: 42px !important;
+    height: 42px !important;
+    min-width: 42px !important;
+    min-height: 42px !important;
+    max-width: 42px !important;
+    max-height: 42px !important;
   }
 
   .tribe-action-icon {
     width: 24px;
     height: 24px;
   }
-}
-/* 確保圖片圖示正確顯示 */
-.tribe-action-icon-img {
-  width: 100%;
-  height: 100%;
-  object-fit: contain;
-}
 
-/* 如果需要讓圖片變成圓形 */
-.tribe-action-btn {
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  overflow: hidden;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-.tribe-action-btn {
-  width: 52px;
-  height: 52px;
-  background: #FFF9EC !important;  /* ✅ Màu kem sáng */
-  border: none;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
-  transition: transform 0.2s ease;
-  position: relative;
-  z-index: 103;
-  outline: none;
-}
+  .tribe-action-btn svg,
+  .tribe-action-btn img {
+    width: 28px !important;
+    height: 28px !important;
+  }
 
+  /* ✅ LOGOUT RESPONSIVE MOBILE */
+  .tribe-action-btn.logout-button {
+    width: auto !important;
+    min-width: 60px !important;
+    max-width: none !important;
+    padding: 0 12px !important;
+    border-radius: 21px !important;
+  }
+
+  .logout-text {
+    font-size: 9px !important;
+    letter-spacing: 0.5px !important;
+  }
+}

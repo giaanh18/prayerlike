@@ -99,20 +99,7 @@ const FriendList = ({ user, onLogout }) => {
         </h1>
       </div>
 
-      <div className="fl-view-toggle">
-        <button 
-          className={`fl-toggle-btn ${viewMode === 'friends' ? 'active' : ''}`}
-          onClick={() => setViewMode('friends')}
-        >
-          👥 好友
-        </button>
-        <button 
-          className={`fl-toggle-btn ${viewMode === 'family' ? 'active' : ''}`}
-          onClick={() => setViewMode('family')}
-        >
-          👨‍👩‍👧‍👦 家族
-        </button>
-      </div>
+      
 
       <div className="fl-container">
         {loading ? (
@@ -125,9 +112,7 @@ const FriendList = ({ user, onLogout }) => {
             <div className="fl-error-icon">⚠️</div>
             <h3>載入失敗</h3>
             <p>{error}</p>
-            <button className="fl-retry-btn" onClick={loadData}>
-              重試
-            </button>
+            
           </div>
         ) : currentList.length > 0 ? (
           <div className="fl-grid">
