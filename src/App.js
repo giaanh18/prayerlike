@@ -10,8 +10,12 @@ import CreatePostScreen from './pages/CreatePostScreen/CreatePostScreen';
 import TextPostScreen from './pages/CreatePostScreen/TextPostScreen';
 import AudioPostScreen from './pages/CreatePostScreen/AudioPostScreen';
 import PrayerHub from './pages/PrayerHub/PrayerHub';
-import FriendList from './components/FriendList/FriendList'; // ✅ SỬA ĐƯỜNG DẪN TỪ pages → components
-import AddFriend from './pages/AddFriend/AddFriend'; // ✅ PHẢI CÓ DÒNG NÀY
+import FriendList from './components/FriendList/FriendList';
+import AddFriend from './pages/AddFriend/AddFriend';
+import YBHistoricalRecord from './pages/YBHistoricalRecord/YBHistoricalRecord';
+import ActivityForm from './pages/Context/ActivityForm';
+import NovaScreen from './pages/NovaScreen/NovaScreen';
+import Profile from './pages/Profile/Profile'; // ✅ THÊM IMPORT PROFILE
 
 import './App.css';
 
@@ -26,7 +30,6 @@ function AppRoutes() {
   const [isCheckingAuth, setIsCheckingAuth] = useState(true);
   const [pendingSignup, setPendingSignup] = useState(null);
 
-  // ✅ ProtectedRoute Component
   const ProtectedRoute = ({ children }) => {
     if (isCheckingAuth) {
       return <div>Loading...</div>;
@@ -39,7 +42,6 @@ function AppRoutes() {
     return children;
   };
 
-  // ✅ Check authentication on mount
   useEffect(() => {
     const checkAuth = async () => {
       try {
@@ -67,7 +69,6 @@ function AppRoutes() {
     checkAuth();
   }, []);
 
-  // ✅ Handle Login
   const handleLogin = useCallback((userData, token) => {
     try {
       localStorage.setItem('token', token);
@@ -86,7 +87,6 @@ function AppRoutes() {
     }
   }, [navigate]);
 
-  // ✅ Handle Logout
   const handleLogout = useCallback(() => {
     try {
       localStorage.removeItem('token');
@@ -105,7 +105,6 @@ function AppRoutes() {
     }
   }, [navigate]);
 
-  // ✅ Handle Signup Complete
   const handleSignUpComplete = useCallback((userData, token) => {
     try {
       if (isDevelopment) {
@@ -118,7 +117,6 @@ function AppRoutes() {
     }
   }, [handleLogin]);
 
-  // ✅ Handle Return to Login
   const handleReturnToLogin = useCallback(() => {
     setPendingSignup(null);
     navigate('/login', { replace: true });
@@ -126,7 +124,6 @@ function AppRoutes() {
 
   return (
     <Routes>
-      {/* Login page */}
       <Route
         path="/login"
         element={
@@ -138,7 +135,6 @@ function AppRoutes() {
         }
       />
 
-      {/* Signup page */}
       <Route
         path="/signup"
         element={
@@ -151,13 +147,11 @@ function AppRoutes() {
         }
       />
 
-      {/* OAuth Callback */}
       <Route
         path="/auth/callback"
         element={<OAuthCallback onLogin={handleLogin} />}
       />
 
-      {/* Main page */}
       <Route
         path="/main"
         element={
@@ -167,7 +161,6 @@ function AppRoutes() {
         }
       />
 
-      {/* Create post pages */}
       <Route
         path="/create-post"
         element={
@@ -195,7 +188,6 @@ function AppRoutes() {
         }
       />
 
-      {/* Prayer Hub page */}
       <Route
         path="/prayer-hub"
         element={
@@ -205,7 +197,6 @@ function AppRoutes() {
         }
       />
 
-      {/* ✅ Friend List page */}
       <Route
         path="/friends"
         element={
@@ -215,7 +206,6 @@ function AppRoutes() {
         }
       />
 
-      {/* ✅✅✅ THÊM ROUTE MỚI - Add Friend page (Tìm kiếm & thêm bạn) */}
       <Route
         path="/addfriend"
         element={
@@ -225,7 +215,43 @@ function AppRoutes() {
         }
       />
 
-      {/* Default redirect */}
+      <Route
+        path="/yb-history"
+        element={
+          <ProtectedRoute>
+            <YBHistoricalRecord user={user} onLogout={handleLogout} />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/activity-form"
+        element={
+          <ProtectedRoute>
+            <ActivityForm user={user} onBack={() => navigate('/main')} />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/nova"
+        element={
+          <ProtectedRoute>
+            <NovaScreen user={user} onLogout={handleLogout} />
+          </ProtectedRoute>
+        }
+      />
+
+      {/* ✅✅✅ THÊM ROUTE MỚI - PROFILE PAGE */}
+      <Route
+        path="/profile"
+        element={
+          <ProtectedRoute>
+            <Profile user={user} onLogout={handleLogout} />
+          </ProtectedRoute>
+        }
+      />
+
       <Route path="/" element={<Navigate to="/main" replace />} />
       <Route path="*" element={<Navigate to="/login" replace />} />
     </Routes>

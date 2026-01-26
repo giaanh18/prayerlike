@@ -1,0 +1,400 @@
+/* src/components/AvatarImage/AvatarImage.css */
+
+/* ==================== AVATAR IMAGE COMPONENT ==================== */
+
+.avatar-image-container {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  overflow: hidden;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.05);
+  transition: all 0.3s ease;
+}
+
+/* ✅ Clickable avatar styles */
+.avatar-image-container.avatar-clickable {
+  cursor: pointer;
+}
+
+.avatar-image-container.avatar-clickable:hover {
+  transform: scale(1.05);
+  box-shadow: 0 4px 12px rgba(0, 188, 212, 0.5);
+  border: 2px solid #00BCD4;
+}
+
+.avatar-image-container.avatar-clickable:active {
+  transform: scale(0.98);
+}
+
+/* ✅ Avatar image */
+.avatar-image {
+  width: 100%;
+  height: 100%;
+  min-width: 100%;
+  min-height: 100%;
+  max-width: 100%;
+  max-height: 100%;
+  border-radius: 50%;
+  object-fit: cover;
+  object-position: center;
+  border: none;
+  transition: all 0.3s ease;
+  display: block;
+}
+
+.avatar-image:hover {
+  transform: scale(1.02);
+}
+
+/* ✅ THÊM: Initials fallback */
+.avatar-initials {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  font-weight: 600;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  text-transform: uppercase;
+  user-select: none;
+  border-radius: 50%;
+  font-size: inherit; /* ✅ Sẽ được set bởi inline style */
+  line-height: 1;
+}
+
+/* ✅ Gradient variations cho initials */
+.avatar-initials:nth-child(odd) {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.avatar-initials:nth-child(even) {
+  background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+}
+
+/* ✅ LOADING STATE */
+.avatar-image-container.loading {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.avatar-spinner {
+  width: 20px;
+  height: 20px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top-color: #FFFFFF;
+  border-radius: 50%;
+  animation: avatarSpin 0.8s linear infinite;
+  flex-shrink: 0;
+}
+
+@keyframes avatarSpin {
+  to { transform: rotate(360deg); }
+}
+
+/* ✅ UPLOAD OVERLAY */
+.avatar-upload-overlay {
+  position: absolute;
+  bottom: -2px;
+  right: -2px;
+  width: 24px;
+  height: 24px;
+  background: #667eea;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  border: 2px solid white;
+  font-size: 11px;
+  z-index: 10;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+  flex-shrink: 0;
+}
+
+.avatar-upload-overlay:hover {
+  background: #5568d3;
+  transform: scale(1.15);
+  box-shadow: 0 3px 10px rgba(102, 126, 234, 0.5);
+}
+
+.avatar-upload-overlay input[type="file"] {
+  display: none;
+}
+
+/* ✅ ERROR STATE */
+.avatar-image.error {
+  opacity: 0.8;
+  filter: grayscale(20%);
+}
+
+/* ✅ Hover tooltip */
+.avatar-image-container.avatar-clickable::after {
+  content: attr(title);
+  position: absolute;
+  bottom: -35px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(0, 0, 0, 0.8);
+  color: #FFFFFF;
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 12px;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s ease;
+  z-index: 1000;
+}
+
+.avatar-image-container.avatar-clickable:hover::after {
+  opacity: 1;
+}
+
+/* ==================== SIZE VARIANTS ==================== */
+
+.avatar-image-container[style*="width: 24px"] {
+  min-width: 24px;
+  min-height: 24px;
+}
+
+.avatar-image-container[style*="width: 24px"] .avatar-initials {
+  font-size: 10px;
+}
+
+.avatar-image-container[style*="width: 32px"] {
+  min-width: 32px;
+  min-height: 32px;
+}
+
+.avatar-image-container[style*="width: 32px"] .avatar-initials {
+  font-size: 13px;
+}
+
+.avatar-image-container[style*="width: 40px"] {
+  min-width: 40px;
+  min-height: 40px;
+}
+
+.avatar-image-container[style*="width: 40px"] .avatar-initials {
+  font-size: 16px;
+}
+
+.avatar-image-container[style*="width: 48px"] {
+  min-width: 48px;
+  min-height: 48px;
+}
+
+.avatar-image-container[style*="width: 48px"] .avatar-initials {
+  font-size: 19px;
+}
+
+.avatar-image-container[style*="width: 64px"] {
+  min-width: 64px;
+  min-height: 64px;
+}
+
+.avatar-image-container[style*="width: 64px"] .avatar-initials {
+  font-size: 26px;
+}
+
+.avatar-image-container[style*="width: 80px"] {
+  min-width: 80px;
+  min-height: 80px;
+}
+
+.avatar-image-container[style*="width: 80px"] .avatar-initials {
+  font-size: 32px;
+}
+
+.avatar-image-container[style*="width: 96px"] {
+  min-width: 96px;
+  min-height: 96px;
+}
+
+.avatar-image-container[style*="width: 96px"] .avatar-initials {
+  font-size: 38px;
+}
+
+.avatar-image-container[style*="width: 120px"] {
+  min-width: 120px;
+  min-height: 120px;
+}
+
+.avatar-image-container[style*="width: 120px"] .avatar-initials {
+  font-size: 48px;
+}
+
+/* ==================== RESPONSIVE ==================== */
+
+@media (max-width: 768px) {
+  .avatar-spinner {
+    width: 18px;
+    height: 18px;
+    border-width: 2px;
+  }
+
+  .avatar-upload-overlay {
+    width: 20px;
+    height: 20px;
+    font-size: 10px;
+    border-width: 1.5px;
+  }
+  
+  /* ✅ Ẩn tooltip trên mobile */
+  .avatar-image-container.avatar-clickable::after {
+    display: none;
+  }
+  
+  /* ✅ Giảm hover effect trên mobile */
+  .avatar-image-container.avatar-clickable:hover {
+    transform: scale(1.03);
+  }
+  
+  /* ✅ Touch feedback cho mobile */
+  .avatar-image-container.avatar-clickable:active {
+    transform: scale(0.95);
+  }
+}
+
+@media (max-width: 480px) {
+  .avatar-spinner {
+    width: 16px;
+    height: 16px;
+    border-width: 2px;
+  }
+
+  .avatar-upload-overlay {
+    width: 18px;
+    height: 18px;
+    font-size: 9px;
+    border-width: 1.5px;
+  }
+  
+  /* ✅ Giảm font size của initials trên mobile nhỏ */
+  .avatar-initials {
+    font-size: 0.9em;
+  }
+}
+
+/* ==================== ACCESSIBILITY ==================== */
+
+/* ✅ Focus state cho keyboard navigation */
+.avatar-image-container.avatar-clickable:focus-visible {
+  outline: 2px solid #00BCD4;
+  outline-offset: 2px;
+}
+
+/* ✅ Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  .avatar-image-container,
+  .avatar-image,
+  .avatar-upload-overlay,
+  .avatar-spinner {
+    animation: none;
+    transition: none;
+  }
+  
+  .avatar-image-container.avatar-clickable:hover {
+    transform: none;
+  }
+}
+
+/* ==================== DARK MODE SUPPORT ==================== */
+
+@media (prefers-color-scheme: dark) {
+  .avatar-image-container {
+    background: rgba(255, 255, 255, 0.08);
+  }
+  
+  .avatar-upload-overlay {
+    border-color: rgba(255, 255, 255, 0.2);
+  }
+  
+  .avatar-image-container.avatar-clickable:hover {
+    box-shadow: 0 4px 12px rgba(0, 188, 212, 0.3);
+  }
+}
+
+/* ==================== PRINT STYLES ==================== */
+
+@media print {
+  .avatar-upload-overlay {
+    display: none;
+  }
+  
+  .avatar-image-container.avatar-clickable::after {
+    display: none;
+  }
+  
+  .avatar-image-container {
+    box-shadow: none !important;
+    border: 1px solid #ccc;
+  }
+}
+
+/* ==================== ANIMATION VARIANTS ==================== */
+
+/* ✅ Pulse animation khi uploading */
+.avatar-image-container.uploading {
+  animation: avatarPulse 1.5s ease-in-out infinite;
+}
+
+@keyframes avatarPulse {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.8;
+    transform: scale(0.98);
+  }
+}
+
+/* ✅ Fade in animation khi load xong */
+.avatar-image,
+.avatar-initials {
+  animation: avatarFadeIn 0.3s ease-in;
+}
+
+@keyframes avatarFadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* ==================== HOVER EFFECTS ==================== */
+
+/* ✅ Glow effect khi hover (optional) */
+.avatar-image-container.avatar-clickable:hover .avatar-image,
+.avatar-image-container.avatar-clickable:hover .avatar-initials {
+  filter: brightness(1.1);
+}
+
+/* ✅ Upload overlay animation */
+@keyframes uploadBounce {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.1);
+  }
+}
+
+.avatar-upload-overlay:hover {
+  animation: uploadBounce 0.5s ease;
+}

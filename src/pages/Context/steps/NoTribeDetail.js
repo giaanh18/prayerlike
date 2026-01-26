@@ -14,15 +14,16 @@ import Nova from '../../../assets/icons/Nova.png';
 import CircleButton from '../../../components/CircleButton/CircleButton';
 import AppBackground from '../../../components/AppBackground/AppBackground';
 import TribesIntroduction from './TribesIntroduction';
-import TribesList from './TribesList'; // ✅ 新增
+import TribesList from './TribesList';
 
-const NoTribeDetail = ({ onBack }) => {
+// ✅ NHẬN THÊM PROPS: onTribeSelected và user
+const NoTribeDetail = ({ onBack, onTribeSelected, user }) => {
   const navigate = useNavigate();
   
   // 狀態管理
   const [hasViewedIntroduction, setHasViewedIntroduction] = useState(false);
   const [showIntroduction, setShowIntroduction] = useState(false);
-  const [showTribesList, setShowTribesList] = useState(false); // ✅ 新增
+  const [showTribesList, setShowTribesList] = useState(false);
 
   // 返回主頁面
   const handleBack = () => {
@@ -56,7 +57,7 @@ const NoTribeDetail = ({ onBack }) => {
     setShowIntroduction(false);
   };
 
-  // ✅ 導向 12 支派列表頁面
+  // 導向 12 支派列表頁面
   const handleTribesList = () => {
     if (!hasViewedIntroduction) {
       console.log('⚠️ 請先查看 Tribes Introduction');
@@ -67,17 +68,65 @@ const NoTribeDetail = ({ onBack }) => {
     setShowTribesList(true);
   };
 
-  // ✅ 從列表頁面返回
+  // 從列表頁面返回
   const handleBackFromTribesList = () => {
     setShowTribesList(false);
   };
 
-  // ✅ 如果顯示支派列表，則渲染 TribesList
+  // ✅ CALLBACK KHI USER CHỌN TRIBE TỪ TRIBESLIST
+  const handleTribeSelectedFromList = async (selectedTribeId) => {
+    console.log(`✅ User selected tribe: ${selectedTribeId}`);
+    
+    try {
+      // ✅ 1. LƯU VÀO LOCALSTORAGE NGAY LẬP TỨC
+      const currentUser = JSON.parse(localStorage.getItem('userData') || '{}');
+      currentUser.tribe = selectedTribeId;
+      localStorage.setItem('userData', JSON.stringify(currentUser));
+      
+      console.log('💾 Đã lưu tribe vào localStorage:', currentUser);
+
+      // ✅ 2. CẬP NHẬT USER OBJECT (NẾU CÓ)
+      if (user) {
+        user.tribe = selectedTribeId;
+      }
+
+      // ✅ 3. GỌI CALLBACK TỪ MAINAPP
+      if (onTribeSelected) {
+        await onTribeSelected(selectedTribeId);
+      }
+
+      // ✅ 4. ĐÓNG TẤT CẢ MODAL
+      setShowTribesList(false);
+      setShowIntroduction(false);
+      
+      // ✅ 5. QUAY VỀ MAINAPP
+      if (onBack) {
+        onBack();
+      }
+
+      // ✅ 6. HIỂN THỊ THÔNG BÁO THÀNH CÔNG
+      setTimeout(() => {
+        alert('✅ 支派選擇成功！您的支派已更新。');
+      }, 100);
+
+    } catch (error) {
+      console.error('❌ Lỗi khi lưu tribe:', error);
+      alert('選擇支派時發生錯誤，請稍後再試');
+    }
+  };
+
+  // ✅ Nếu hiển thị TribesList, truyền callback xuống
   if (showTribesList) {
-    return <TribesList onBack={handleBackFromTribesList} />;
+    return (
+      <TribesList 
+        onBack={handleBackFromTribesList}
+        onTribeSelected={handleTribeSelectedFromList}
+        user={user}
+      />
+    );
   }
 
-  // 如果顯示介紹頁面，則渲染 TribesIntroduction
+  // Nếu hiển thị TribesIntroduction
   if (showIntroduction) {
     return <TribesIntroduction onBack={handleBackFromIntroduction} />;
   }

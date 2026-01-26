@@ -1,0 +1,159 @@
+/* ==================== 🎤 VOICE RECORD BUTTON STYLES (REDESIGNED) ==================== */
+
+.voice-record-button {
+  width: 36px;
+  height: 36px;
+  min-width: 36px;
+  background: #6B4E2E;
+  border: none;
+  border-radius: 50%; /* ✅ Tròn hoàn toàn */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  position: absolute; /* ✅ Position absolute */
+  bottom: 12px; /* ✅ Cách đáy textarea 12px */
+  right: 12px; /* ✅ Cách phải textarea 12px */
+  padding: 0;
+  box-shadow: 0 2px 6px rgba(107, 78, 46, 0.3);
+  z-index: 10; /* ✅ Đảm bảo nằm trên textarea */
+}
+
+.voice-record-button:hover {
+  background: #8B6E4E;
+  transform: scale(1.1);
+  box-shadow: 0 4px 10px rgba(107, 78, 46, 0.5);
+}
+
+.voice-record-button:active {
+  transform: scale(0.95);
+}
+
+.voice-record-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.voice-icon {
+  width: 18px;
+  height: 18px;
+  color: white;
+  transition: all 0.3s ease;
+}
+
+/* Recording state */
+.voice-record-button.recording {
+  background: #E74C3C;
+  animation: pulse-record 1.5s infinite;
+}
+
+.voice-record-button.recording:hover {
+  background: #C0392B;
+}
+
+@keyframes pulse-record {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(231, 76, 60, 0.7);
+  }
+  50% {
+    box-shadow: 0 0 0 8px rgba(231, 76, 60, 0);
+  }
+}
+
+.recording-icon {
+  animation: none;
+}
+
+/* Voice indicator (khi có âm thanh) */
+.voice-indicator {
+  position: absolute;
+  top: -2px;
+  right: -2px;
+  width: 10px;
+  height: 10px;
+  background: #2ECC71;
+  border: 2px solid white;
+  border-radius: 50%;
+  animation: blink 1s infinite;
+}
+
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
+}
+
+/* Processing state */
+.voice-record-button.processing {
+  background: #F39C12;
+  cursor: wait;
+}
+
+.voice-spinner {
+  width: 18px;
+  height: 18px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top-color: white;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .voice-record-button {
+    width: 34px;
+    height: 34px;
+    min-width: 34px;
+    bottom: 10px;
+    right: 10px;
+  }
+
+  .voice-icon {
+    width: 16px;
+    height: 16px;
+  }
+}
+
+@media (max-width: 375px) {
+  .voice-record-button {
+    width: 32px;
+    height: 32px;
+    min-width: 32px;
+    bottom: 8px;
+    right: 8px;
+  }
+
+  .voice-icon {
+    width: 15px;
+    height: 15px;
+  }
+}
+
+/* Focus state for accessibility */
+.voice-record-button:focus {
+  outline: 2px solid #8B6E4E;
+  outline-offset: 2px;
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+  .voice-record-button {
+    background: #6B4E2E;
+  }
+
+  .voice-record-button:hover {
+    background: #8B6E4E;
+  }
+
+  .voice-record-button.recording {
+    background: #E74C3C;
+  }
+
+  .voice-record-button.processing {
+    background: #F39C12;
+  }
+}

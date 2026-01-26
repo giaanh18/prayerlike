@@ -1,5 +1,3 @@
-// src/pages/SignUp/SignUp.js
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import AuthAPI from '../../services/authApi';
@@ -21,11 +19,16 @@ const SignUp = ({ onSignUpComplete, onReturnToLogin }) => {
     const navigate = useNavigate();
     const location = useLocation();
 
-    const verifiedEmail = location.state?.email || location.state?.existingProfile?.email || '';
+    const verifiedEmail = location.state?.email || 
+                         location.state?.existingProfile?.email || 
+                         location.state?.sessionData?.user?.email || 
+                         '';
     const sessionData = location.state?.sessionData || null;
     const initialName = location.state?.existingProfile?.name || '';
     const initialUserId = location.state?.existingProfile?.user_id || location.state?.existingProfile?.id || '';
-    const provider = location.state?.sessionData?.provider || 'email';
+    
+    const detectedProvider = location.state?.sessionData?.provider || 
+                            (location.state?.verified && !location.state?.sessionData ? 'email' : 'oauth');
 
     const [currentStep, setCurrentStep] = useState(1);
     const [formData, setFormData] = useState({
@@ -35,7 +38,7 @@ const SignUp = ({ onSignUpComplete, onReturnToLogin }) => {
         termsAccepted: false,
         emailVerified: true,
         tribe: null, 
-        provider: provider
+        provider: detectedProvider
     });
     const [errors, setErrors] = useState({});
     const [isLoading, setIsLoading] = useState(false);
@@ -43,13 +46,13 @@ const SignUp = ({ onSignUpComplete, onReturnToLogin }) => {
 
     useEffect(() => {
         console.log('🟢 [SignUp.js] 元件已成功載入 (MOUNTED)。');
+        console.log('📋 [SignUp.js] Location state:', location.state);
+        console.log('🔑 [SignUp.js] Detected provider:', detectedProvider);
         console.log('📋 [SignUp.js] 載入時的初始 formData:', formData);
         console.log('🔑 [SignUp.js] 載入時的 sessionData:', sessionData);
+        console.log('📧 [SignUp.js] verifiedEmail:', verifiedEmail);
     }, []); 
 
-    // ========================================
-    // 📝 FORM HANDLERS
-    // ========================================
     const handleChange = (field, value) => {
         if (field === 'userId') {
             const cleanValue = value.replace(/[^a-zA-Z0-9_-]/g, '').slice(0, 30);
@@ -70,11 +73,11 @@ const SignUp = ({ onSignUpComplete, onReturnToLogin }) => {
         });
     };
 
-    // ========================================
-    // ✅ VALIDATION
-    // ========================================
+    // ✅ SỬA validateForm - Bỏ qua email validation khi Social Login
     const validateForm = () => {
         const newErrors = {};
+        
+        // Validate User ID
         if (!formData.userId.trim()) {
             newErrors.userId = '請輸入 User ID';
         } else if (formData.userId.length < 3) {
@@ -82,25 +85,53 @@ const SignUp = ({ onSignUpComplete, onReturnToLogin }) => {
         } else if (!/^[a-zA-Z0-9_-]+$/.test(formData.userId)) {
             newErrors.userId = 'User ID 只能包含英文、數字、底線和連字號';
         }
+        
+        // Validate Name
         if (!formData.name.trim()) {
             newErrors.name = '請輸入您的名稱';
         } else if (formData.name.length < 2) {
             newErrors.name = '名稱必須至少 2 個字元';
         }
-        if (!formData.email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
-            newErrors.email = 'Email 格式不正確';
+        
+        // ✅ CHỈ VALIDATE EMAIL KHI KHÔNG PHẢI SOCIAL LOGIN
+        const isSocialLogin = formData.provider && formData.provider !== 'email';
+        
+        console.log('🔍 [validateForm] Check:');
+        console.log('   isSocialLogin:', isSocialLogin);
+        console.log('   formData.email:', formData.email);
+        console.log('   formData.provider:', formData.provider);
+        console.log('   verifiedEmail:', verifiedEmail);
+        
+        if (!isSocialLogin) {
+            // Chỉ validate email khi là email login
+            if (!formData.email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+                newErrors.email = 'Email 格式不正確';
+            }
+        } else {
+            // Social Login: Nếu email rỗng, sử dụng verifiedEmail
+            if (!formData.email && verifiedEmail) {
+                console.log('⚠️ [validateForm] Email rỗng, sử dụng verifiedEmail:', verifiedEmail);
+                // Cập nhật formData với verifiedEmail
+                setFormData(prev => ({ ...prev, email: verifiedEmail }));
+            }
         }
+        
+        console.log('🔍 [validateForm] Validation errors:', newErrors);
         setErrors(newErrors);
         return Object.keys(newErrors).length === 0;
     };
 
-    // ========================================
-    // 🔄 NAVIGATION HANDLERS
-    // ========================================
     const handleNext = () => {
+        console.log('🔘 handleNext called');
+        console.log('📋 Current formData:', formData);
+        console.log('🔑 verifiedEmail:', verifiedEmail);
+        console.log('🔑 isSocialLogin:', formData.provider !== 'email');
+        
         if (validateForm()) {
             console.log('✅ [SignUp.js] Step 1 驗證通過，資料:', formData);
             setCurrentStep(2);
+        } else {
+            console.log('❌ [SignUp.js] Step 1 驗證失敗，錯誤:', errors);
         }
     };
     
@@ -131,9 +162,6 @@ const SignUp = ({ onSignUpComplete, onReturnToLogin }) => {
         }
     };
 
-    // ========================================
-    // 📍 STEP HANDLERS
-    // ========================================
     const handleStep2Next = (termsData) => {
         updateFormData({ ...termsData, termsAccepted: true });
         console.log('✅ [SignUp.js] Step 2 條款同意，資料:', termsData);
@@ -150,7 +178,6 @@ const SignUp = ({ onSignUpComplete, onReturnToLogin }) => {
         setCurrentStep(6);
     };
 
-    // 輔助函式：提交 Tribe (假設 Profile 已存在)
     const handleTribeSubmission = async (tribeData) => {
         const tribeId = tribeData?.id; 
 
@@ -158,8 +185,6 @@ const SignUp = ({ onSignUpComplete, onReturnToLogin }) => {
             console.log('🟡 [TribeSubmission] 沒有選擇 Tribe，跳過 API 提交。');
             return true; 
         }
-        
-        // 注意：isLoading 狀態由主函式 (handleStep6Next) 控制
         
         const apiEndpoint = 'https://pray-api.yalinelena.church/auth/profile/tribe';
         const postData = { tribe: tribeId };
@@ -200,53 +225,43 @@ const SignUp = ({ onSignUpComplete, onReturnToLogin }) => {
 
         } catch (error) {
             console.error('💥 [TribeSubmission] 儲存支派時發生 JavaScript 錯誤:', error);
-            // 在這裡拋出錯誤，讓主函式 (handleStep6Next) 的 catch 區塊捕獲
             throw error; 
         }
     };
     
-    // 【關鍵修改】：這是現在唯一的最終提交函式
     const handleStep6Next = async (tribeDataFromStep6) => {
         console.log('✅ [SignUp.js] Step 6 完成 (handleStep6Next 觸發)。');
         console.log('🔎 [SignUp.js] 檢查從 Step 6 *直接傳入*的 Tribe 資料:', tribeDataFromStep6);
 
-        // 1. 設定完整載入狀態
         setIsLoading(true);
         setIsSubmitting(true);
 
-        // 2. 立即更新本地狀態
         updateFormData({ tribe: tribeDataFromStep6 });
 
         try {
-            // 3. 【順序一：先建立 Profile】
             const profileData = {
-                name: formData.name,       // 來自 Step 1
-                user_id: formData.userId   // 來自 Step 1
+                name: formData.name,
+                user_id: formData.userId
             };
             console.log('📤 [Step6Next] 1. 準備呼叫 AuthAPI.updateProfile (建立 Profile)...', profileData);
             const updateResult = await AuthAPI.updateProfile(profileData);
             console.log('✅ [Step6Next] 1. AuthAPI.updateProfile 成功', updateResult);
 
-            // 4. 【順序二：再更新 Tribe】
-            //    我們使用 tribeDataFromStep6，因為 formData.tribe 可能是異步的
             console.log('📤 [Step6Next] 2. 準備呼叫 handleTribeSubmission...');
             await handleTribeSubmission(tribeDataFromStep6);
             console.log('✅ [Step6Next] 2. handleTribeSubmission 完成');
 
-            // 5. 【順序三：取得最終 Profile】
             console.log('📤 [Step6Next] 3. 準備呼叫 AuthAPI.getProfile 取得最終資料...');
             const profile = await AuthAPI.getProfile(); 
             console.log('✅ [Step6Next] 3. AuthAPI.getProfile 成功', profile);
             
-            // 6. 【順序四：儲存並導航】
             const finalData = {
                 id: profile.user_id || formData.userId,
                 name: profile.name || formData.name,
-                email: formData.email,
+                email: formData.email || verifiedEmail,
                 avatar: profile.avatar || `https://ui-avatars.com/api/?name=${formData.name}&background=667eea&color=fff`,
                 token: sessionData?.app_token || 'session-token',
                 loginMethod: formData.provider === 'oauth' ? 'oauth' : 'email_verification',
-                // 使用剛才 API 回傳的 profile.tribe，這是最準確的
                 tribe: profile.tribe 
             };
             console.log('🎉 [Step6Next] 4. 最終註冊資料 (準備儲存到 localStorage):', finalData);
@@ -265,7 +280,6 @@ const SignUp = ({ onSignUpComplete, onReturnToLogin }) => {
             }
         
         } catch (error) {
-            // 統一的錯誤處理
             console.error('💥 [Step6Next] 註冊流程最終步驟失敗:', error);
             let errorMessage = error.message || '註冊失敗，請稍後再試';
             if (error.message.includes('Unauthorized') || error.message.includes('Session') || error.message.includes('會話過期')) {
@@ -276,25 +290,29 @@ const SignUp = ({ onSignUpComplete, onReturnToLogin }) => {
             }
             alert(errorMessage);
         } finally {
-            // 7. 結束載入狀態
             setIsSubmitting(false);
             setIsLoading(false);
         }
     };
-    
-    // handleFinalComplete 函式現在不再被 handleStep6Next 呼叫，可以移除或保留
-    // const handleFinalComplete = async () => { ... };
 
-    // 🚀 **新增邏輯：檢查 USER ID 和 NAME 是否輸入**
-    const isFormReady = 
+    const renderStep1 = () => {
+      const isSocialLogin = formData.provider && formData.provider !== 'email';
+      const isEmailLocked = !!verifiedEmail || isSocialLogin;
+
+      const isFormReady = 
         formData.userId.trim().length >= 3 && 
         /^[a-zA-Z0-9_-]+$/.test(formData.userId) &&
         formData.name.trim().length >= 2;
 
-    // ========================================
-    // 🎨 RENDER STEPS
-    // ========================================
-    const renderStep1 = () => (
+      console.log('🔍 [renderStep1] Debug:');
+      console.log('   userId:', formData.userId, '| length:', formData.userId.trim().length);
+      console.log('   name:', formData.name, '| length:', formData.name.trim().length);
+      console.log('   email:', formData.email);
+      console.log('   provider:', formData.provider);
+      console.log('   isSocialLogin:', isSocialLogin);
+      console.log('   isFormReady:', isFormReady);
+
+      return (
         <div className="signup-content">
             <BrandLogo logoSrc={logoImage} size="medium" />
             <div className="signup-form">
@@ -326,33 +344,63 @@ const SignUp = ({ onSignUpComplete, onReturnToLogin }) => {
                         您的顯示名稱（2-50 個字元）
                     </small>
                 </div>
-                <div className="input-group">
-                    <FormInput
-                        type="email"
-                        placeholder="EMAIL ADDRESS"
-                        value={formData.email}
-                        onChange={(e) => handleChange('email', e.target.value)}
-                        className="signup-input"
-                        disabled={isSubmitting || isLoading || !!verifiedEmail}
-                        autoComplete="email"
-                    />
-                    {errors.email && <span className="error-text">{errors.email}</span>}
-                    <small style={{ color: '#999', fontSize: '11px', marginTop: '3px', display: 'block' }}>
-                        {verifiedEmail ? '✅ Email 已驗證' : '我們將發送驗證郵件到此地址'}
-                    </small>
-                </div>
+                
+                {!isSocialLogin && (
+                  <div className="input-group">
+                      <FormInput
+                          type="email"
+                          placeholder="EMAIL ADDRESS"
+                          value={formData.email}
+                          onChange={(e) => handleChange('email', e.target.value)}
+                          className="signup-input"
+                          disabled={isSubmitting || isLoading || isEmailLocked}
+                          autoComplete="email"
+                      />
+                      {errors.email && <span className="error-text">{errors.email}</span>}
+                      <small style={{ color: '#999', fontSize: '11px', marginTop: '3px', display: 'block' }}>
+                          {verifiedEmail ? '✅ Email 已驗證' : '我們將發送驗證郵件到此地址'}
+                      </small>
+                  </div>
+                )}
+
+                {isSocialLogin && verifiedEmail && (
+                  <div className="input-group">
+                      <div style={{
+                          padding: '12px 16px',
+                          background: '#f0f0f0',
+                          borderRadius: '8px',
+                          border: '1px solid #ddd',
+                          color: '#666',
+                          fontSize: '14px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '8px'
+                      }}>
+                          <span>✅</span>
+                          <span>{verifiedEmail}</span>
+                          <span style={{ marginLeft: 'auto', fontSize: '12px', color: '#999' }}>
+                              (已透過 {formData.provider} 驗證)
+                          </span>
+                      </div>
+                  </div>
+                )}
+
                 <ActionButton
-                    onClick={handleNext}
+                    onClick={() => {
+                        console.log('🔘 Create Account button clicked!');
+                        console.log('   isFormReady:', isFormReady);
+                        handleNext();
+                    }}
                     size="medium"
                     className="create-account-button"
-                    // 🚀 **修改點 3：按鈕禁用條件**
                     disabled={!isFormReady || isSubmitting || isLoading}
                     loading={isSubmitting || isLoading}
-                    // 🚀 **修改點 4：根據啟用狀態設定背景色，強制覆蓋禁用樣式**
                     style={{ 
                         backgroundColor: isFormReady ? '#FFF9EC' : '#D9D9D9',
                         color: isFormReady ? '#000000' : '#999999',
-                        border: 'none'
+                        border: 'none',
+                        cursor: isFormReady ? 'pointer' : 'not-allowed',
+                        opacity: isFormReady ? 1 : 0.6
                     }}
                 >
                     Create account
@@ -376,7 +424,8 @@ const SignUp = ({ onSignUpComplete, onReturnToLogin }) => {
                 </div>
             </div>
         </div>
-    );
+      );
+    };
 
     const renderCurrentStep = () => {
         switch (currentStep) {
@@ -409,7 +458,7 @@ const SignUp = ({ onSignUpComplete, onReturnToLogin }) => {
                     <Step6TribeSelection
                         formData={formData}
                         updateFormData={updateFormData}
-                        nextStep={handleStep6Next} // 這裡傳入的是 handleStep6Next 函式
+                        nextStep={handleStep6Next}
                         prevStep={prevStep}
                         isLoading={isLoading} 
                     />
@@ -419,9 +468,6 @@ const SignUp = ({ onSignUpComplete, onReturnToLogin }) => {
         }
     };
 
-    // ========================================
-    // 🎯 MAIN RENDER
-    // ========================================
     const shouldShowProgress = currentStep === 1 || currentStep === 2;
     return (
         <LoginBackground gradientColors={['#142049', '#848484', '#FFDF9E']}>
@@ -456,3 +502,4 @@ const SignUp = ({ onSignUpComplete, onReturnToLogin }) => {
 };
 
 export default SignUp;
+

@@ -186,7 +186,7 @@ function AudioPostScreen({ onClose = () => {}, onUploadSuccess = () => {} }) {
 
       console.log("✅ [Step 1] 上傳成功，Record ID:", recordId);
 
-      setUploadMessage('正在轉錄文字 (請稍候)...');
+      setUploadMessage('Transcribing text (please wait)...');
       
       const transcriptData = await pollForTranscript(recordId);
 
@@ -281,13 +281,13 @@ function AudioPostScreen({ onClose = () => {}, onUploadSuccess = () => {} }) {
             className={`btn-start-recording ${activeButton === 'start' ? 'active' : ''}`}
             onClick={startRecording}
           >
-            開始錄音
+            Start Recording
           </button>
           <button 
             className={`btn-cancel ${activeButton === 'cancel' ? 'active' : ''}`}
             onClick={handleCancel}
           >
-            取消
+            	Cancel
           </button>
         </>
       );
@@ -300,13 +300,13 @@ function AudioPostScreen({ onClose = () => {}, onUploadSuccess = () => {} }) {
             className={`btn-stop-recording ${activeButton === 'stop' ? 'active' : ''}`}
             onClick={stopRecording}
           >
-            停止錄音
+            Stop Recording
           </button>
           <button 
             className={`btn-cancel ${activeButton === 'cancel' ? 'active' : ''}`}
             onClick={handleCancel}
           >
-            取消
+            Cancel
           </button>
         </>
       );
@@ -319,13 +319,13 @@ function AudioPostScreen({ onClose = () => {}, onUploadSuccess = () => {} }) {
             className={`btn-confirm ${activeButton === 'confirm' ? 'active' : ''}`}
             onClick={handleConfirm}
           >
-            確認並送出
+            Confirm & Submit
           </button>
           <button 
             className={`btn-cancel ${activeButton === 'cancel' ? 'active' : ''}`}
             onClick={handleReRecord}
           >
-            重新錄製
+            Re-record
           </button>
         </>
       );
@@ -339,8 +339,8 @@ function AudioPostScreen({ onClose = () => {}, onUploadSuccess = () => {} }) {
       return (
         <div className="recording-status">
           <div className="mic-icon">🎤</div>
-          <div className="ready-text">準備開始錄音</div>
-          <div className="hint-text">點擊「開始錄音」後開始說話</div>
+          <div className="ready-text">Ready to Record</div>
+          <div className="hint-text">Click "Start Recording" to begin speaking</div>
         </div>
       );
     }
@@ -350,10 +350,10 @@ function AudioPostScreen({ onClose = () => {}, onUploadSuccess = () => {} }) {
         <div className="recording-status">
           <div className="recording-indicator">
             <span className="recording-dot"></span>
-            <span className="recording-text">錄音中...</span>
+            <span className="recording-text">Recording...</span>
           </div>
           <div className={`audio-detection ${hasAudioInput ? 'detected' : 'waiting'}`}>
-            {hasAudioInput ? '✓ 偵測到聲音' : '等待聲音輸入...'}
+            {hasAudioInput ? '✓ 偵測到聲音' : 'Waiting for audio input...'}
           </div>
           <div className="recording-wave">
             <div className="wave-bar"></div>
@@ -369,11 +369,11 @@ function AudioPostScreen({ onClose = () => {}, onUploadSuccess = () => {} }) {
     if (recordingState === 'preview') {
       return (
         <div className="audio-preview">
-          <div className="preview-title">預覽錄音</div>
+          <div className="preview-title">Preview Recording</div>
           {audioURL && (
             <>
               <audio controls src={audioURL} />
-              <div className="preview-hint">確認無誤後點擊「確認並送出」</div>
+              <div className="preview-hint">Click "Confirm & Submit" if everything is correct</div>
             </>
           )}
         </div>
@@ -421,7 +421,7 @@ function AudioPostScreen({ onClose = () => {}, onUploadSuccess = () => {} }) {
       <div className="audio-post-content">
         <div className="content-card">
           <div className="card-header">
-            語音貼文
+            Voice Post
           </div>
           
           <div className="card-body">

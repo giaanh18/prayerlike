@@ -23,6 +23,24 @@ const TextPostScreen = ({ user }) => {
   const cameFromAudio = location.state?.fromAudio || false;
   const recordId = location.state?.recordId;
 
+  // ✅ Kiểm tra user có tribe chưa
+  const [currentTribeId, setCurrentTribeId] = useState(() => {
+    const storedUser = JSON.parse(localStorage.getItem('userData') || '{}');
+    return storedUser.tribe !== undefined ? storedUser.tribe : user?.tribe;
+  });
+
+  const hasTribe = currentTribeId !== null && currentTribeId !== undefined;
+
+  // ✅ Sync tribe từ localStorage
+  useEffect(() => {
+    const storedUser = JSON.parse(localStorage.getItem('userData') || '{}');
+    
+    if (storedUser.tribe !== undefined && storedUser.tribe !== currentTribeId) {
+      console.log(`🔄 Syncing tribe from localStorage: ${storedUser.tribe}`);
+      setCurrentTribeId(storedUser.tribe);
+    }
+  }, [user, currentTribeId]);
+
   // State
   const [title, setTitle] = useState('');
   const [content, setContent] = useState(transcriptFromAudio);
@@ -91,6 +109,12 @@ const TextPostScreen = ({ user }) => {
     }
     if (!user || !user.id) {
       setStatusMessage('User not logged in');
+      return;
+    }
+
+    // ✅ CHẶN nếu chọn Tribe Prayer hoặc Tribe privacy mà chưa có tribe
+    if ((category === 'Tribe Prayer' || privacy === 'Tribe') && !hasTribe) {
+      alert('⚠️ 您尚未選擇支派！\n請先選擇您的支派才能使用 Tribe 相關功能。');
       return;
     }
 
@@ -173,8 +197,14 @@ const TextPostScreen = ({ user }) => {
     navigate('/notifications');
   };
 
-  const privacyOptions = ['Public', 'Family', 'Tribe', 'Individual'];
-  const categoryOptions = ['Personal & Family', 'Church & Ministry', 'Kingdom Prayer', 'Tribe Prayer'];
+  // ✅ Chặn Tribe nếu chưa có tribe
+  const privacyOptions = hasTribe 
+    ? ['Public', 'Family', 'Tribe', 'Individual']
+    : ['Public', 'Family', 'Individual'];
+
+  const categoryOptions = hasTribe 
+    ? ['Personal & Family', 'Church & Ministry', 'Kingdom Prayer', 'Tribe Prayer']
+    : ['Personal & Family', 'Church & Ministry', 'Kingdom Prayer'];
 
   return (
     <div className="text-post-screen">
@@ -223,6 +253,19 @@ const TextPostScreen = ({ user }) => {
                     {option}
                   </div>
                 ))}
+                
+                {/* ✅ Hiển thị Tribe bị khóa nếu chưa có tribe */}
+                {!hasTribe && (
+                  <div 
+                    className="dropdown-item disabled"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      alert('⚠️ 您尚未選擇支派！\n請先選擇您的支派才能使用 Tribe Privacy。');
+                    }}
+                  >
+                    Tribe 🔒
+                  </div>
+                )}
               </div>
             )}
           </div>
@@ -243,13 +286,34 @@ const TextPostScreen = ({ user }) => {
                     key={option} 
                     className={`dropdown-item ${category === option ? 'selected' : ''}`}
                     onClick={() => {
+                      // ✅ CHẶN chọn Tribe Prayer nếu chưa có tribe
+                      if (option === 'Tribe Prayer' && !hasTribe) {
+                        alert('⚠️ 您尚未選擇支派！\n請先選擇您的支派才能使用 Tribe Prayer 功能。');
+                        return;
+                      }
+                      
                       setCategory(option);
                       setIsCategoryOpen(false);
                     }}
                   >
                     {option}
+                    {/* ✅ Hiển thị 🔒 nếu là Tribe Prayer và chưa có tribe */}
+                    {option === 'Tribe Prayer' && !hasTribe && ' 🔒'}
                   </div>
                 ))}
+                
+                {/* ✅ Hiển thị Tribe Prayer bị khóa nếu chưa có tribe */}
+                {!hasTribe && (
+                  <div 
+                    className="dropdown-item disabled"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      alert('⚠️ 您尚未選擇支派！\n請先選擇您的支派才能使用 Tribe Prayer 功能。');
+                    }}
+                  >
+                    Tribe Prayer 🔒
+                  </div>
+                )}
               </div>
             )}
           </div>
@@ -308,7 +372,7 @@ const TextPostScreen = ({ user }) => {
 
       </div>
 
-      {/* ✅ 底部導航列 - 修正 ariaLabel 為中文，與 MainApp 統一以確保尺寸正確 */}
+      {/* ✅ 底部導航列 */}
       <div className="bottom-navigation">
         <CircleButton 
           provider="Home" 

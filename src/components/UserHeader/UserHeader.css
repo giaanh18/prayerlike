@@ -31,6 +31,7 @@
   gap: 4px;
 }
 
+/* ✅ AVATAR CONTAINER - MERGED & CLEANED */
 .user-avatar-large {
   width: 56px;
   height: 56px;
@@ -39,12 +40,116 @@
   border: 3px solid #FFFFFF;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
   flex-shrink: 0;
+  cursor: pointer;
+  transition: transform 0.3s ease;
+  position: relative;
 }
 
-.avatar-img {
+.user-avatar-large:hover {
+  transform: scale(1.05);
+  border-color: #667eea;
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.5);
+}
+
+/* ✅ AVATAR IMAGE COMPONENT STYLES */
+.user-avatar-large .avatar-image-container {
+  width: 56px !important;
+  height: 56px !important;
+  display: block;
+  border-radius: 50%;
+}
+
+.user-avatar-large .avatar-image {
+  width: 56px !important;
+  height: 56px !important;
+  border-radius: 50% !important;
+  border: none !important;
+  box-shadow: none !important;
+  object-fit: cover;
+  display: block;
+}
+
+/* ✅ LOADING STATE */
+.user-avatar-large .avatar-image-container.loading {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.user-avatar-large .avatar-spinner {
+  width: 24px;
+  height: 24px;
+  border: 3px solid rgba(255, 255, 255, 0.3);
+  border-top-color: #FFFFFF;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ✅ FALLBACK AVATAR */
+.user-avatar-large .avatar-placeholder {
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-weight: bold;
+  font-size: 20px;
+  text-transform: uppercase;
+}
+
+/* ✅ HIDE OLD IMG TAG */
+.user-avatar-large > .avatar-img,
+.user-avatar-large .avatar-image-container ~ .avatar-img {
+  display: none;
+}
+
+/* ✅ UPLOAD OVERLAY (if editable) */
+.user-avatar-large .avatar-upload-overlay {
+  position: absolute;
+  bottom: -2px;
+  right: -2px;
+  width: 20px;
+  height: 20px;
+  background: #667eea;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  border: 2px solid white;
+  font-size: 10px;
+  z-index: 10;
+}
+
+.user-avatar-large .avatar-upload-overlay:hover {
+  background: #5568d3;
+  transform: scale(1.1);
+}
+
+.user-avatar-large .avatar-upload-overlay input[type="file"] {
+  display: none;
+}
+
+/* ✅ ERROR STATE */
+.user-avatar-large .avatar-image.error {
+  opacity: 0.8;
+}
+
+/* ✅ ACCESSIBILITY */
+.user-avatar-large:focus-within {
+  outline: 2px solid #667eea;
+  outline-offset: 2px;
+  border-radius: 50%;
 }
 
 .user-name-tag {
@@ -55,8 +160,13 @@
   padding: 6px 16px;
   border-radius: 18px;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
-  margin-left: -23px;
+  margin-left: 0px !important; /* ✅ ĐỔI TỪ -23px THÀNH 0px */
+  position: relative; /* ✅ THÊM */
+  z-index: 10; /* ✅ THÊM: Đảm bảo text hiển thị trên avatar */
+  white-space: nowrap; /* ✅ THÊM: Không cho text xuống dòng */
+  overflow: visible; /* ✅ THÊM: Hiển thị toàn bộ text */
 }
+
 
 /* Right: Notification + Coins */
 .header-actions {
@@ -147,7 +257,7 @@
   color: #000000 !important;
 }
 
-/* ==================== DÒNG 2: LOGO REUBEN | 2 ICON TRÒN ==================== */
+/* ==================== DÒNG 2: LOGO TRIBE | 2 ICON TRÒN ==================== */
 
 .header-row-2 {
   display: flex;
@@ -225,7 +335,6 @@
   z-index: 102;
 }
 
-/* ✅ BASE STYLE CHO TẤT CẢ BUTTONS */
 .tribe-action-btn {
   width: 52px !important;
   height: 52px !important;
@@ -262,7 +371,6 @@
   transform: scale(0.95);
 }
 
-/* Icon bên trong */
 .tribe-action-btn svg,
 .tribe-action-btn img {
   width: 36px !important;
@@ -283,14 +391,13 @@
   object-fit: contain;
 }
 
-/* ✅✅✅ LOGOUT BUTTON - SPECIAL STYLE */
+/* ✅ LOGOUT BUTTON - SPECIAL STYLE */
 .tribe-action-btn.logout-button {
-  /* Override size để fit text */
   width: auto !important;
   min-width: 70px !important;
   max-width: none !important;
   padding: 0 16px !important;
-  border-radius: 26px !important; /* Pill shape */
+  border-radius: 26px !important;
 }
 
 .tribe-action-btn.logout-button:hover {
@@ -315,9 +422,37 @@
     padding: 12px 16px;
   }
 
+  /* ✅ AVATAR RESPONSIVE */
   .user-avatar-large {
     width: 48px;
     height: 48px;
+    border-width: 2px;
+  }
+
+  .user-avatar-large .avatar-image-container {
+    width: 48px !important;
+    height: 48px !important;
+  }
+
+  .user-avatar-large .avatar-image {
+    width: 48px !important;
+    height: 48px !important;
+  }
+
+  .user-avatar-large .avatar-spinner {
+    width: 20px;
+    height: 20px;
+    border-width: 2px;
+  }
+
+  .user-avatar-large .avatar-placeholder {
+    font-size: 18px;
+  }
+
+  .user-avatar-large .avatar-upload-overlay {
+    width: 18px;
+    height: 18px;
+    font-size: 9px;
   }
 
   .user-name-tag {
@@ -353,7 +488,6 @@
     height: 32px !important;
   }
 
-  /* ✅ LOGOUT RESPONSIVE */
   .tribe-action-btn.logout-button {
     width: auto !important;
     min-width: 65px !important;
@@ -374,9 +508,36 @@
     gap: 12px;
   }
 
+  /* ✅ AVATAR RESPONSIVE MOBILE */
   .user-avatar-large {
     width: 44px;
     height: 44px;
+    border-width: 2px;
+  }
+
+  .user-avatar-large .avatar-image-container {
+    width: 44px !important;
+    height: 44px !important;
+  }
+
+  .user-avatar-large .avatar-image {
+    width: 44px !important;
+    height: 44px !important;
+  }
+
+  .user-avatar-large .avatar-spinner {
+    width: 18px;
+    height: 18px;
+  }
+
+  .user-avatar-large .avatar-placeholder {
+    font-size: 16px;
+  }
+
+  .user-avatar-large .avatar-upload-overlay {
+    width: 16px;
+    height: 16px;
+    font-size: 8px;
   }
 
   .user-name-tag {
@@ -432,7 +593,6 @@
     height: 28px !important;
   }
 
-  /* ✅ LOGOUT RESPONSIVE MOBILE */
   .tribe-action-btn.logout-button {
     width: auto !important;
     min-width: 60px !important;
@@ -445,4 +605,36 @@
     font-size: 9px !important;
     letter-spacing: 0.5px !important;
   }
+}
+/* ==================== 🔥 FORCE HIDE OLD AVATAR ==================== */
+
+/* ✅ Ẩn TẤT CẢ img tag cũ trong user-avatar-large */
+.user-avatar-large > img,
+.user-avatar-large img.avatar-img,
+.user-avatar-large > .avatar-img {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  position: absolute !important;
+  z-index: -9999 !important;
+  pointer-events: none !important;
+}
+
+/* ✅ CHỈ HIỂN THỊ AvatarImage component */
+.user-avatar-large .avatar-image-container,
+.user-avatar-large .avatar-placeholder {
+  display: flex !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  z-index: 1 !important;
+}
+
+/* ✅ Đảm bảo container chỉ có 1 child hiển thị */
+.user-avatar-large {
+  position: relative;
+  overflow: hidden !important;
+}
+
+.user-avatar-large > *:not(.avatar-image-container):not(.avatar-upload-overlay) {
+  display: none !important;
 }

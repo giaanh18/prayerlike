@@ -1,4 +1,3 @@
-// src/pages/Login/login.js
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import AuthAPI from '../../services/authApi';
@@ -57,78 +56,134 @@ const Login = ({ onLogin }) => {
     EMAIL_VERIFICATION_COUNTDOWN_DEFAULT_SECONDS 
   );
 
-  // ✅ 新增：封裝「登入後續處理」邏輯，供 Email 驗證與 Social Login 共用
+  // ✅ 修改：封裝「登入後續處理」邏輯，供 Email 驗證與 Social Login 共用
   const processLoginSuccess = useCallback(async (sessionData, userEmail = null) => {
     try {
       console.log('👤 Process Login Success...');
+      console.log('📊 Session Data:', sessionData);
       
-      // 如果是第一次登入 (依照後端 session 判斷)
-      if (sessionData.first_login) {
+      // ✅ 檢查 session 是否有效
+      if (!sessionData || !sessionData.authenticated) {
+        console.error('❌ Session 無效');
+        setError('登入狀態無效，請重試');
+        setIsLoading(false);
+        return;
+      }
+
+      // ✅ 取得 session 中的 user 資訊
+      const sessionUser = sessionData.user || {};
+      const sessionEmail = sessionUser.email || userEmail;
+
+      console.log('📧 Session Email:', sessionEmail);
+      console.log('🆕 First Login:', sessionData.first_login);
+      
+      // ✅ 如果是第一次登入 → 導向 /signup
+      if (sessionData.first_login === true) {
         console.log('🆕 First login detected → Redirect to /signup');
         setSuccess('第一次登入，正在前往註冊頁面...');
         
         setTimeout(() => {
           navigate('/signup', { 
             state: { 
-              email: userEmail,
-              verificationCode: 'SOCIAL_LOGIN', // 或是原本的 code
+              email: sessionEmail,
+              sessionData: sessionData,
               verified: true,
-              sessionData: sessionData
-            } 
+              existingProfile: sessionUser
+            },
+            replace: true
           });
         }, 1000);
         return;
       }
 
+      // ✅ 不是第一次登入 → 取得 profile
       console.log('👤 Returning user → Fetch profile');
-      const profile = await AuthAPI.getProfile();
-      console.log('👤 Profile data:', profile);
-
-      // 建構 User Data
-      const userData = {
-        id: profile.user_id || profile.id,
-        name: profile.name,
-        email: userEmail || profile.email, // 優先使用傳入的 email，若無則用 profile 的
-        avatar: profile.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(profile.name || 'User')}&background=667eea&color=fff`,
-        token: sessionData.app_token || 'session-token',
-        loginMethod: userEmail ? 'email_verification' : 'social_login',
-        tribe: profile.tribe // 確保帶入 tribe 資訊
-      };
-
-      setLoginSuccessMessage('登入成功，正在進入系統...');
       
-      setTimeout(() => {
-        setLoginSuccessMessage('');
-        onLogin(userData); // 更新 App 狀態
+      try {
+        const profile = await AuthAPI.getProfile();
+        console.log('👤 Profile data:', profile);
+
+        // ✅ 檢查 profile 是否完整
+        if (!profile || !profile.user_id) {
+          console.warn('⚠️ Profile 不完整，導向 /signup');
+          setSuccess('需要完成註冊資訊，正在前往註冊頁面...');
+          
+          setTimeout(() => {
+            navigate('/signup', { 
+              state: { 
+                email: sessionEmail,
+                sessionData: sessionData,
+                existingProfile: profile || sessionUser
+              },
+              replace: true
+            });
+          }, 1000);
+          return;
+        }
+
+        // ✅ Profile 完整 → 登入成功
+        const userData = {
+          id: profile.user_id || profile.id,
+          name: profile.name,
+          email: sessionEmail || profile.email,
+          avatar: profile.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(profile.name || 'User')}&background=667eea&color=fff`,
+          token: sessionData.app_token || 'session-token',
+          loginMethod: userEmail ? 'email_verification' : 'social_login',
+          tribe: profile.tribe
+        };
+
+        console.log('✅ Login Success - User Data:', userData);
+        setLoginSuccessMessage('登入成功，正在進入系統...');
         
         setTimeout(() => {
-          navigate('/main', { replace: true });
-        }, 100);
-      }, 1000);
+          setLoginSuccessMessage('');
+          onLogin(userData);
+          
+          setTimeout(() => {
+            navigate('/main', { replace: true });
+          }, 100);
+        }, 1000);
 
-    } catch (profileError) {
-      console.error('❌ 無法取得 profile:', profileError);
-      // 若無法取得 Profile，可能視為需要註冊
-      setSuccess('需要完成註冊，正在前往註冊頁面...');
-      setTimeout(() => {
-        navigate('/signup', { state: { sessionData } });
-      }, 1000);
+      } catch (profileError) {
+        console.error('❌ 無法取得 profile:', profileError);
+        
+        // ✅ 如果是 404 或 profile 不存在 → 導向 signup
+        if (profileError.message?.includes('404') || profileError.message?.includes('not found')) {
+          console.log('⚠️ Profile 不存在，導向 /signup');
+          setSuccess('需要建立新帳號，正在前往註冊頁面...');
+          
+          setTimeout(() => {
+            navigate('/signup', { 
+              state: { 
+                email: sessionEmail,
+                sessionData: sessionData,
+                existingProfile: sessionUser
+              },
+              replace: true
+            });
+          }, 1000);
+        } else {
+          setError('無法取得帳號資訊，請重試');
+          setIsLoading(false);
+        }
+      }
+
+    } catch (error) {
+      console.error('💥 processLoginSuccess 發生錯誤:', error);
+      setError(error.message || '登入失敗，請重試');
+      setIsLoading(false);
     }
   }, [navigate, onLogin]);
 
-  // ✅ 新增：useEffect 在元件載入時檢查是否從 Social Login 返回
+  // ✅ useEffect: 檢查從 Social Login 返回的狀態
   useEffect(() => {
     const checkSocialLoginStatus = async () => {
-      // 檢查 sessionStorage 中是否有標記正在進行 OAuth
       const oauthProvider = sessionStorage.getItem('oauth_provider');
-      
-      // 或者直接檢查是否有 Session (即使沒有標記，有時 Cookie 仍可能存在)
-      // 這裡我們稍微保守一點，如果有標記才顯示 Loading，避免一般進入時畫面閃爍
       
       if (oauthProvider) {
         console.log(`🔄 檢測到從 ${oauthProvider} 登入返回，檢查 Session...`);
         setIsLoading(true);
-        sessionStorage.removeItem('oauth_provider'); // 清除標記，避免無限迴圈
+        sessionStorage.removeItem('oauth_provider');
         
         try {
           const session = await AuthAPI.getSession();
@@ -138,26 +193,19 @@ const Login = ({ onLogin }) => {
             console.log('✅ Social Login Verified!');
             await processLoginSuccess(session);
           } else {
-            // 只有在明確是 OAuth 回來卻失敗時才報錯，否則靜默
-            setError(`${oauthProvider} 登入未完成或是失敗，請重試`);
+            setError(`${oauthProvider} 登入未完成或失敗，請重試`);
             setIsLoading(false);
           }
         } catch (err) {
-          console.error('Check session error:', err);
+          console.error('❌ Check session error:', err);
           setError('登入狀態確認失敗');
           setIsLoading(false);
         }
-      } else {
-          // 若沒有 oauth_provider 標記，也可以選擇性地檢查 session (自動登入功能)
-          // AuthAPI.getSession().then(session => {
-          //    if (session.authenticated) processLoginSuccess(session);
-          // }).catch(() => {});
       }
     };
 
     checkSocialLoginStatus();
   }, [processLoginSuccess]);
-
 
   const handleEmailChange = (e) => {
     setEmail(e.target.value);
@@ -265,7 +313,7 @@ const Login = ({ onLogin }) => {
         return;
       }
 
-      // ✅ 修改：呼叫共用的登入成功處理函式
+      // ✅ 呼叫共用的登入成功處理函式
       await processLoginSuccess(session, email);
 
     } catch (error) {
@@ -280,28 +328,23 @@ const Login = ({ onLogin }) => {
     setError('');
     
     try {
-      // ✅ 1. Get available providers
       const providers = await AuthAPI.getProviders();
       console.log('📊 Available providers:', providers);
       
       const providerKey = provider.toLowerCase();
-      // 注意：部分後端可能回傳 google 而不是 Google，這裡做個防呆
       if (!providers[providerKey] && !providers[provider]) {
         setError(`${provider} 登入目前無法使用`);
         return;
       }
 
-      // ✅ 2. Construct OAuth URL
       const BASE_URL = 'https://pray-api.yalinelena.church';
       const oauthUrl = `${BASE_URL}/auth/${providerKey}/login`;
       
       console.log(`🔗 Redirecting to: ${oauthUrl}`);
       
-      // ✅ 3. 儲存當前狀態，以便返回時 useEffect 偵測
       sessionStorage.setItem('oauth_provider', provider);
       sessionStorage.setItem('oauth_timestamp', Date.now().toString());
       
-      // ✅ 4. Redirect to OAuth
       window.location.href = oauthUrl;
       
     } catch (error) {

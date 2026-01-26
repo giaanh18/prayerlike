@@ -1,0 +1,553 @@
+/* src/pages/Profile/Profile.css */
+
+.profile-container {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 20px;
+    min-height: 100vh;
+}
+
+.profile-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 30px;
+    padding-bottom: 15px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.profile-header h1 {
+    font-size: 24px;
+    font-weight: 600;
+    color: #FFFFFF;
+    margin: 0;
+}
+
+.back-button,
+.logout-button {
+    padding: 8px 16px;
+    border: none;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.back-button {
+    background: rgba(255, 255, 255, 0.1);
+    color: #FFFFFF;
+    display: inline-flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 4px;
+    writing-mode: horizontal-tb;
+    white-space: nowrap;
+}
+
+.back-button:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+.logout-button {
+    background: #FF5252;
+    color: #FFFFFF;
+}
+
+.logout-button:hover {
+    background: #FF1744;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(255, 82, 82, 0.3);
+}
+
+/* ==================== AVATAR SECTION ==================== */
+
+.profile-avatar-section {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-bottom: 40px;
+    padding: 30px 0;
+}
+
+.avatar-wrapper {
+    position: relative;
+    margin-bottom: 15px;
+    transition: transform 0.3s ease;
+}
+
+.avatar-wrapper:hover {
+    transform: scale(1.05);
+}
+
+.avatar-edit-overlay {
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    background: #4CAF50;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    border: 3px solid #2D3656;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.avatar-edit-overlay:hover {
+    background: #45A049;
+    transform: scale(1.1);
+}
+
+.avatar-uploading-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.7);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.spinner-small {
+    width: 30px;
+    height: 30px;
+    border: 3px solid rgba(255, 255, 255, 0.3);
+    border-top-color: #FFFFFF;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+.provider-badge {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 16px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 20px;
+    backdrop-filter: blur(10px);
+}
+
+.provider-icon {
+    font-size: 20px;
+}
+
+.provider-label {
+    font-size: 14px;
+    font-weight: 500;
+    color: #FFFFFF;
+}
+
+/* ==================== INFO SECTION - SIÊU BỰ ==================== */
+
+.profile-info-section {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 16px;
+    padding: 40px;  /* ✅ Tăng từ 20px lên 40px */
+    backdrop-filter: blur(10px);
+}
+
+.info-item {
+    margin-bottom: 35px;  /* ✅ Tăng từ 24px lên 35px */
+    padding-bottom: 35px;  /* ✅ Tăng từ 24px lên 35px */
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.info-item:last-child {
+    margin-bottom: 0;
+    padding-bottom: 0;
+    border-bottom: none;
+}
+
+.info-item label {
+    display: block;
+    font-size: 16px;  /* ✅ Tăng từ 14px lên 16px */
+    font-weight: 600;  /* ✅ Tăng từ 500 lên 600 */
+    color: rgba(255, 255, 255, 0.8);  /* ✅ Sáng hơn */
+    margin-bottom: 12px;  /* ✅ Tăng từ 8px lên 12px */
+    letter-spacing: 0.3px;  /* ✅ Thêm khoảng cách chữ */
+}
+
+.info-value {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 16px;  /* ✅ Tăng từ 12px lên 16px */
+}
+
+.info-value span {
+    font-size: 18px;  /* ✅ Tăng từ 16px lên 18px */
+    font-weight: 500;  /* ✅ Thêm weight */
+    color: #FFFFFF;
+    flex: 1;
+    line-height: 1.5;  /* ✅ Thêm line-height */
+}
+
+.masked-email {
+    font-family: monospace;
+    font-size: 17px;  /* ✅ Tăng size riêng cho email */
+}
+
+.password-placeholder {
+    letter-spacing: 5px;  /* ✅ Tăng từ 4px lên 5px */
+    font-size: 20px;  /* ✅ Tăng size cho password dots */
+}
+
+.info-hint {
+    font-size: 14px;  /* ✅ Tăng từ 12px lên 14px */
+    color: rgba(255, 255, 255, 0.6);  /* ✅ Sáng hơn */
+    margin-top: 10px;  /* ✅ Tăng từ 8px lên 10px */
+    margin-bottom: 0;
+    line-height: 1.4;
+}
+
+.change-btn {
+    padding: 10px 20px;  /* ✅ Tăng từ 6px 16px lên 10px 20px */
+    background: #00BCD4;
+    color: #FFFFFF;
+    border: none;
+    border-radius: 8px;  /* ✅ Tăng từ 6px lên 8px */
+    font-size: 15px;  /* ✅ Tăng từ 14px lên 15px */
+    font-weight: 600;  /* ✅ Tăng từ 500 lên 600 */
+    cursor: pointer;
+    transition: all 0.3s ease;
+    white-space: nowrap;
+}
+
+.change-btn:hover:not(:disabled) {
+    background: #00ACC1;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 188, 212, 0.3);
+}
+
+.change-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* ==================== EDIT NAME ==================== */
+
+.edit-name-container {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.name-input {
+    width: 100%;
+    padding: 14px;  /* ✅ Tăng từ 12px lên 14px */
+    background: rgba(255, 255, 255, 0.1);
+    border: 2px solid rgba(255, 255, 255, 0.2);
+    border-radius: 8px;
+    color: #FFFFFF;
+    font-size: 17px;  /* ✅ Tăng từ 16px lên 17px */
+    transition: all 0.3s ease;
+}
+
+.name-input:focus {
+    outline: none;
+    border-color: #00BCD4;
+    background: rgba(255, 255, 255, 0.15);
+}
+
+.edit-actions {
+    display: flex;
+    gap: 10px;  /* ✅ Tăng từ 8px lên 10px */
+}
+
+.save-btn,
+.cancel-btn {
+    flex: 1;
+    padding: 12px;  /* ✅ Tăng từ 10px lên 12px */
+    border: none;
+    border-radius: 8px;
+    font-size: 15px;  /* ✅ Tăng từ 14px lên 15px */
+    font-weight: 600;  /* ✅ Tăng từ 500 lên 600 */
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.save-btn {
+    background: #4CAF50;
+    color: #FFFFFF;
+}
+
+.save-btn:hover:not(:disabled) {
+    background: #45A049;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(76, 175, 80, 0.3);
+}
+
+.save-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.cancel-btn {
+    background: rgba(255, 255, 255, 0.1);
+    color: #FFFFFF;
+}
+
+.cancel-btn:hover:not(:disabled) {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+/* ==================== PUBLIC VIEW NOTICE ==================== */
+
+.public-view-notice {
+    margin-top: 20px;
+    padding: 15px;
+    background: rgba(255, 193, 7, 0.1);
+    border: 1px solid rgba(255, 193, 7, 0.3);
+    border-radius: 12px;
+    text-align: center;
+}
+
+.public-view-notice p {
+    color: #FFC107;
+    font-size: 14px;
+    margin: 0;
+}
+
+/* ==================== LOADING & ERROR ==================== */
+
+.profile-loading,
+.profile-error {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    padding: 20px;
+    text-align: center;
+}
+
+.loading-spinner {
+    width: 50px;
+    height: 50px;
+    border: 4px solid rgba(255, 255, 255, 0.1);
+    border-top-color: #00BCD4;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin-bottom: 20px;
+}
+
+.profile-loading p,
+.profile-error p {
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 16px;
+    margin: 10px 0;
+}
+
+.error-icon {
+    font-size: 64px;
+    margin-bottom: 20px;
+}
+
+.profile-error h3 {
+    color: #FFFFFF;
+    font-size: 24px;
+    margin-bottom: 12px;
+}
+
+.retry-btn,
+.back-btn {
+    margin: 8px;
+    padding: 12px 24px;
+    border: none;
+    border-radius: 8px;
+    font-size: 16px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.retry-btn {
+    background: #4CAF50;
+    color: #FFFFFF;
+}
+
+.retry-btn:hover {
+    background: #45A049;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(76, 175, 80, 0.3);
+}
+
+.back-btn {
+    background: rgba(255, 255, 255, 0.1);
+    color: #FFFFFF;
+}
+
+.back-btn:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+/* ==================== RESPONSIVE ==================== */
+
+@media (max-width: 768px) {
+    .profile-container {
+        padding: 15px;
+    }
+
+    .profile-header h1 {
+        font-size: 20px;
+    }
+
+    .back-button,
+    .logout-button {
+        padding: 6px 12px;
+        font-size: 13px;
+    }
+
+    .profile-info-section {
+        padding: 25px;  /* ✅ Giảm xuống cho mobile */
+    }
+
+    .info-item {
+        margin-bottom: 28px;
+        padding-bottom: 28px;
+    }
+
+    .info-item label {
+        font-size: 15px;  /* ✅ Giảm xuống cho mobile */
+    }
+
+    .info-value span {
+        font-size: 16px;  /* ✅ Giảm xuống cho mobile */
+    }
+
+    .info-value {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .change-btn {
+        align-self: flex-start;
+        margin-top: 8px;
+    }
+}
+/* ==================== TERMS & CONDITIONS SECTION ==================== */
+
+.terms-section {
+    margin-top: 40px;
+    padding: 35px;
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 16px;
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.terms-title {
+    font-size: 18px;
+    font-weight: 700;
+    color: #FFFFFF;
+    margin: 0 0 30px 0;
+    letter-spacing: 1.2px;
+    text-transform: uppercase;
+}
+
+.terms-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 22px 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.terms-item:last-of-type {
+    margin-bottom: 25px;
+}
+
+.terms-label {
+    font-size: 16px;
+    font-weight: 500;
+    color: rgba(255, 255, 255, 0.9);
+}
+
+.terms-read-btn {
+    padding: 10px 18px;
+    background: transparent;
+    color: rgba(255, 255, 255, 0.6);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    white-space: nowrap;
+}
+
+.terms-read-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: #FFFFFF;
+    border-color: rgba(255, 255, 255, 0.4);
+    transform: translateX(3px);
+}
+
+.delete-account-btn {
+    width: 100%;
+    padding: 16px;
+    background: transparent;
+    color: rgba(255, 255, 255, 0.5);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 10px;
+    font-size: 15px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    margin-top: 10px;
+}
+
+.delete-account-btn:hover {
+    background: rgba(255, 82, 82, 0.15);
+    color: #FF5252;
+    border-color: rgba(255, 82, 82, 0.4);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(255, 82, 82, 0.2);
+}
+
+/* Responsive for Terms Section */
+@media (max-width: 768px) {
+    .terms-section {
+        padding: 25px;
+        margin-top: 30px;
+    }
+
+    .terms-title {
+        font-size: 16px;
+        margin-bottom: 20px;
+    }
+
+    .terms-item {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 12px;
+        padding: 18px 0;
+    }
+
+    .terms-label {
+        font-size: 15px;
+    }
+
+    .terms-read-btn {
+        align-self: flex-start;
+        padding: 8px 14px;
+        font-size: 13px;
+    }
+
+    .delete-account-btn {
+        padding: 14px;
+        font-size: 14px;
+    }
+}

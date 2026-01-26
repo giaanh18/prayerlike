@@ -229,7 +229,7 @@
   letter-spacing: -0.2px;
 }
 
-/* ==================== 篩選列 - FILTER BAR (✅ FIXED) ==================== */
+/* ==================== 篩選列 - FILTER BAR ==================== */
 .filter-bar {
   display: flex !important;
   justify-content: center !important;
@@ -246,15 +246,14 @@
 
 .filter-controls {
   display: flex !important;
-  justify-content: space-between !important; /* ✅ TÁCH 2 BÊN */
+  justify-content: space-between !important;
   align-items: center !important;
-  width: 100% !important; /* ✅ CHIẾM FULL WIDTH */
-  max-width: 600px !important; /* ✅ GIỚI HẠN WIDTH */
+  width: 100% !important;
+  max-width: 600px !important;
   flex-wrap: nowrap !important;
   gap: 0 !important;
 }
 
-/* ✅ STYLE CHO 2 BUTTON TRONG FILTER BAR */
 .filter-controls > button,
 .filter-controls > .RectButton,
 .filter-controls .RectButton {
@@ -285,7 +284,6 @@
   box-shadow: 0 4px 12px rgba(255, 215, 0, 0.2) !important;
 }
 
-/* ✅ ACTIVE STATE - VÀNG */
 .filter-controls > button.active,
 .filter-controls > .RectButton.active,
 .filter-controls .RectButton.active,
@@ -297,7 +295,6 @@
   box-shadow: 0 4px 12px rgba(255, 215, 0, 0.4) !important;
 }
 
-/* ✅ DISABLED STATE */
 .filter-controls > button:disabled,
 .filter-controls > .RectButton:disabled,
 .filter-controls .RectButton:disabled {
@@ -425,20 +422,112 @@
   margin-bottom: var(--spacing-md);
 }
 
-.post-avatar {
-  width: 44px;
-  height: 44px;
-  border-radius: 50%;
-  overflow: hidden;
-  border: 2px solid #FFF9EC;
-  margin-right: var(--spacing-sm);
+/* ==================== 🔧 POST CARD AVATAR - FIXED ==================== */
+
+.post-header {
+  display: flex !important;
+  align-items: flex-start !important;
+  gap: 12px !important;
+  margin-bottom: 16px !important;
+  position: relative !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
 }
 
-.post-avatar img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
+.post-avatar {
+  width: 48px !important;
+  height: 48px !important;
+  min-width: 48px !important;
+  min-height: 48px !important;
+  max-width: 48px !important;
+  max-height: 48px !important;
+  border-radius: 50% !important;
+  overflow: hidden !important;
+  flex-shrink: 0 !important;
+  position: relative !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  background: #f0f0f0 !important;
+  border: 2px solid #FFF9EC !important;
+  box-sizing: border-box !important;
+  margin-right: 0 !important;
 }
+
+/* ✅ Ẩn HOÀN TOÀN img tag cũ */
+.post-avatar > img:not(.avatar-image) {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  position: absolute !important;
+  z-index: -9999 !important;
+  pointer-events: none !important;
+}
+
+/* ✅ CHỈ HIỂN THỊ AvatarImage component */
+.post-avatar .avatar-image-container {
+  width: 48px !important;
+  height: 48px !important;
+  min-width: 48px !important;
+  min-height: 48px !important;
+  max-width: 48px !important;
+  max-height: 48px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  position: relative !important;
+  z-index: 1 !important;
+  border-radius: 50% !important;
+  overflow: hidden !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+.post-avatar .avatar-image,
+.post-avatar .avatar-placeholder {
+  width: 48px !important;
+  height: 48px !important;
+  min-width: 48px !important;
+  min-height: 48px !important;
+  max-width: 48px !important;
+  max-height: 48px !important;
+  border-radius: 50% !important;
+  object-fit: cover !important;
+  display: block !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: none !important;
+}
+
+/* ✅ Đảm bảo không có element nào khác hiển thị */
+.post-avatar > *:not(.avatar-image-container) {
+  display: none !important;
+}
+
+/* ✅ Hover Effect */
+.post-avatar:hover .avatar-image-container {
+  transform: scale(1.05) !important;
+  transition: transform 0.3s ease !important;
+}
+
+/* ✅ Loading State */
+.post-avatar .avatar-image-container.loading {
+  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%) !important;
+  background-size: 200% 100% !important;
+  animation: loading 1.5s ease-in-out infinite !important;
+}
+
+@keyframes loading {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+/* ==================== END OF POST CARD AVATAR FIX ==================== */
+
 
 .post-info {
   flex: 1;
@@ -513,8 +602,8 @@
 .audio-action-button {
   flex: 1;
   padding: 8px 12px;
-  background: #667eea;
-  color: white;
+  background: #D9D9D9; /* ✅ ĐỔI TỪ TÍM SANG XÁM */
+  color: #666;
   border: none;
   border-radius: 8px;
   font-size: 13px;
@@ -524,7 +613,7 @@
 }
 
 .audio-action-button:hover:not(:disabled) {
-  background: #5568d3;
+  background: #BDBDBD; /* ✅ ĐỔI TỪ TÍM SANG XÁM ĐẬM */
 }
 
 .audio-action-button:disabled {
@@ -540,7 +629,7 @@
   background: #CC0000;
 }
 
-/* ==================== 貼文操作按鈕 - FIXED COLORS ==================== */
+/* ==================== 貼文操作按鈕 ==================== */
 .post-actions {
   display: flex !important;
   gap: 8px !important;
@@ -560,7 +649,7 @@
   padding: 12px 16px !important;
   border: 2px solid transparent !important;
   border-radius: 8px !important;
-  background: #D9D9D9 !important; /* ✅ MẶC ĐỊNH XÁM */
+  background: #D9D9D9 !important;
   color: #666 !important;
   font-size: 13px !important;
   font-weight: 600 !important;
@@ -587,21 +676,18 @@
   transform: none !important;
 }
 
-/* ✅ AMEN - CHỈ VÀNG TRONG LÚC PROCESSING */
 .action-button.action-amen.active-amen {
   background: #FFDE97 !important;
   color: #333 !important;
   border-color: #FFDE97 !important;
 }
 
-/* ✅ PRAY FOR ME - VÀNG KHI ACTIVE */
 .action-button.action-comment.active-comment {
   background: #FFDE97 !important;
   color: #333 !important;
   border-color: #FFDE97 !important;
 }
 
-/* ✅ WITNESS - VÀNG KHI ACTIVE */
 .action-button.action-witness.active-witness {
   background: #FFDE97 !important;
   color: #333 !important;
@@ -615,7 +701,6 @@
   align-items: center !important;
   flex-shrink: 0 !important;
 }
-
 
 /* ==================== FORM CONTAINER ==================== */
 .form-container {
@@ -774,7 +859,7 @@
 .comment-reply {
   margin-left: var(--spacing-xl);
   background: #FFFFFF;
-  border-left: 3px solid #667eea;
+  border-left: 3px solid #D9D9D9; /* ✅ ĐỔI TỪ TÍM SANG XÁM */
 }
 
 .comment-header {
@@ -839,8 +924,83 @@
 
 .comment-actions {
   display: flex;
-  gap: var(--spacing-sm);
-  margin-top: var(--spacing-sm);
+  gap: 8px;
+  align-items: center;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.comment-action-btn.like,
+.comment-like-btn {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 4px !important;
+  padding: 6px 12px !important;
+  border: 2px solid transparent !important;
+  border-radius: 6px !important;
+  background: #D9D9D9 !important; /* ✅ MẶC ĐỊNH XÁM */
+  color: #666 !important;
+  font-size: 11px !important;
+  font-weight: 600 !important;
+  cursor: pointer !important;
+  transition: all 0.3s ease !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.3px !important;
+  white-space: nowrap !important;
+  width: auto !important;
+  flex-shrink: 0 !important;
+  box-shadow: none !important;
+  min-width: auto !important;
+}
+
+.comment-action-btn.like:hover:not(:disabled),
+.comment-like-btn:hover:not(:disabled) {
+  transform: translateY(-1px) !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1) !important;
+  background: #BDBDBD !important;
+}
+
+.comment-action-btn.like:active,
+.comment-like-btn:active {
+  transform: translateY(0) !important;
+}
+
+
+.comment-action-btn.like:disabled,
+.comment-like-btn:disabled {
+  opacity: 0.6 !important;
+  cursor: not-allowed !important;
+  transform: none !important;
+}
+
+
+/* ✅ ACTIVE STATE - VÀNG KHI ĐANG PROCESSING */
+.comment-action-btn.like.active-amen,
+.comment-like-btn.active-amen {
+  background: #FFDE97 !important;
+  color: #333 !important;
+  border-color: #FFDE97 !important;
+}
+
+.comment-action-btn.reply {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 12px;
+  background: transparent;
+  border: none;
+  color: #666;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  width: auto;
+}
+
+.comment-action-btn.reply:hover {
+  color: #333;
 }
 
 .no-comments {
@@ -856,8 +1016,8 @@
 
 .load-more-btn {
   padding: 10px 20px;
-  background: #667eea;
-  color: white;
+  background: #D9D9D9; /* ✅ ĐỔI TỪ TÍM SANG XÁM */
+  color: #666;
   border: none;
   border-radius: 8px;
   font-size: 14px;
@@ -867,7 +1027,7 @@
 }
 
 .load-more-btn:hover:not(:disabled) {
-  background: #5568d3;
+  background: #BDBDBD; /* ✅ ĐỔI TỪ TÍM SANG XÁM ĐẬM */
 }
 
 .load-more-btn:disabled {
@@ -907,12 +1067,12 @@
 }
 
 .comment-save-btn {
-  background: #667eea;
-  color: white;
+  background: #D9D9D9; /* ✅ ĐỔI TỪ TÍM SANG XÁM */
+  color: #666;
 }
 
 .comment-save-btn:hover:not(:disabled) {
-  background: #5568d3;
+  background: #BDBDBD; /* ✅ ĐỔI TỪ TÍM SANG XÁM ĐẬM */
 }
 
 .comment-save-btn:disabled {
@@ -965,12 +1125,12 @@
 }
 
 .comment-reply-submit {
-  background: #667eea;
-  color: white;
+  background: #D9D9D9; /* ✅ ĐỔI TỪ TÍM SANG XÁM */
+  color: #666;
 }
 
 .comment-reply-submit:hover:not(:disabled) {
-  background: #5568d3;
+  background: #BDBDBD; /* ✅ ĐỔI TỪ TÍM SANG XÁM ĐẬM */
 }
 
 .comment-reply-submit:disabled {
@@ -1004,7 +1164,7 @@
   margin-top: var(--spacing-md);
   padding: var(--spacing-md);
   background: #F0F8FF;
-  border: 2px solid #667eea;
+  border: 2px solid #D9D9D9; /* ✅ ĐỔI TỪ TÍM SANG XÁM */
   border-radius: 12px;
 }
 
@@ -1018,7 +1178,7 @@
 .transcript-header h4 {
   font-size: 16px;
   font-weight: bold;
-  color: #667eea;
+  color: #666; /* ✅ ĐỔI TỪ TÍM SANG XÁM */
   margin: 0;
 }
 
@@ -1053,7 +1213,7 @@
 .transcript-text h5 {
   font-size: 14px;
   font-weight: bold;
-  color: #667eea;
+  color: #666; /* ✅ ĐỔI TỪ TÍM SANG XÁM */
   margin-bottom: var(--spacing-sm);
 }
 
@@ -1075,7 +1235,7 @@
 .transcript-audio h5 {
   font-size: 14px;
   font-weight: bold;
-  color: #667eea;
+  color: #666; /* ✅ ĐỔI TỪ TÍM SANG XÁM */
   margin-bottom: var(--spacing-sm);
 }
 
@@ -1084,51 +1244,42 @@
   margin-bottom: var(--spacing-sm);
 }
 
-/* ==================== 底部導航列 - FIXED COMPLETELY ==================== */
+/* ==================== 底部導航列 ==================== */
 .bottom-navigation {
   position: fixed !important;
   bottom: 0 !important;
   left: 0 !important;
   right: 0 !important;
-  width: 100vw !important; /* ✅ FULL VIEWPORT WIDTH */
+  width: 100vw !important;
   height: 80px !important;
-  
   background: #2D3656 !important;
   border-top: 1px solid rgba(255, 255, 255, 0.15) !important;
-  
-  /* ✅ FLEX + SPACE-EVENLY */
   display: flex !important;
-  justify-content: space-evenly !important; /* ✅ KHOẢNG CÁCH ĐỀU */
+  justify-content: space-evenly !important;
   align-items: center !important;
   gap: 0 !important;
-  
-  /* ✅ KHÔNG PADDING 2 BÊN */
   padding: 0 0 20px 0 !important;
   margin: 0 !important;
-  
   box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.3) !important;
   z-index: 9999 !important;
   box-sizing: border-box !important;
 }
 
-/* ✅ MỖI ICON - KHÔNG CHO GROW/SHRINK */
 .bottom-navigation > *,
 .bottom-navigation > button,
 .bottom-navigation > div {
-  flex: 0 0 auto !important; /* ✅ KHÔNG GROW, KHÔNG SHRINK */
+  flex: 0 0 auto !important;
   width: auto !important;
   margin: 0 !important;
   padding: 0 !important;
 }
 
-/* Mobile */
 @media (max-width: 480px) {
   .bottom-navigation {
     height: 75px !important;
     padding: 0 0 15px 0 !important;
   }
 }
-
 
 /* ==================== 動畫效果 ==================== */
 @keyframes fadeIn {
@@ -1160,8 +1311,7 @@
   background: rgba(255, 255, 255, 0.5);
 }
 
-/* ==================== ✅ WITNESS WALL - POST CARD LAYOUT ==================== */
-
+/* ==================== WITNESS WALL ==================== */
 .witness-wall {
   width: 100%;
   padding: 20px;
@@ -1458,9 +1608,7 @@
   transform: translateY(-1px);
 }
 
-/* ==================== POST BADGES - STATIC LABELS ==================== */
-
-/* Container chứa 2 badges */
+/* ==================== POST BADGES ==================== */
 .post-badges-container {
   display: flex;
   gap: 8px;
@@ -1469,7 +1617,6 @@
   margin-left: auto;
 }
 
-/* Style chung cho cả 2 badges - STATIC (không hover, không click) */
 .post-privacy-badge,
 .post-category-badge {
   background: rgba(255, 215, 0, 0.15);
@@ -1483,31 +1630,26 @@
   white-space: nowrap;
   display: inline-block;
   text-align: center;
-  /* ✅ XÓA MỌI TƯƠNG TÁC */
   pointer-events: none;
   user-select: none;
 }
 
-/* Privacy Badge - CHỮ IN HOA */
 .post-privacy-badge {
   text-transform: uppercase;
 }
 
-/* Category Badge - CHỮ VIẾT HOA ĐẦU */
 .post-category-badge {
   text-transform: capitalize;
   letter-spacing: 0.3px;
 }
 
-/* ✅ ĐẢM BẢO SPAN BÊN TRONG CŨNG TĨNH */
 .post-privacy-badge span,
 .post-category-badge span {
   display: inline;
   pointer-events: none;
 }
 
-/* ==================== ✅ WITNESS WALL - ĐỒNG NHẤT VỚI ORIGINAL POST ==================== */
-
+/* ==================== WITNESS WALL - ĐỒNG NHẤT ==================== */
 .witness-wall {
   width: 100% !important;
   max-width: 100% !important;
@@ -1527,7 +1669,6 @@
   box-sizing: border-box !important;
 }
 
-/* ✅ WITNESS POST CARD - GIỐNG HỆT POST-CARD */
 .witness-wall-post-card {
   background: #FFFFFF !important;
   border-radius: 16px !important;
@@ -1550,7 +1691,6 @@
   transform: translateY(-2px) !important;
 }
 
-/* ✅ ORIGINAL POST SECTION - GIỐNG POST-CONTENT */
 .witness-original-post-section {
   width: 100% !important;
   padding: 0 !important;
@@ -1561,7 +1701,6 @@
   box-sizing: border-box !important;
 }
 
-/* ✅ WITNESS SECTION - GIỐNG POST-CONTENT */
 .witness-section {
   width: 100% !important;
   background: linear-gradient(to bottom, #FFFEF8, #FFF9EC) !important;
@@ -1572,7 +1711,6 @@
   margin: 0 !important;
 }
 
-/* ✅ POST HEADER - ĐỒNG NHẤT */
 .witness-wall-header,
 .post-header {
   display: flex !important;
@@ -1584,7 +1722,6 @@
   box-sizing: border-box !important;
 }
 
-/* ✅ AVATAR - ĐỒNG NHẤT */
 .witness-wall-avatar,
 .post-avatar {
   width: 48px !important;
@@ -1604,7 +1741,6 @@
   object-fit: cover !important;
 }
 
-/* ✅ INFO SECTION - ĐỒNG NHẤT */
 .witness-wall-info,
 .post-info {
   flex: 1 !important;
@@ -1614,7 +1750,6 @@
   gap: 2px !important;
 }
 
-/* ✅ AUTHOR NAME - ĐỒNG NHẤT */
 .witness-wall-author,
 .post-author {
   font-size: 15px !important;
@@ -1624,7 +1759,6 @@
   margin: 0 !important;
 }
 
-/* ✅ TIME - ĐỒNG NHẤT */
 .witness-wall-time,
 .post-time {
   font-size: 12px !important;
@@ -1633,7 +1767,6 @@
   margin: 0 !important;
 }
 
-/* ✅ BADGES CONTAINER - ĐỒNG NHẤT VỊ TRÍ */
 .post-badges-container {
   display: flex !important;
   gap: 8px !important;
@@ -1642,7 +1775,6 @@
   align-items: center !important;
 }
 
-/* ✅ BADGES - ĐỒNG NHẤT STYLE */
 .post-privacy-badge,
 .post-category-badge {
   background: rgba(255, 215, 0, 0.15) !important;
@@ -1658,7 +1790,6 @@
   user-select: none !important;
 }
 
-/* ✅ CONTENT - ĐỒNG NHẤT */
 .witness-wall-content,
 .post-content {
   width: 100% !important;
@@ -1685,7 +1816,6 @@
   margin: 0 !important;
 }
 
-/* ✅ POST ACTIONS - ĐỒNG NHẤT */
 .post-actions {
   display: flex !important;
   gap: 8px !important;
@@ -1696,7 +1826,6 @@
   box-sizing: border-box !important;
 }
 
-/* ✅ PAGINATION - FIX VỊ TRÍ */
 .witness-wall-pagination {
   display: flex !important;
   justify-content: center !important;
@@ -1742,7 +1871,6 @@
   text-align: center !important;
 }
 
-/* ✅ LOADING & EMPTY STATES */
 .witness-wall-loading,
 .witness-wall-empty {
   display: flex !important;
@@ -1785,7 +1913,6 @@
 }
 
 /* ==================== 響應式設計 ==================== */
-
 @media (max-width: 768px) {
   .app-container {
     padding-bottom: 120px;
@@ -1961,6 +2088,7 @@
     gap: 4px !important;
     padding: 10px !important;
   }
+  
   .action-button {
     padding: 8px 8px !important;
     font-size: 10px !important;
@@ -2031,21 +2159,2258 @@ a:focus-visible,
 input:focus-visible,
 textarea:focus-visible,
 select:focus-visible {
-  outline: 3px solid #667eea;
+  outline: 3px solid #D9D9D9; /* ✅ ĐỔI TỪ TÍM SANG XÁM */
   outline-offset: 2px;
 }
 
 ::selection {
-  background-color: #667eea;
-  color: #FFFFFF;
+  background-color: #D9D9D9; /* ✅ ĐỔI TỪ TÍM SANG XÁM */
+  color: #000000;
 }
 
 ::-moz-selection {
-  background-color: #667eea;
-  color: #FFFFFF;
+  background-color: #D9D9D9; /* ✅ ĐỔI TỪ TÍM SANG XÁM */
+  color: #000000;
 }
 
+/* ==================== ACTIVITY VIEW ==================== */
+.activity-view {
+  width: 100%;
+  position: relative;
+  padding: 20px 0;
+}
 
-/* ==================== END OF FILE ==================== */
+.add-activity-button {
+  position: fixed;
+  bottom: 120px;
+  right: 20px;
+  width: 60px;
+  height: 60px;
+  background: linear-gradient(135deg, #FFD700, #FFA500);
+  border: none;
+  border-radius: 50%;
+  font-size: 32px;
+  color: #000000;
+  cursor: pointer;
+  box-shadow: 0 4px 16px rgba(255, 215, 0, 0.4);
+  z-index: 100;
+}
 
+.activities-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.activity-card {
+  background: #FFFFFF;
+  border-radius: 16px;
+  padding: 20px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.activity-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.activity-avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  overflow: hidden;
+}
+
+.activity-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.activity-info {
+  flex: 1;
+}
+
+.activity-author {
+  font-size: 15px;
+  font-weight: bold;
+  color: #000000;
+}
+
+.activity-time {
+  font-size: 12px;
+  color: #666666;
+}
+
+.activity-privacy-badge {
+  background: rgba(255, 215, 0, 0.15);
+  border: 1px solid rgba(255, 215, 0, 0.3);
+  color: #FFD700;
+  padding: 6px 16px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.activity-content h3 {
+  font-size: 18px;
+  font-weight: bold;
+  margin-bottom: 8px;
+}
+
+.activity-content p {
+  font-size: 15px;
+  color: #333333;
+  margin: 4px 0;
+}
+
+.activity-cover-image {
+  width: 100%;
+  margin: 12px 0;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.activity-cover-image img {
+  width: 100%;
+  height: auto;
+  max-height: 400px;
+  object-fit: cover;
+  display: block;
+}
+
+.activity-date,
+.activity-location,
+.activity-participants {
+  font-size: 14px;
+  color: #4a5568;
+  margin: 6px 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.activity-description {
+  margin-top: 12px;
+  font-size: 14px;
+  color: #2d3748;
+  line-height: 1.6;
+  white-space: pre-wrap;
+}
+
+.activity-images-gallery {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.activity-images-gallery img {
+  width: 100%;
+  height: 120px;
+  object-fit: cover;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.activity-images-gallery img:hover {
+  transform: scale(1.05);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.activities-list:empty::after {
+  content: '暫無活動';
+  display: block;
+  text-align: center;
+  padding: 40px;
+  color: #a0aec0;
+  font-size: 16px;
+}
+
+@media (max-width: 768px) {
+  .activity-card {
+    padding: 12px;
+  }
+
+  .activity-content h3 {
+    font-size: 16px;
+  }
+
+  .activity-images-gallery {
+    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+  }
+
+  .activity-images-gallery img {
+    height: 100px;
+  }
+}
+
+/* ==================== 🌐 TRANSLATION BUTTON STYLES ==================== */
+.post-content {
+  position: relative;
+  padding: 12px 45px 12px 12px;
+}
+
+.post-translate-button {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: 32px;
+  height: 32px;
+  background: #6B4E2E;
+  border: none;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  z-index: 10;
+  padding: 6px;
+  box-shadow: 0 2px 4px rgba(107, 78, 46, 0.3);
+}
+
+.post-translate-button:hover {
+  background: #8B6E4E;
+  transform: scale(1.05);
+  box-shadow: 0 4px 8px rgba(107, 78, 46, 0.4);
+}
+
+.post-translate-button svg {
+  fill: white;
+  transition: fill 0.3s ease;
+}
+
+.post-translate-button.active {
+  background: #4A3520;
+  box-shadow: 0 4px 8px rgba(107, 78, 46, 0.5);
+}
+
+.post-translate-button.active svg {
+  fill: white;
+}
+
+.post-translate-button.translating {
+  background: #8B6E4E;
+  animation: pulse 1s infinite;
+  pointer-events: none;
+}
+
+.post-translate-button.translating svg {
+  fill: white;
+  animation: rotate 1s linear infinite;
+}
+
+.post-translate-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.05);
+    opacity: 0.9;
+  }
+}
+
+@keyframes rotate {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.post-translated-content {
+  margin-top: 15px;
+  padding: 15px;
+  background: linear-gradient(135deg, #FFF8F0 0%, #F5EBE0 100%);
+  border-left: 4px solid #6B4E2E;
+  border-radius: 12px;
+  animation: slideDown 0.3s ease;
+}
+
+.post-translated-content .translate-label {
+  font-size: 12px;
+  color: #6B4E2E;
+  font-weight: 600;
+  display: block;
+  margin-bottom: 8px;
+}
+
+.post-translated-content p {
+  margin: 0;
+  color: #333;
+  line-height: 1.6;
+  font-size: 14px;
+}
+
+.post-translation-error {
+  margin-top: 12px;
+  padding: 10px 15px;
+  background: linear-gradient(135deg, #ffe6e6 0%, #ffcccc 100%);
+  border-left: 4px solid #ff4444;
+  border-radius: 8px;
+  color: #cc0000;
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  animation: shake 0.5s ease;
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-5px); }
+  75% { transform: translateX(5px); }
+}
+
+.comment-content {
+  position: relative;
+  padding: 8px 35px 8px 8px;
+}
+
+.comment-translate-button {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 24px;
+  height: 24px;
+  background: #6B4E2E;
+  border: none;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  z-index: 5;
+  padding: 4px;
+  box-shadow: 0 1px 3px rgba(107, 78, 46, 0.3);
+}
+
+.comment-translate-button:hover {
+  background: #8B6E4E;
+  transform: scale(1.05);
+  box-shadow: 0 2px 6px rgba(107, 78, 46, 0.4);
+}
+
+.comment-translate-button svg {
+  fill: white;
+  transition: fill 0.3s ease;
+}
+
+.comment-translate-button.active {
+  background: #4A3520;
+  box-shadow: 0 2px 6px rgba(107, 78, 46, 0.5);
+}
+
+.comment-translate-button.active svg {
+  fill: white;
+}
+
+.comment-translate-button.translating {
+  background: #8B6E4E;
+  animation: pulse-small 1s infinite;
+  pointer-events: none;
+}
+
+.comment-translate-button.translating svg {
+  fill: white;
+  animation: rotate-small 1s linear infinite;
+}
+
+.comment-translate-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+@keyframes pulse-small {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.05);
+    opacity: 0.9;
+  }
+}
+
+@keyframes rotate-small {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.comment-translated-content {
+  margin-top: 10px;
+  padding: 10px;
+  background: linear-gradient(135deg, #FFF8F0 0%, #F5EBE0 100%);
+  border-left: 3px solid #6B4E2E;
+  border-radius: 8px;
+  animation: slideDown 0.3s ease;
+}
+
+.comment-translated-content .translate-label {
+  font-size: 11px;
+  color: #6B4E2E;
+  font-weight: 600;
+  display: block;
+  margin-bottom: 5px;
+}
+
+.comment-translated-content p {
+  margin: 0;
+  color: #333;
+  line-height: 1.5;
+  font-size: 13px;
+}
+
+.comment-translation-error {
+  margin-top: 8px;
+  padding: 8px 10px;
+  background: linear-gradient(135deg, #ffe6e6 0%, #ffcccc 100%);
+  border-left: 3px solid #ff4444;
+  border-radius: 6px;
+  color: #cc0000;
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  animation: shake 0.5s ease;
+}
+
+@media (max-width: 768px) {
+  .post-translate-button {
+    width: 28px;
+    height: 28px;
+    padding: 5px;
+    border-radius: 5px;
+  }
+
+  .post-translate-button svg {
+    width: 16px;
+    height: 16px;
+  }
+
+  .comment-translate-button {
+    width: 22px;
+    height: 22px;
+    padding: 3px;
+    border-radius: 4px;
+  }
+
+  .comment-translate-button svg {
+    width: 13px;
+    height: 13px;
+  }
+}
+
+@media (max-width: 375px) {
+  .post-content {
+    padding: 10px 40px 10px 10px;
+  }
+
+  .post-translate-button {
+    width: 26px;
+    height: 26px;
+    top: 10px;
+    right: 10px;
+    border-radius: 4px;
+  }
+
+  .comment-content {
+    padding: 6px 30px 6px 6px;
+  }
+
+  .comment-translate-button {
+    width: 20px;
+    height: 20px;
+    border-radius: 3px;
+  }
+
+  .comment-translate-button svg {
+    width: 12px;
+    height: 12px;
+  }
+}
+
+.witness-original-post-section .post-content {
+  position: relative;
+  padding: 12px 45px 12px 12px;
+}
+
+.witness-original-post-section .post-translate-button {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: 32px;
+  height: 32px;
+  background: #6B4E2E;
+  border: none;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  z-index: 10;
+  padding: 6px;
+  box-shadow: 0 2px 4px rgba(107, 78, 46, 0.3);
+}
+
+.witness-original-post-section .post-translate-button:hover {
+  background: #8B6E4E;
+  transform: scale(1.05);
+  box-shadow: 0 4px 8px rgba(107, 78, 46, 0.4);
+}
+
+.witness-original-post-section .post-translate-button svg {
+  fill: white;
+}
+
+.witness-wall .comment-content {
+  position: relative;
+  padding: 8px 35px 8px 8px;
+}
+
+.witness-wall .comment-translate-button {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 24px;
+  height: 24px;
+  background: #6B4E2E;
+  border: none;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  z-index: 5;
+  padding: 4px;
+  box-shadow: 0 1px 3px rgba(107, 78, 46, 0.3);
+}
+
+.witness-wall .comment-translate-button:hover {
+  background: #8B6E4E;
+  transform: scale(1.05);
+}
+
+.witness-wall .comment-translate-button svg {
+  fill: white;
+}
+
+.post-translate-button,
+.comment-translate-button {
+  will-change: transform, background-color;
+}
+
+.post-translate-button:focus,
+.comment-translate-button:focus {
+  outline: 2px solid #8B6E4E;
+  outline-offset: 2px;
+}
+
+.post-translate-button:active,
+.comment-translate-button:active {
+  transform: scale(0.95);
+}
+
+.post-translate-button.translating,
+.comment-translate-button.translating {
+  cursor: wait;
+}
+
+.post-translate-button.success,
+.comment-translate-button.success {
+  background: #4A3520;
+}
+
+.post-translate-button.success svg,
+.comment-translate-button.success svg {
+  fill: white;
+}
+
+.post-translate-button.error,
+.comment-translate-button.error {
+  background: #f44336;
+  animation: shake 0.5s ease;
+}
+
+.post-translate-button.error svg,
+.comment-translate-button.error svg {
+  fill: white;
+}
+
+.post-translate-button::before,
+.comment-translate-button::before {
+  content: attr(title);
+  position: absolute;
+  bottom: 100%;
+  right: 0;
+  background: rgba(107, 78, 46, 0.95);
+  color: white;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s ease;
+  margin-bottom: 5px;
+}
+
+.post-translate-button:hover::before,
+.comment-translate-button:hover::before {
+  opacity: 1;
+}
+
+@media (prefers-color-scheme: dark) {
+  .post-translate-button,
+  .comment-translate-button {
+    background: #6B4E2E;
+  }
+
+  .post-translate-button:hover,
+  .comment-translate-button:hover {
+    background: #8B6E4E;
+  }
+
+  .post-translated-content,
+  .comment-translated-content {
+    background: linear-gradient(135deg, #2d2520 0%, #3d3530 100%);
+    border-left-color: #8B6E4E;
+  }
+
+  .post-translated-content p,
+  .comment-translated-content p {
+    color: #e0e0e0;
+  }
+
+  .post-translated-content .translate-label,
+  .comment-translated-content .translate-label {
+    color: #e0e0e0;
+  }
+}
+
+@media (prefers-contrast: high) {
+  .post-translate-button,
+  .comment-translate-button {
+    border: 2px solid #4A3520;
+  }
+
+  .post-translated-content,
+  .comment-translated-content {
+    border-left-width: 5px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .post-translate-button,
+  .comment-translate-button,
+  .post-translated-content,
+  .comment-translated-content {
+    animation: none;
+    transition: none;
+  }
+
+  .post-translate-button:hover,
+  .comment-translate-button:hover {
+    transform: none;
+  }
+}
+
+@media print {
+  .post-translate-button,
+  .comment-translate-button {
+    display: none;
+  }
+
+  .post-translated-content,
+  .comment-translated-content {
+    background: #f5f5f5;
+    border-left: 3px solid #6B4E2E;
+  }
+}
+
+/* ==================== 🎤 COMMENT INPUT WITH VOICE ==================== */
+.comment-input-container {
+  position: relative;
+  display: block;
+  width: 100%;
+}
+
+.comment-input-container textarea {
+  width: 100%;
+  padding: 12px 50px 12px 12px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  font-size: 14px;
+  font-family: inherit;
+  resize: vertical;
+  min-height: 80px;
+  box-sizing: border-box;
+  transition: border-color 0.3s ease;
+}
+
+.comment-input-container textarea:focus {
+  outline: none;
+  border-color: #6B4E2E;
+  box-shadow: 0 0 0 3px rgba(107, 78, 46, 0.1);
+}
+
+.comment-input-container textarea::placeholder {
+  color: #999;
+}
+
+.comment-input-container {
+  isolation: isolate;
+}
+
+/* ==================== 🎤 VOICE RECORD BUTTON ==================== */
+.voice-record-button {
+  width: 36px;
+  height: 36px;
+  min-width: 36px;
+  background: #6B4E2E;
+  border: none;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  position: absolute;
+  bottom: 12px;
+  right: 12px;
+  padding: 0;
+  box-shadow: 0 2px 6px rgba(107, 78, 46, 0.3);
+  z-index: 10;
+}
+
+.voice-record-button:hover {
+  background: #8B6E4E;
+  transform: scale(1.1);
+  box-shadow: 0 4px 10px rgba(107, 78, 46, 0.5);
+}
+
+.voice-record-button:active {
+  transform: scale(0.95);
+}
+
+.voice-record-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.voice-icon {
+  width: 18px;
+  height: 18px;
+  color: white;
+  transition: all 0.3s ease;
+}
+
+.voice-record-button.recording {
+  background: #E74C3C;
+  animation: pulse-record 1.5s infinite;
+}
+
+.voice-record-button.recording:hover {
+  background: #C0392B;
+}
+
+@keyframes pulse-record {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(231, 76, 60, 0.7);
+  }
+  50% {
+    box-shadow: 0 0 0 8px rgba(231, 76, 60, 0);
+  }
+}
+
+.recording-icon {
+  animation: none;
+}
+
+.voice-indicator {
+  position: absolute;
+  top: -2px;
+  right: -2px;
+  width: 10px;
+  height: 10px;
+  background: #2ECC71;
+  border: 2px solid white;
+  border-radius: 50%;
+  animation: blink 1s infinite;
+}
+
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
+}
+
+.voice-record-button.processing {
+  background: #F39C12;
+  cursor: wait;
+}
+
+.voice-spinner {
+  width: 18px;
+  height: 18px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top-color: white;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@media (max-width: 768px) {
+  .voice-record-button {
+    width: 34px;
+    height: 34px;
+    min-width: 34px;
+    bottom: 10px;
+    right: 10px;
+  }
+
+  .voice-icon {
+    width: 16px;
+    height: 16px;
+  }
+}
+
+@media (max-width: 375px) {
+  .voice-record-button {
+    width: 32px;
+    height: 32px;
+    min-width: 32px;
+    bottom: 8px;
+    right: 8px;
+  }
+
+  .voice-icon {
+    width: 15px;
+    height: 15px;
+  }
+}
+
+.voice-record-button:focus {
+  outline: 2px solid #8B6E4E;
+  outline-offset: 2px;
+}
+
+@media (prefers-color-scheme: dark) {
+  .voice-record-button {
+    background: #6B4E2E;
+  }
+
+  .voice-record-button:hover {
+    background: #8B6E4E;
+  }
+
+  .voice-record-button.recording {
+    background: #E74C3C;
+  }
+
+  .voice-record-button.processing {
+    background: #F39C12;
+  }
+}
+
+/* ==================== 🎨 IMPROVED FORM STYLES ==================== */
+.comment-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px;
+  background: #f9f9f9;
+  border-radius: 12px;
+  margin-top: 12px;
+}
+
+.form-info {
+  display: flex;
+  justify-content: flex-end;
+  padding: 0 4px;
+}
+
+.char-count {
+  font-size: 12px;
+  color: #666;
+}
+
+.form-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.submit-btn,
+.cancel-btn {
+  padding: 10px 20px;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.submit-btn {
+  background: #4A90E2;
+  color: white;
+}
+
+.submit-btn:hover:not(:disabled) {
+  background: #357ABD;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(74, 144, 226, 0.3);
+}
+
+.submit-btn:disabled {
+  background: #ccc;
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.cancel-btn {
+  background: #E0E0E0;
+  color: #333;
+}
+
+.cancel-btn:hover {
+  background: #BDBDBD;
+}
+
+.witness-form-wrapper {
+  background: #FFF9E6;
+  border-left: 4px solid #F39C12;
+}
+
+.witness-submit-btn {
+  background: #F39C12;
+}
+
+.witness-submit-btn:hover:not(:disabled) {
+  background: #E67E22;
+}
+
+.comment-form-wrapper {
+  background: #E3F2FD;
+  border-left: 4px solid #4A90E2;
+}
+
+.comment-submit-btn {
+  background: #4A90E2;
+}
+
+.comment-submit-btn:hover:not(:disabled) {
+  background: #357ABD;
+}
+/* ==================== WITNESS IMAGE UPLOAD ==================== */
+
+.witness-image-previews {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+  gap: 10px;
+  margin: 10px 0;
+  padding: 10px;
+  background: #f5f5f5;
+  border-radius: 8px;
+}
+
+.witness-image-preview-item {
+  position: relative;
+  aspect-ratio: 1;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 2px solid #ddd;
+  transition: transform 0.2s;
+}
+
+.witness-image-preview-item:hover {
+  transform: scale(1.05);
+  border-color: #4CAF50;
+}
+
+.witness-image-preview-item img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.remove-witness-image-btn {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  background: rgba(255, 0, 0, 0.8);
+  color: white;
+  border: none;
+  border-radius: 50%;
+  width: 24px;
+  height: 24px;
+  cursor: pointer;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+  z-index: 10;
+}
+
+.remove-witness-image-btn:hover {
+  background: rgba(255, 0, 0, 1);
+  transform: scale(1.1);
+}
+
+.select-image-btn {
+  background: #4CAF50;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.2s;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.select-image-btn:hover {
+  background: #45a049;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(76, 175, 80, 0.3);
+}
+
+.select-image-btn:disabled {
+  background: #ccc;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+.form-info {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 0;
+  font-size: 13px;
+  color: #666;
+}
+
+.image-count {
+  color: #4CAF50;
+  font-weight: 500;
+}
+
+.char-count {
+  color: #999;
+}
+
+/* ==================== WITNESS IMAGES GALLERY (IN WITNESS WALL) ==================== */
+
+.witness-images-gallery {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 10px;
+  margin-top: 12px;
+  padding: 10px;
+  background: #f9f9f9;
+  border-radius: 8px;
+}
+
+.witness-images-gallery img {
+  width: 100%;
+  aspect-ratio: 1;
+  object-fit: cover;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: transform 0.2s, box-shadow 0.2s;
+  border: 2px solid #ddd;
+}
+
+.witness-images-gallery img:hover {
+  transform: scale(1.05);
+  border-color: #4CAF50;
+  box-shadow: 0 4px 12px rgba(76, 175, 80, 0.3);
+}
+
+/* ==================== WITNESS FORM ACTIONS ==================== */
+
+.witness-form-wrapper .form-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  align-items: center;
+  margin-top: 12px;
+}
+
+.witness-submit-btn {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+  transition: all 0.3s;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.witness-submit-btn:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+}
+
+.witness-submit-btn:disabled {
+  background: #ccc;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* ==================== RESPONSIVE ==================== */
+
+@media (max-width: 768px) {
+  .witness-image-previews {
+    grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+    gap: 8px;
+    padding: 8px;
+  }
+
+  .remove-witness-image-btn {
+    width: 20px;
+    height: 20px;
+    font-size: 12px;
+  }
+
+  .select-image-btn {
+    padding: 6px 12px;
+    font-size: 13px;
+  }
+
+  .witness-images-gallery {
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    gap: 8px;
+    padding: 8px;
+  }
+
+  .form-info {
+    font-size: 12px;
+  }
+}
+
+@media (max-width: 480px) {
+  .witness-image-previews {
+    grid-template-columns: repeat(auto-fill, minmax(70px, 1fr));
+    gap: 6px;
+    padding: 6px;
+  }
+
+  .remove-witness-image-btn {
+    width: 18px;
+    height: 18px;
+    font-size: 11px;
+    top: 2px;
+    right: 2px;
+  }
+
+  .select-image-btn {
+    padding: 5px 10px;
+    font-size: 12px;
+  }
+
+  .witness-images-gallery {
+    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+    gap: 6px;
+    padding: 6px;
+  }
+
+  .witness-form-wrapper .form-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .witness-submit-btn,
+  .select-image-btn,
+  .cancel-btn {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+/* ==================== WITNESS WALL SPECIFIC STYLES ==================== */
+
+.witness-wall-post-card {
+  background: white;
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 16px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.witness-section {
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 2px solid #f0f0f0;
+}
+
+.witness-wall-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.witness-wall-avatar img {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 2px solid #667eea;
+}
+
+.witness-wall-info {
+  flex: 1;
+}
+
+.witness-wall-author {
+  font-weight: 600;
+  color: #333;
+  font-size: 14px;
+}
+
+.witness-wall-time {
+  font-size: 12px;
+  color: #999;
+}
+
+.witness-wall-content {
+  padding: 12px 0;
+}
+
+.witness-wall-content h4 {
+  margin: 0 0 8px 0;
+  color: #667eea;
+  font-size: 16px;
+}
+
+.witness-wall-content p {
+  margin: 0;
+  color: #555;
+  line-height: 1.6;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+}
+
+/* ==================== LOADING & EMPTY STATES ==================== */
+
+.witness-wall-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 20px;
+  min-height: 300px;
+}
+
+.witness-wall-loading-spinner {
+  width: 50px;
+  height: 50px;
+  border: 4px solid #f3f3f3;
+  border-top: 4px solid #667eea;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.witness-wall-loading-text {
+  margin-top: 16px;
+  color: #666;
+  font-size: 14px;
+}
+
+.witness-wall-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 20px;
+  text-align: center;
+  min-height: 300px;
+}
+
+.witness-wall-empty-icon {
+  font-size: 64px;
+  margin-bottom: 16px;
+}
+
+.witness-wall-empty h3 {
+  margin: 0 0 8px 0;
+  color: #333;
+  font-size: 20px;
+}
+
+.witness-wall-empty p {
+  margin: 0;
+  color: #666;
+  font-size: 14px;
+}
+
+/* ==================== PAGINATION ==================== */
+
+.witness-wall-pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 16px;
+  margin: 24px 0;
+  padding: 16px;
+}
+
+.pagination-btn {
+  background: #667eea;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+  transition: all 0.2s;
+}
+
+.pagination-btn:hover:not(:disabled) {
+  background: #5568d3;
+  transform: translateY(-1px);
+}
+
+.pagination-btn:disabled {
+  background: #ccc;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.pagination-info {
+  color: #666;
+  font-size: 14px;
+  font-weight: 500;
+}
+/* ==================== WITNESS IMAGE UPLOAD IN POST FORM ==================== */
+
+.witness-image-upload {
+  margin: 15px 0;
+}
+
+.image-upload-label {
+  display: inline-block;
+  padding: 10px 20px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+}
+
+.image-upload-label:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+}
+
+.image-preview-container {
+  position: relative;
+  margin-top: 15px;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.image-preview {
+  width: 100%;
+  max-height: 300px;
+  object-fit: cover;
+  display: block;
+  border-radius: 12px;
+}
+
+.remove-image-btn {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: rgba(255, 59, 48, 0.9);
+  color: white;
+  border: none;
+  font-size: 18px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.remove-image-btn:hover {
+  background: rgba(255, 59, 48, 1);
+  transform: scale(1.1);
+}
+
+.file-info {
+  margin-left: 15px;
+  color: #666;
+  font-size: 13px;
+}
+
+/* ==================== WITNESS IMAGES IN WITNESS WALL ==================== */
+
+.witness-images-container {
+  margin: 15px 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.witness-image-wrapper {
+  flex: 1 1 auto;
+  max-width: 100%;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.witness-image {
+  width: 100%;
+  height: auto;
+  max-height: 400px;
+  object-fit: cover;
+  display: block;
+  border-radius: 12px;
+  transition: transform 0.3s ease;
+  cursor: pointer;
+}
+
+.witness-image:hover {
+  transform: scale(1.02);
+}
+
+/* Multiple images layout */
+.witness-images-container:has(.witness-image-wrapper:nth-child(2)) .witness-image-wrapper {
+  max-width: calc(50% - 5px);
+}
+
+.witness-images-container:has(.witness-image-wrapper:nth-child(3)) .witness-image-wrapper {
+  max-width: calc(33.333% - 7px);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .witness-image {
+    max-height: 300px;
+  }
   
+  .witness-images-container:has(.witness-image-wrapper:nth-child(2)) .witness-image-wrapper,
+  .witness-images-container:has(.witness-image-wrapper:nth-child(3)) .witness-image-wrapper {
+    max-width: 100%;
+  }
+  
+  .image-preview {
+    max-height: 250px;
+  }
+}
+/* ==================== ✅ AMEN & WITNESS BUTTON - PERSISTENT YELLOW STATE ==================== */
+
+/* ✅ AMEN BUTTON - VÀNG NHẠT GIỐNG CATEGORY BUTTON */
+.action-button.action-amen.active-amen {
+  background: #FFDE97 !important;
+  color: #333 !important;
+  font-weight: bold;
+  box-shadow: 0 3px 8px rgba(107, 78, 46, 0.2) !important;
+  border: 2px solid #FFDE97 !important;
+}
+
+/* ✅ WITNESS BUTTON - CÙNG MÀU VỚI AMEN */
+.action-button.action-witness.witnessed-done {
+  background: #FFDE97 !important;
+  color: #333 !important;
+  font-weight: bold;
+  opacity: 1 !important;
+  cursor: not-allowed !important;
+  pointer-events: none !important;
+  border: 2px solid #FFDE97 !important;
+  box-shadow: 0 3px 8px rgba(107, 78, 46, 0.2) !important;
+}
+
+.action-button.action-witness.witnessed-done:hover {
+  transform: none !important;
+  box-shadow: 0 3px 8px rgba(107, 78, 46, 0.2) !important;
+  background: #FFDE97 !important;
+}
+
+/* ✅ Animation khi vừa witness xong */
+@keyframes witnessSuccess {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.05);
+  }
+}
+
+.action-button.action-witness.witnessed-done {
+  animation: witnessSuccess 0.5s ease-in-out;
+}
+
+/* ✅ COMMENT AMEN BUTTON - CÙNG MÀU */
+.comment-like-btn.active-amen {
+  background: #FFDE97 !important;
+  color: #333 !important;
+  font-weight: bold;
+  box-shadow: 0 2px 6px rgba(107, 78, 46, 0.2) !important;
+  border: 2px solid #FFDE97 !important;
+}
+
+/* ✅ WITNESS WALL - AMEN BUTTONS */
+.witness-wall .action-button.action-amen.active-amen {
+  background: #FFDE97 !important;
+  color: #333 !important;
+  font-weight: bold;
+  box-shadow: 0 3px 8px rgba(107, 78, 46, 0.2) !important;
+  border: 2px solid #FFDE97 !important;
+}
+
+.witness-wall .comment-like-btn.active-amen {
+  background: #FFDE97 !important;
+  color: #333 !important;
+  font-weight: bold;
+  box-shadow: 0 2px 6px rgba(107, 78, 46, 0.2) !important;
+  border: 2px solid #FFDE97 !important;
+}
+
+/* ✅ Đảm bảo màu không bị override */
+.action-button.action-amen.active-amen,
+.action-button.action-witness.witnessed-done,
+.comment-like-btn.active-amen {
+  background-color: #FFDE97 !important;
+  background-image: none !important;
+}
+
+/* ✅ Responsive - Mobile */
+@media (max-width: 768px) {
+  .action-button.action-amen.active-amen,
+  .action-button.action-witness.witnessed-done {
+    box-shadow: 0 2px 6px rgba(107, 78, 46, 0.2) !important;
+  }
+  
+  .comment-like-btn.active-amen {
+    box-shadow: 0 2px 4px rgba(107, 78, 46, 0.2) !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .action-button.action-amen.active-amen,
+  .action-button.action-witness.witnessed-done {
+    box-shadow: 0 2px 4px rgba(107, 78, 46, 0.2) !important;
+  }
+  
+  .comment-like-btn.active-amen {
+    box-shadow: 0 1px 3px rgba(107, 78, 46, 0.2) !important;
+  }
+}
+/* ==================== 👤 AVATAR STYLES ==================== */
+
+.post-avatar,
+.comment-avatar,
+.witness-wall-avatar,
+.activity-avatar {
+  position: relative;
+  flex-shrink: 0;
+}
+
+.post-avatar {
+  width: 48px;
+  height: 48px;
+}
+
+.comment-avatar {
+  width: 32px;
+  height: 32px;
+}
+
+.witness-wall-avatar {
+  width: 48px;
+  height: 48px;
+}
+
+.activity-avatar {
+  width: 48px;
+  height: 48px;
+}
+
+/* Avatar Image Component Styles */
+.avatar-image-container {
+  position: relative;
+  display: inline-block;
+  line-height: 0;
+}
+
+.avatar-image {
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid #FFF9EC;
+  transition: all 0.3s ease;
+  display: block;
+}
+
+.avatar-image:hover {
+  transform: scale(1.05);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.avatar-image.loading {
+  background: #f0f0f0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+}
+
+.avatar-spinner {
+  width: 20px;
+  height: 20px;
+  border: 2px solid rgba(0, 0, 0, 0.1);
+  border-top-color: #667eea;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Avatar Upload Overlay */
+.avatar-upload-overlay {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  width: 24px;
+  height: 24px;
+  background: #667eea;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  border: 2px solid white;
+  font-size: 12px;
+  z-index: 10;
+}
+
+.avatar-upload-overlay:hover {
+  background: #5568d3;
+  transform: scale(1.1);
+  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.4);
+}
+
+.avatar-upload-overlay input[type="file"] {
+  display: none;
+}
+
+/* Avatar in different contexts */
+.post-header .avatar-image-container,
+.comment-header .avatar-image-container,
+.witness-wall-header .avatar-image-container,
+.activity-header .avatar-image-container {
+  margin-right: 12px;
+}
+
+/* Responsive Avatar Sizes */
+@media (max-width: 768px) {
+  .post-avatar,
+  .witness-wall-avatar,
+  .activity-avatar {
+    width: 40px;
+    height: 40px;
+  }
+
+  .comment-avatar {
+    width: 28px;
+    height: 28px;
+  }
+
+  .avatar-upload-overlay {
+    width: 20px;
+    height: 20px;
+    font-size: 10px;
+  }
+}
+
+@media (max-width: 480px) {
+  .post-avatar,
+  .witness-wall-avatar,
+  .activity-avatar {
+    width: 36px;
+    height: 36px;
+  }
+
+  .comment-avatar {
+    width: 24px;
+    height: 24px;
+  }
+}
+
+/* Avatar Loading State */
+.avatar-image-container.loading {
+  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background-size: 200% 100%;
+  animation: loading 1.5s ease-in-out infinite;
+  border-radius: 50%;
+}
+
+@keyframes loading {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+/* Avatar Error State */
+.avatar-image.error {
+  border-color: #ff6b6b;
+  opacity: 0.7;
+}
+
+/* Avatar Online Status Indicator (Optional) */
+.avatar-image-container.online::after {
+  content: '';
+  position: absolute;
+  bottom: 2px;
+  right: 2px;
+  width: 12px;
+  height: 12px;
+  background: #51cf66;
+  border: 2px solid white;
+  border-radius: 50%;
+  z-index: 11;
+}
+
+/* Avatar Hover Effect in Posts */
+.post-card .avatar-image-container:hover,
+.comment .avatar-image-container:hover,
+.witness-wall-post-card .avatar-image-container:hover,
+.activity-card .avatar-image-container:hover {
+  cursor: pointer;
+}
+
+/* Avatar in Witness Wall */
+.witness-wall-header .avatar-image-container {
+  margin-right: 10px;
+}
+
+.witness-original-post-section .post-avatar .avatar-image {
+  border-color: #667eea;
+}
+
+.witness-section .witness-wall-avatar .avatar-image {
+  border-color: #ffd93d;
+}
+
+/* Avatar Group (for multiple avatars) */
+.avatar-group {
+  display: flex;
+  align-items: center;
+}
+
+.avatar-group .avatar-image-container {
+  margin-right: -8px;
+  border: 2px solid white;
+  transition: all 0.3s ease;
+}
+
+.avatar-group .avatar-image-container:hover {
+  z-index: 10;
+  transform: translateY(-2px);
+}
+
+/* Avatar Badge (for notifications, etc.) */
+.avatar-image-container .badge {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  background: #ff6b6b;
+  color: white;
+  font-size: 10px;
+  font-weight: bold;
+  padding: 2px 6px;
+  border-radius: 10px;
+  border: 2px solid white;
+  z-index: 12;
+}
+
+/* Avatar Placeholder Animation */
+.avatar-placeholder {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-weight: bold;
+  font-size: 16px;
+}
+
+.post-avatar .avatar-placeholder {
+  font-size: 18px;
+}
+
+.comment-avatar .avatar-placeholder {
+  font-size: 12px;
+}
+
+/* Dark Mode Support (Optional) */
+@media (prefers-color-scheme: dark) {
+  .avatar-image {
+    border-color: #2D3656;
+  }
+
+  .avatar-upload-overlay {
+    border-color: #2D3656;
+  }
+
+  .avatar-image-container.online::after {
+    border-color: #2D3656;
+  }
+}
+
+/* Animation for new avatar upload */
+@keyframes avatarPulse {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.05);
+  }
+}
+
+.avatar-image.new-upload {
+  animation: avatarPulse 0.6s ease-in-out;
+}
+
+/* Accessibility */
+.avatar-image-container:focus-within {
+  outline: 2px solid #667eea;
+  outline-offset: 2px;
+  border-radius: 50%;
+}
+
+/* Print Styles */
+@media print {
+  .avatar-upload-overlay {
+    display: none;
+  }
+
+  .avatar-image {
+    border: 1px solid #000;
+  }
+}
+/* ==================== 🔥 FORCE HIDE OLD AVATAR - CRITICAL FIX ==================== */
+
+/* ✅ Ẩn TẤT CẢ img tag cũ trong avatar containers */
+.post-avatar > img,
+.comment-avatar > img,
+.witness-wall-avatar > img,
+.activity-avatar > img,
+.user-avatar-large > img {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  position: absolute !important;
+  z-index: -9999 !important;
+  pointer-events: none !important;
+}
+
+/* ✅ CHỈ HIỂN THỊ AvatarImage component */
+.post-avatar .avatar-image-container,
+.comment-avatar .avatar-image-container,
+.witness-wall-avatar .avatar-image-container,
+.activity-avatar .avatar-image-container,
+.user-avatar-large .avatar-image-container {
+  display: flex !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  z-index: 1 !important;
+  position: relative !important;
+}
+
+/* ✅ Đảm bảo container chỉ có 1 child hiển thị */
+.post-avatar,
+.comment-avatar,
+.witness-wall-avatar,
+.activity-avatar,
+.user-avatar-large {
+  position: relative !important;
+  overflow: hidden !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+/* ✅ Ẩn mọi child KHÔNG PHẢI avatar-image-container */
+.post-avatar > *:not(.avatar-image-container),
+.comment-avatar > *:not(.avatar-image-container),
+.witness-wall-avatar > *:not(.avatar-image-container),
+.activity-avatar > *:not(.avatar-image-container),
+.user-avatar-large > *:not(.avatar-image-container) {
+  display: none !important;
+}
+
+/* ✅ Đảm bảo AvatarImage component có đúng size */
+.post-avatar .avatar-image-container {
+  width: 48px !important;
+  height: 48px !important;
+}
+
+.comment-avatar .avatar-image-container {
+  width: 32px !important;
+  height: 32px !important;
+}
+
+.witness-wall-avatar .avatar-image-container {
+  width: 48px !important;
+  height: 48px !important;
+}
+
+.activity-avatar .avatar-image-container {
+  width: 48px !important;
+  height: 48px !important;
+}
+
+.user-avatar-large .avatar-image-container {
+  width: 56px !important;
+  height: 56px !important;
+}
+
+/* ✅ Đảm bảo avatar image có đúng size */
+.post-avatar .avatar-image,
+.comment-avatar .avatar-image,
+.witness-wall-avatar .avatar-image,
+.activity-avatar .avatar-image,
+.user-avatar-large .avatar-image {
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: cover !important;
+  border-radius: 50% !important;
+}
+
+/* ✅ Responsive */
+@media (max-width: 768px) {
+  .post-avatar .avatar-image-container,
+  .witness-wall-avatar .avatar-image-container,
+  .activity-avatar .avatar-image-container {
+    width: 40px !important;
+    height: 40px !important;
+  }
+
+  .comment-avatar .avatar-image-container {
+    width: 28px !important;
+    height: 28px !important;
+  }
+
+  .user-avatar-large .avatar-image-container {
+    width: 48px !important;
+    height: 48px !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .post-avatar .avatar-image-container,
+  .witness-wall-avatar .avatar-image-container,
+  .activity-avatar .avatar-image-container {
+    width: 36px !important;
+    height: 36px !important;
+  }
+
+  .comment-avatar .avatar-image-container {
+    width: 24px !important;
+    height: 24px !important;
+  }
+
+  .user-avatar-large .avatar-image-container {
+    width: 44px !important;
+    height: 44px !important;
+  }
+}
+
+/* ==================== END OF FORCE HIDE OLD AVATAR ==================== */
+
+/* ==================== END OF AMEN & WITNESS STYLES ==================== */
+/* ==================== 🌐 TRANSLATION STYLES - FIXED VISIBILITY ==================== */
+
+.post-translated-content {
+  margin-top: 15px;
+  padding: 15px;
+  background: linear-gradient(135deg, #FFF8F0 0%, #F5EBE0 100%) !important;
+  border-left: 4px solid #6B4E2E;
+  border-radius: 12px;
+  animation: slideDown 0.3s ease;
+  box-shadow: 0 2px 8px rgba(107, 78, 46, 0.15);
+  position: relative;
+  z-index: 1;
+}
+
+/* ✅ XÓA MỌI PSEUDO-ELEMENTS CÓ THỂ CHE */
+.post-translated-content::before,
+.post-translated-content::after {
+  display: none !important;
+  content: none !important;
+}
+
+.post-translated-content .translate-label {
+  font-size: 12px;
+  color: #6B4E2E !important;
+  background: transparent !important;
+  font-weight: 700;
+  display: block;
+  margin-bottom: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  position: relative;
+  z-index: 2;
+}
+
+/* ✅ XÓA PSEUDO-ELEMENTS CỦA LABEL */
+.post-translated-content .translate-label::before,
+.post-translated-content .translate-label::after {
+  display: none !important;
+  content: none !important;
+}
+
+.post-translated-content p {
+  margin: 0;
+  color: #2c3e50 !important;
+  background: transparent !important;
+  line-height: 1.7;
+  font-size: 14px;
+  font-weight: 500;
+  position: relative;
+  z-index: 2;
+}
+
+/* ✅ XÓA PSEUDO-ELEMENTS CỦA PARAGRAPH */
+.post-translated-content p::before,
+.post-translated-content p::after {
+  display: none !important;
+  content: none !important;
+}
+
+/* ==================== COMMENT TRANSLATED CONTENT ==================== */
+
+.comment-translated-content {
+  margin-top: 10px;
+  padding: 10px;
+  background: linear-gradient(135deg, #FFF8F0 0%, #F5EBE0 100%) !important;
+  border-left: 3px solid #6B4E2E;
+  border-radius: 8px;
+  animation: slideDown 0.3s ease;
+  box-shadow: 0 2px 6px rgba(107, 78, 46, 0.12);
+  position: relative;
+  z-index: 1;
+}
+
+/* ✅ XÓA PSEUDO-ELEMENTS */
+.comment-translated-content::before,
+.comment-translated-content::after {
+  display: none !important;
+  content: none !important;
+}
+
+.comment-translated-content .translate-label {
+  font-size: 11px;
+  color: #6B4E2E !important;
+  background: transparent !important;
+  font-weight: 700;
+  display: block;
+  margin-bottom: 5px;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  position: relative;
+  z-index: 2;
+}
+
+.comment-translated-content .translate-label::before,
+.comment-translated-content .translate-label::after {
+  display: none !important;
+  content: none !important;
+}
+
+.comment-translated-content p {
+  margin: 0;
+  color: #2c3e50 !important;
+  background: transparent !important;
+  line-height: 1.6;
+  font-size: 13px;
+  font-weight: 500;
+  position: relative;
+  z-index: 2;
+}
+
+.comment-translated-content p::before,
+.comment-translated-content p::after {
+  display: none !important;
+  content: none !important;
+}
+
+/* ==================== TRANSLATION ERROR ==================== */
+
+.post-translation-error,
+.comment-translation-error {
+  margin-top: 12px;
+  padding: 10px 15px;
+  background: linear-gradient(135deg, #ffe6e6 0%, #ffcccc 100%) !important;
+  border-left: 4px solid #ff4444;
+  border-radius: 8px;
+  color: #cc0000 !important;
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  animation: shake 0.5s ease;
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-5px); }
+  75% { transform: translateX(5px); }
+}
+
+/* ==================== 🔧 FIX POST CONTENT OVERLAY ==================== */
+
+.post-content {
+  position: relative;
+  padding: 12px 45px 12px 12px;
+  background: transparent !important;
+}
+
+/* ✅ XÓA MỌI PSEUDO-ELEMENTS CÓ THỂ CHE */
+.post-content::before,
+.post-content::after {
+  display: none !important;
+  content: none !important;
+}
+
+/* ==================== 🔧 FIX COMMENT CONTENT OVERLAY ==================== */
+
+.comment-content {
+  position: relative;
+  padding: 8px 35px 8px 8px;
+  background: transparent !important;
+}
+
+.comment-content::before,
+.comment-content::after {
+  display: none !important;
+  content: none !important;
+}
+
+/* ==================== 🔧 FIX WITNESS WALL OVERLAY ==================== */
+
+.witness-original-post-section .post-content {
+  background: transparent !important;
+}
+
+.witness-original-post-section .post-content::before,
+.witness-original-post-section .post-content::after {
+  display: none !important;
+  content: none !important;
+}
+
+.witness-wall .comment-content {
+  background: transparent !important;
+}
+
+.witness-wall .comment-content::before,
+.witness-wall .comment-content::after {
+  display: none !important;
+  content: none !important;
+}
+
+/* ==================== RESPONSIVE ==================== */
+
+@media (max-width: 768px) {
+  .post-translated-content {
+    padding: 12px;
+  }
+
+  .post-translated-content .translate-label {
+    font-size: 11px;
+  }
+
+  .post-translated-content p {
+    font-size: 13px;
+  }
+
+  .comment-translated-content {
+    padding: 8px;
+  }
+
+  .comment-translated-content .translate-label {
+    font-size: 10px;
+  }
+
+  .comment-translated-content p {
+    font-size: 12px;
+  }
+}
+
+@media (max-width: 480px) {
+  .post-translated-content {
+    padding: 10px;
+  }
+
+  .post-translated-content .translate-label {
+    font-size: 10px;
+  }
+
+  .post-translated-content p {
+    font-size: 12px;
+  }
+
+  .comment-translated-content {
+    padding: 6px;
+  }
+
+  .comment-translated-content .translate-label {
+    font-size: 9px;
+  }
+
+  .comment-translated-content p {
+    font-size: 11px;
+  }
+}

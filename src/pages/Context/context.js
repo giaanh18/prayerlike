@@ -1,6 +1,5 @@
-// ./src/pages/Context/Context.js
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { useNavigate, useLocation} from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import ApiService from '../../services/api';
 import TRANSCRIPT_API from '../../services/TranscriptAPI';
 
@@ -14,6 +13,9 @@ import CircleButton from '../../components/CircleButton/CircleButton';
 import CategoryLabel from '../../components/CategoryLabel/CategoryLabel';
 import TribeDetail from './steps/TribeDetail';
 import NoTribeDetail from './steps/NoTribeDetail';
+import ActivityForm from './ActivityForm';
+import VoiceRecordButton from '../../components/VoiceRecordButton/VoiceRecordButton';
+import AvatarImage from '../../components/AvatarImage/AvatarImage';
 
 // 導入圖片資源
 import family_and_personal from '../../assets/icons/family_and_personal.png';
@@ -62,8 +64,92 @@ const tribeIdMap = {
   12: { name: 'Benjamin', icon: benjaminIcon },
 };
 
-// ==================== ✅ WITNESS WALL COMPONENT - FULL COMMENT FUNCTIONALITY ====================
-const WitnessWall = ({ selectedCategory, currentUserId, allPosts }) => {
+// ==================== 🖼️ IMAGE HELPER ====================
+const getActivityImageUrl = (imagePath) => {
+  if (!imagePath) {
+    console.warn('⚠️ getActivityImageUrl: No image path provided');
+    return null;
+  }
+
+  if (imagePath.startsWith('http://') || imagePath.startsWith('https://')) {
+    console.log('✅ Image already full URL:', imagePath);
+    return imagePath;
+  }
+
+  const baseUrl = 'https://pray-api.yalinelena.church';
+  const cleanPath = imagePath.startsWith('/') ? imagePath : `/${imagePath}`;
+  const fullUrl = `${baseUrl}${cleanPath}`;
+
+  console.log('🔗 Converted image URL:', {
+    original: imagePath,
+    full: fullUrl
+  });
+
+  return fullUrl;
+};
+
+// ==================== 🖼️ WITNESS IMAGE HELPER ====================
+const getWitnessImageUrl = (imagePath) => {
+  if (!imagePath) {
+    console.warn('⚠️ getWitnessImageUrl: No image path provided');
+    return null;
+  }
+
+  if (imagePath.startsWith('http://') || imagePath.startsWith('https://')) {
+    console.log('✅ Witness image already full URL:', imagePath);
+    return imagePath;
+  }
+
+  const baseUrl = 'https://pray-api.yalinelena.church';
+  const cleanPath = imagePath.startsWith('/') ? imagePath : `/${imagePath}`;
+  const fullUrl = `${baseUrl}${cleanPath}`;
+
+  console.log('🔗 Converted witness image URL:', {
+    original: imagePath,
+    full: fullUrl
+  });
+
+  return fullUrl;
+};
+
+// ==================== 🌐 TRANSLATE ICON COMPONENT ====================
+const TranslateIcon = ({ size = 18 }) => (
+  <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" style={{ width: size, height: size }}>
+    <path d="M12.87 15.07l-2.54-2.51.03-.03c1.74-1.94 2.98-4.17 3.71-6.53H17V4h-7V2H8v2H1v1.99h11.17C11.5 7.92 10.44 9.75 9 11.35 8.07 10.32 7.3 9.19 6.69 8h-2c.73 1.63 1.73 3.17 2.98 4.56l-5.09 5.02L4 19l5-5 3.11 3.11.76-2.04zM18.5 10h-2L12 22h2l1.12-3h4.75L21 22h2l-4.5-12zm-2.62 7l1.62-4.33L19.12 17h-3.24z" fill="currentColor" />
+  </svg>
+);
+
+// ==================== 🌍 LANGUAGE NAMES ====================
+const getLanguageName = (code) => {
+  const languages = {
+    'en': 'English',
+    'vi': 'Tiếng Việt',
+    'zh-TW': '繁體中文',
+    'zh-CN': '简体中文',
+    'ja': '日本語',
+    'ko': '한국어',
+    'th': 'ภาษาไทย',
+    'fr': 'Français',
+    'de': 'Deutsch',
+    'es': 'Español',
+    'it': 'Italiano',
+    'pt': 'Português',
+    'ru': 'Русский',
+    'ar': 'العربية',
+    'hi': 'हिन्दी'
+  };
+  return languages[code] || code;
+};
+
+// ==================== ✅ WITNESS WALL COMPONENT ====================
+const WitnessWall = ({ 
+  selectedCategory, 
+  currentUserId, 
+  allPosts, 
+  refreshBalance,
+  viewScope = 'my'
+}) => {
+
   const [witnesses, setWitnesses] = useState([]);
   const [loading, setLoading] = useState(false);
   const [pagination, setPagination] = useState({
@@ -76,51 +162,151 @@ const WitnessWall = ({ selectedCategory, currentUserId, allPosts }) => {
   });
   const [currentPage, setCurrentPage] = useState(1);
 
-  // ✅ STATE ĐỂ QUẢN LÝ LIKE/COMMENT CHO TỪNG ORIGINAL POST
   const [postStates, setPostStates] = useState({});
+  const [commentStates, setCommentStates] = useState({});
+  const [translationStates, setTranslationStates] = useState({});
+
+  const handleTranslateOriginalPost = async (postId, content) => {
+    const currentState = translationStates[postId];
+
+    if (currentState?.isTranslating) return;
+
+    if (currentState?.translatedContent) {
+      setTranslationStates(prev => ({
+        ...prev,
+        [postId]: {
+          ...prev[postId],
+          translatedContent: null,
+          detectedLanguage: null
+        }
+      }));
+      return;
+    }
+
+    setTranslationStates(prev => ({
+      ...prev,
+      [postId]: {
+        ...prev[postId],
+        isTranslating: true,
+        translationError: null
+      }
+    }));
+
+    try {
+      console.log(`🌐 Translating original post ${postId} in Witness Wall...`);
+      
+      // ✅ GỌI GOOGLE TRANSLATION API
+      const result = await ApiService.translate(content, 'vi');
+      
+      if (result.success) {
+        setTranslationStates(prev => ({
+          ...prev,
+          [postId]: {
+            ...prev[postId],
+            translatedContent: result.translatedText,
+            detectedLanguage: result.detectedSourceLanguage,
+            isTranslating: false
+          }
+        }));
+
+        console.log(`✅ Original post ${postId} translation completed:`, {
+          from: result.detectedSourceLanguage,
+          text: result.translatedText.substring(0, 50) + '...'
+        });
+      } else {
+        throw new Error(result.message || 'Translation failed');
+      }
+
+    } catch (error) {
+      console.error(`❌ Original post ${postId} translation error:`, error);
+      setTranslationStates(prev => ({
+        ...prev,
+        [postId]: {
+          ...prev[postId],
+          translationError: '翻譯失敗，請稍後再試',
+          isTranslating: false
+        }
+      }));
+    }
+  };
 
   const loadWitnesses = async (page = 1) => {
     setLoading(true);
     try {
-      console.log(`✨ Loading Witness Wall - Page ${page}, Category: ${selectedCategory}`);
-      
-      const result = await ApiService.getWitnessList(page, 100); // Lấy nhiều để filter
-      
+      console.log(`✨ Loading Witness Wall - Page ${page}, Category: ${selectedCategory}, ViewScope: ${viewScope}`);
+
+      const result = await ApiService.getWitnessList(page, 100);
+
       if (result.success) {
-        // ✅ FILTER WITNESSES THEO CATEGORY CỦA ORIGINAL POST
-        const filteredWitnesses = result.witnesses.filter(witness => {
-          const originalPost = witness.original_post || 
-            allPosts?.find(p => p.docid === witness.parent_docid);
+        console.log('📦 Raw witnesses data:', result.witnesses);
+        console.log('🖼️ Witnesses with images:');
+        result.witnesses.forEach((w, idx) => {
+          console.log(`  Witness ${idx + 1}:`, {
+            id: w.docid,
+            content: w.content?.substring(0, 30) + '...',
+            image_url: w.image_url || 'NO IMAGE_URL',
+            images: w.images || 'NO IMAGES'
+          });
+        });
+
+        const witnessesWithFullUrls = result.witnesses.map(witness => {
+          let imageUrls = [];
           
-          // Nếu không có original post, bỏ qua
+          if (witness.image_url) {
+            imageUrls.push(getWitnessImageUrl(witness.image_url));
+          }
+          
+          if (witness.images && Array.isArray(witness.images)) {
+            imageUrls = [...imageUrls, ...witness.images.map(img => getWitnessImageUrl(img))];
+          }
+          
+          return {
+            ...witness,
+            images: imageUrls
+          };
+        });
+
+        console.log('✅ Witnesses with full URLs:', witnessesWithFullUrls);
+
+        const filteredWitnesses = witnessesWithFullUrls.filter(witness => {
+          const originalPost = witness.original_post ||
+            allPosts?.find(p => p.docid === witness.parent_docid);
+
           if (!originalPost) {
             console.log(`⚠️ Witness ${witness.docid} không tìm thấy original post`);
             return false;
           }
-          
-          // Nếu không có category filter, hiển thị tất cả
+
+          if (viewScope === 'my') {
+            const isMyPost = originalPost.userid === currentUserId || 
+                            originalPost.author === currentUserId;
+            
+            if (!isMyPost) {
+              console.log(`🏠 Home mode: Skipping witness ${witness.docid} (not my post)`);
+              return false;
+            }
+          }
+
           if (!selectedCategory) {
             console.log(`✅ Witness ${witness.docid} - No category filter, showing all`);
             return true;
           }
-          
-          // ✅ SO SÁNH CATEGORY CỦA ORIGINAL POST VỚI SELECTED CATEGORY
+
           const postCategory = originalPost.category;
           const isMatch = postCategory === selectedCategory;
-          
+
           console.log(`🔍 Witness ${witness.docid}: Original Post Category="${postCategory}", Selected="${selectedCategory}", Match=${isMatch}`);
-          
+
           return isMatch;
         });
 
-        console.log(`✅ Filtered ${filteredWitnesses.length}/${result.witnesses.length} witnesses for category: ${selectedCategory}`);
-        
-        // ✅ PAGINATION THỦ CÔNG
+        console.log(`✅ Filtered ${filteredWitnesses.length}/${result.witnesses.length} witnesses for category: ${selectedCategory}${viewScope === 'my' ? ' (MY POSTS ONLY)' : ''}`);
+
         const perPage = 20;
         const startIndex = (page - 1) * perPage;
         const endIndex = startIndex + perPage;
         const paginatedWitnesses = filteredWitnesses.slice(startIndex, endIndex);
-        
+
         setWitnesses(paginatedWitnesses);
         setPagination({
           current_page: page,
@@ -131,16 +317,17 @@ const WitnessWall = ({ selectedCategory, currentUserId, allPosts }) => {
           has_prev: page > 1
         });
 
-        // ✅ KHỞI TẠO STATE CHO TỪNG ORIGINAL POST
         const initialStates = {};
+        const initialTranslationStates = {};
+
         paginatedWitnesses.forEach(witness => {
-          const originalPost = witness.original_post || 
+          const originalPost = witness.original_post ||
             allPosts?.find(p => p.docid === witness.parent_docid);
-          
+
           if (originalPost) {
             initialStates[originalPost.docid] = {
               likeCount: originalPost.amen_count || 0,
-              hasLiked: false,
+              isLiked: originalPost.amened || false,
               isLiking: false,
               commentCount: originalPost.comment_count || 0,
               showCommentForm: false,
@@ -149,9 +336,18 @@ const WitnessWall = ({ selectedCategory, currentUserId, allPosts }) => {
               comments: [],
               loadingComments: false
             };
+
+            initialTranslationStates[originalPost.docid] = {
+              isTranslating: false,
+              translatedContent: null,
+              detectedLanguage: null,
+              translationError: null
+            };
           }
         });
+
         setPostStates(initialStates);
+        setTranslationStates(initialTranslationStates);
       } else {
         console.error('❌ Failed to load witnesses:', result.message);
         setWitnesses([]);
@@ -171,7 +367,7 @@ const WitnessWall = ({ selectedCategory, currentUserId, allPosts }) => {
   useEffect(() => {
     setCurrentPage(1);
     loadWitnesses(1);
-  }, [selectedCategory]);
+  }, [selectedCategory, viewScope]);
 
   const handleNextPage = () => {
     if (pagination.has_next) {
@@ -187,22 +383,21 @@ const WitnessWall = ({ selectedCategory, currentUserId, allPosts }) => {
     }
   };
 
-  // ✅ HANDLE LIKE CHO ORIGINAL POST - TRỞ VỀ XÁM SAU KHI LIKE
   const handleLikeOriginalPost = async (postId) => {
     const currentState = postStates[postId];
     if (!currentState || currentState.isLiking) return;
 
-    const prevLiked = currentState.hasLiked;
     const prevCount = currentState.likeCount;
+    const prevLiked = currentState.isLiked;
+    
     const newLiked = !prevLiked;
     const newCount = newLiked ? prevCount + 1 : Math.max(0, prevCount - 1);
 
-    // ✅ HIỂN THỊ VÀNG TẠM THỜI
     setPostStates(prev => ({
       ...prev,
       [postId]: {
         ...prev[postId],
-        hasLiked: true,
+        isLiked: newLiked,
         likeCount: newCount,
         isLiking: true
       }
@@ -210,35 +405,36 @@ const WitnessWall = ({ selectedCategory, currentUserId, allPosts }) => {
 
     try {
       const result = await ApiService.likePost(postId, currentUserId);
-      
+
       if (result.success) {
         const finalCount = result.data?.amen_count !== undefined ? result.data.amen_count : newCount;
+        const finalLiked = result.data?.amened !== undefined ? result.data.amened : newLiked;
 
-        // ✅ SAU 300MS → TRỞ VỀ XÁM
-        setTimeout(() => {
-          setPostStates(prev => ({
-            ...prev,
-            [postId]: {
-              ...prev[postId],
-              likeCount: finalCount,
-              hasLiked: false,
-              isLiking: false
-            }
-          }));
-        }, 300);
+        setPostStates(prev => ({
+          ...prev,
+          [postId]: {
+            ...prev[postId],
+            likeCount: finalCount,
+            isLiked: finalLiked,
+            isLiking: false
+          }
+        }));
 
-        console.log(`✅ Liked original post ${postId}:`, finalCount);
+        console.log(`✅ Amen ${newLiked ? 'added' : 'removed'} for original post ${postId}:`, finalCount);
+
+        if (refreshBalance) {
+          await refreshBalance();
+        }
       } else {
         throw new Error(result.message || 'API Error');
       }
     } catch (error) {
       console.error('❌ Like error:', error);
-      // ✅ ROLLBACK NẾU LỖI
       setPostStates(prev => ({
         ...prev,
         [postId]: {
           ...prev[postId],
-          hasLiked: false,
+          isLiked: prevLiked,
           likeCount: prevCount,
           isLiking: false
         }
@@ -246,7 +442,65 @@ const WitnessWall = ({ selectedCategory, currentUserId, allPosts }) => {
     }
   };
 
-  // ✅ LOAD COMMENTS CHO ORIGINAL POST
+  const handleLikeComment = async (commentId) => {
+    const currentState = commentStates[commentId];
+    if (!currentState || currentState.isLiking) return;
+
+    const prevCount = currentState.likeCount;
+    const prevLiked = currentState.isLiked;
+    
+    const newLiked = !prevLiked;
+    const newCount = newLiked ? prevCount + 1 : Math.max(0, prevCount - 1);
+
+    setCommentStates(prev => ({
+      ...prev,
+      [commentId]: {
+        ...prev[commentId],
+        isLiked: newLiked,
+        likeCount: newCount,
+        isLiking: true
+      }
+    }));
+
+    try {
+      const result = await ApiService.likeComment(commentId, currentUserId);
+
+      if (result.success) {
+        const finalCount = result.data?.amen_count !== undefined ? result.data.amen_count : newCount;
+        const finalLiked = result.data?.amened !== undefined ? result.data.amened : newLiked;
+
+        setCommentStates(prev => ({
+          ...prev,
+          [commentId]: {
+            ...prev[commentId],
+            likeCount: finalCount,
+            isLiked: finalLiked,
+            isLiking: false
+          }
+        }));
+
+        console.log(`✅ Comment amen ${newLiked ? 'added' : 'removed'} ${commentId}:`, finalCount);
+
+        if (refreshBalance) {
+          await refreshBalance();
+        }
+      } else {
+        throw new Error(result.message || 'API Error');
+      }
+    } catch (error) {
+      console.error('❌ Like comment error:', error);
+      setCommentStates(prev => ({
+        ...prev,
+        [commentId]: {
+          ...prev[commentId],
+          isLiked: prevLiked,
+          likeCount: prevCount,
+          isLiking: false
+        }
+      }));
+    }
+  };
+
   const loadComments = async (postId) => {
     setPostStates(prev => ({
       ...prev,
@@ -267,8 +521,23 @@ const WitnessWall = ({ selectedCategory, currentUserId, allPosts }) => {
         content: c.content,
         time: c.datetime || '剛剛',
         likes: c.amen_count || 0,
+        isLiked: c.amened || false,
         isReply: true,
         userid: c.userid
+      }));
+
+      const newCommentStates = {};
+      formattedComments.forEach(comment => {
+        newCommentStates[comment.id] = {
+          likeCount: comment.likes || 0,
+          isLiked: comment.isLiked || false,
+          isLiking: false
+        };
+      });
+
+      setCommentStates(prev => ({
+        ...prev,
+        ...newCommentStates
       }));
 
       setPostStates(prev => ({
@@ -291,7 +560,6 @@ const WitnessWall = ({ selectedCategory, currentUserId, allPosts }) => {
     }
   };
 
-  // ✅ TOGGLE COMMENT FORM
   const handleToggleCommentForm = (postId) => {
     const currentState = postStates[postId];
     const newShowState = !currentState?.showCommentForm;
@@ -304,13 +572,11 @@ const WitnessWall = ({ selectedCategory, currentUserId, allPosts }) => {
       }
     }));
 
-    // ✅ NẾU MỞ FORM → LOAD COMMENTS
     if (newShowState && currentState?.comments.length === 0) {
       loadComments(postId);
     }
   };
 
-  // ✅ UPDATE COMMENT TEXT
   const handleCommentTextChange = (postId, text) => {
     setPostStates(prev => ({
       ...prev,
@@ -321,11 +587,10 @@ const WitnessWall = ({ selectedCategory, currentUserId, allPosts }) => {
     }));
   };
 
-  // ✅ SUBMIT COMMENT - FIXED: HIỂN THỊ NGAY LẬP TỨC
   const handleCommentSubmit = async (e, postId, postSn) => {
     e.preventDefault();
     const currentState = postStates[postId];
-    
+
     if (!currentState?.commentText.trim() || currentState.isCommenting) return;
 
     setPostStates(prev => ({
@@ -338,7 +603,7 @@ const WitnessWall = ({ selectedCategory, currentUserId, allPosts }) => {
 
     try {
       console.log(`💬 新增評論到貼文 docid=${postId}:`, currentState.commentText.trim());
-      
+
       const result = await ApiService.addComment({
         userid: currentUserId,
         content: currentState.commentText.trim(),
@@ -348,19 +613,29 @@ const WitnessWall = ({ selectedCategory, currentUserId, allPosts }) => {
 
       if (result.success) {
         console.log('✅ 評論新增成功:', result.comment);
-        
-        // ✅ TẠO COMMENT MỚI
+
+        const newCommentId = result.comment?.docid || `temp-${Date.now()}`;
+
         const newComment = {
-          id: result.comment?.docid || `temp-${Date.now()}`,
+          id: newCommentId,
           author: currentUserId,
           content: currentState.commentText.trim(),
           time: '剛剛',
           likes: 0,
+          isLiked: false,
           isReply: true,
           userid: currentUserId
         };
 
-        // ✅ THÊM VÀO DANH SÁCH NGAY LẬP TỨC
+        setCommentStates(prev => ({
+          ...prev,
+          [newCommentId]: {
+            likeCount: 0,
+            isLiked: false,
+            isLiking: false
+          }
+        }));
+
         setPostStates(prev => ({
           ...prev,
           [postId]: {
@@ -368,11 +643,15 @@ const WitnessWall = ({ selectedCategory, currentUserId, allPosts }) => {
             commentText: '',
             isCommenting: false,
             commentCount: prev[postId].commentCount + 1,
-            comments: [newComment, ...prev[postId].comments] // ✅ THÊM VÀO ĐẦU
+            comments: [newComment, ...prev[postId].comments]
           }
         }));
 
         console.log('✅ Comment đã được thêm vào UI');
+
+        if (refreshBalance) {
+          await refreshBalance();
+        }
 
       } else {
         alert(`評論失敗: ${result.message}`);
@@ -420,12 +699,12 @@ const WitnessWall = ({ selectedCategory, currentUserId, allPosts }) => {
     <div className="witness-wall">
       <div className="witness-wall-grid">
         {witnesses.map(witness => {
-          const originalPost = witness.original_post || 
+          const originalPost = witness.original_post ||
             allPosts?.find(p => p.docid === witness.parent_docid);
 
           const postState = postStates[originalPost?.docid] || {
             likeCount: originalPost?.amen_count || 0,
-            hasLiked: originalPost?.amened || false,
+            isLiked: originalPost?.amened || false,
             isLiking: false,
             commentCount: originalPost?.comment_count || 0,
             showCommentForm: false,
@@ -435,79 +714,115 @@ const WitnessWall = ({ selectedCategory, currentUserId, allPosts }) => {
             loadingComments: false
           };
 
+          const translationState = translationStates[originalPost?.docid] || {
+            isTranslating: false,
+            translatedContent: null,
+            detectedLanguage: null,
+            translationError: null
+          };
+
           return (
             <div key={witness.docid} className="witness-wall-post-card">
               {originalPost && (
                 <div className="witness-original-post-section">
                   <div className="post-header">
                     <div className="post-avatar">
-                      <img
-                        src={`https://ui-avatars.com/api/?name=${encodeURIComponent(originalPost.userid || originalPost.author)}&background=random&size=48`}
-                        alt="Original post avatar"
+                      <AvatarImage 
+                        userId={originalPost.userid || originalPost.author}
+                        userName={originalPost.userid || originalPost.author}
+                        size={48}
+                        clickable={true}
                       />
                     </div>
                     <div className="post-info">
                       <div className="post-author">{originalPost.userid || originalPost.author}</div>
                       <div className="post-time">{originalPost.datetime || '剛剛'}</div>
                     </div>
-                    
-                    {/* ✅ BADGES CONTAINER - MỚI */}
-                  {/* ✅ BADGES CONTAINER - DYNAMIC */}
-                  <div className="post-badges-container">
-                    <div className="post-privacy-badge">
-                      {(!originalPost.privacy || originalPost.privacy === 'public') && <span>Public</span>}
-                      {originalPost.privacy === 'family' && <span>Family</span>}
-                      {originalPost.privacy === 'tribe' && <span>Tribe</span>}
-                      {(originalPost.privacy === 'individual' || originalPost.privacy === 'private') && <span>Individual</span>}
-                    </div>
-                    <div className="post-category-badge">
-                      <span>{originalPost.category || 'General'}</span>
-                    </div>
-                  </div>
 
+                    <div className="post-badges-container">
+                      <div className="post-privacy-badge">
+                        {(!originalPost.privacy || originalPost.privacy === 'public') && <span>Public</span>}
+                        {originalPost.privacy === 'family' && <span>Family</span>}
+                        {originalPost.privacy === 'tribe' && <span>Tribe</span>}
+                        {(originalPost.privacy === 'individual' || originalPost.privacy === 'private') && <span>Individual</span>}
+                      </div>
+                      <div className="post-category-badge">
+                        <span>{originalPost.category || 'General'}</span>
+                      </div>
+                    </div>
                   </div>
 
                   <div className="post-content">
+                    <button
+                      className={`post-translate-button ${translationState.isTranslating ? 'translating' : ''} ${translationState.translatedContent ? 'active' : ''}`}
+                      onClick={() => handleTranslateOriginalPost(originalPost.docid, originalPost.content)}
+                      disabled={translationState.isTranslating}
+                      title={translationState.translatedContent ? '隱藏翻譯' : '翻譯此貼文'}
+                    >
+                      <TranslateIcon size={18} />
+                    </button>
+
                     {originalPost.title && <h3>{originalPost.title}</h3>}
                     <p>{originalPost.content}</p>
+
+                    {translationState.translatedContent && (
+                      <div className="post-translated-content">
+                        <span className="translate-label">
+                          🌐 翻譯 {translationState.detectedLanguage && `(從 ${getLanguageName(translationState.detectedLanguage)})`}:
+                        </span>
+                        <p>{translationState.translatedContent}</p>
+                      </div>
+                    )}
+
+                    {translationState.translationError && (
+                      <div className="post-translation-error">
+                        ⚠️ {translationState.translationError}
+                      </div>
+                    )}
                   </div>
 
-                  {/* ✅ POST ACTIONS */}
                   <div className="post-actions">
-                    <button 
-                      className={`action-button action-amen ${postState.hasLiked ? 'active-amen' : ''}`}
+                    <button
+                      className={`action-button action-amen ${postState.isLiked ? 'active-amen' : ''}`}
                       onClick={() => handleLikeOriginalPost(originalPost.docid)}
                       disabled={postState.isLiking}
+                      title={postState.isLiked ? '取消 Amen' : 'Amen 此貼文'}
                     >
-                      {postState.isLiking ? 'Processing...' : 
-                        (postState.hasLiked ? `AMENED (${postState.likeCount})` : `AMEN (${postState.likeCount})`)}
+                      {postState.isLiking ? 'Processing...' : `AMEN (${postState.likeCount})`}
                     </button>
-                    
-                    <button 
+
+                    <button
                       className={`action-button action-comment ${postState.showCommentForm ? 'active-comment' : ''}`}
                       onClick={() => handleToggleCommentForm(originalPost.docid)}
                     >
                       PRAY FOR ME ({postState.commentCount})
                     </button>
                   </div>
-
-                  {/* ✅ COMMENT FORM - GIỐNG ORIGINAL POST */}
                   {postState.showCommentForm && (
                     <div className="form-container comment-form-wrapper">
-                      <form 
-                        className="comment-form" 
+                      <form
+                        className="comment-form"
                         onSubmit={(e) => handleCommentSubmit(e, originalPost.docid, originalPost.sn)}
                       >
-                        <textarea
-                          value={postState.commentText}
-                          onChange={(e) => handleCommentTextChange(originalPost.docid, e.target.value)}
-                          placeholder="寫下您的評論..."
-                          rows="3"
-                          maxLength="500"
-                        />
-                        <div className="form-info">
-                          <span className="char-count">{postState.commentText.length}/500</span>
+                        <div className="comment-input-container">
+                          <textarea
+                            value={postState.commentText}
+                            onChange={(e) => handleCommentTextChange(originalPost.docid, e.target.value)}
+                            placeholder="寫下您的評論..."
+                            rows="3"
+                            maxLength="500"
+                          />
+
+                          <VoiceRecordButton
+                            onTranscriptComplete={(transcript) => {
+                              handleCommentTextChange(
+                                originalPost.docid,
+                                postState.commentText + (postState.commentText ? ' ' : '') + transcript
+                              );
+                            }}
+                          />
                         </div>
+
                         <div className="form-actions">
                           <button
                             type="submit"
@@ -526,7 +841,6 @@ const WitnessWall = ({ selectedCategory, currentUserId, allPosts }) => {
                         </div>
                       </form>
 
-                      {/* ✅ COMMENTS LIST */}
                       <div className="comments-section">
                         <div className="comments-header">
                           <h4>💬 評論 ({postState.comments.length})</h4>
@@ -535,44 +849,67 @@ const WitnessWall = ({ selectedCategory, currentUserId, allPosts }) => {
 
                         <div className="comments-list">
                           {postState.comments.length > 0 ? (
-                            postState.comments.map(comment => (
-                              <div key={comment.id} className="comment">
-                                <div className="comment-header">
-                                  <div className="comment-avatar">
-                                    <img
-                                      src={`https://ui-avatars.com/api/?name=${encodeURIComponent(comment.author)}&background=random&size=32`}
-                                      alt="評論者頭像"
-                                    />
+                            postState.comments.map(comment => {
+                              const commentState = commentStates[comment.id] || {
+                                likeCount: comment.likes || 0,
+                                isLiked: comment.isLiked || false,
+                                isLiking: false
+                              };
+
+                              return (
+                                <div key={comment.id} className="comment comment-reply">
+                                  <div className="comment-header">
+                                    <div className="comment-avatar">
+                                      <AvatarImage 
+                                        userId={comment.userid || comment.author}
+                                        userName={comment.author}
+                                        size={32}
+                                        clickable={true}
+                                      />
+                                    </div>
+                                    <div className="comment-info">
+                                      <div className="comment-author">{comment.author}</div>
+                                      <div className="comment-time">{comment.time}</div>
+                                    </div>
                                   </div>
-                                  <div className="comment-info">
-                                    <div className="comment-author">{comment.author}</div>
-                                    <div className="comment-time">{comment.time}</div>
+                                  <div className="comment-content">
+                                    <p>{comment.content}</p>
+                                  </div>
+
+                                  <div className="comment-actions">
+                                    <button
+                                      className={`comment-like-btn ${commentState.isLiked ? 'active-amen' : ''}`}
+                                      onClick={() => handleLikeComment(comment.id)}
+                                      disabled={commentState.isLiking}
+                                      title={commentState.isLiked ? '取消 Amen' : 'Amen 評論'}
+                                    >
+                                      {commentState.isLiking ? 'Processing...' : `AMEN (${commentState.likeCount})`}
+                                    </button>
                                   </div>
                                 </div>
-                                <div className="comment-content">
-                                  <p>{comment.content}</p>
-                                </div>
-                              </div>
-                            ))
+                              );
+                            })
                           ) : (
                             <div className="no-comments">
                               <p>尚無評論，成為第一個留言的人！</p>
                             </div>
                           )}
+
                         </div>
                       </div>
                     </div>
                   )}
                 </div>
               )}
-
-              {/* ✅ WITNESS SECTION */}
+              
               <div className="witness-section">
                 <div className="witness-wall-header">
                   <div className="witness-wall-avatar">
-                    <img
-                      src={`https://ui-avatars.com/api/?name=${encodeURIComponent(witness.userid)}&background=random&size=48`}
-                      alt="Witness avatar"
+                    <AvatarImage 
+                      userId={witness.userid}
+                      userName={witness.userid}
+                      size={48}
+                      clickable={true}
                     />
                   </div>
                   <div className="witness-wall-info">
@@ -580,10 +917,31 @@ const WitnessWall = ({ selectedCategory, currentUserId, allPosts }) => {
                     <div className="witness-wall-time">{witness.datetime || '剛剛'}</div>
                   </div>
                 </div>
-                
+
                 <div className="witness-wall-content">
                   {witness.title && <h4>{witness.title}</h4>}
                   <p>{witness.content}</p>
+                  
+                  {witness.images && witness.images.length > 0 && (
+                    <div className="witness-images-container">
+                      {witness.images.map((imageUrl, index) => (
+                        <div key={index} className="witness-image-wrapper">
+                          <img 
+                            src={imageUrl} 
+                            alt={`Witness image ${index + 1}`}
+                            className="witness-image"
+                            onError={(e) => {
+                              console.error('❌ Witness image load failed:', imageUrl);
+                              e.target.style.display = 'none';
+                            }}
+                            onLoad={() => {
+                              console.log('✅ Witness image loaded:', imageUrl);
+                            }}
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
@@ -600,11 +958,11 @@ const WitnessWall = ({ selectedCategory, currentUserId, allPosts }) => {
           >
             ← 上一頁
           </button>
-          
+
           <span className="pagination-info">
             第 {pagination.current_page} / {pagination.total_pages} 頁 (共 {pagination.total_items} 筆見證)
           </span>
-          
+
           <button
             className="pagination-btn"
             onClick={handleNextPage}
@@ -618,6 +976,7 @@ const WitnessWall = ({ selectedCategory, currentUserId, allPosts }) => {
   );
 };
 
+// ==================== PRIVACY DROPDOWN ====================
 const PrivacyDropdown = ({ onChange, initialValue = 'public' }) => {
   const [selected, setSelected] = useState(initialValue);
   const [isOpen, setIsOpen] = useState(false);
@@ -667,15 +1026,63 @@ const PrivacyDropdown = ({ onChange, initialValue = 'public' }) => {
   );
 };
 
-const Comment = ({ comment, onReply, onEdit, onDelete, onLike, currentUserId, postDocid }) => {
+// ==================== COMMENT COMPONENT ====================
+const Comment = ({ comment, onReply, onLike, currentUserId, postDocid, commentState }) => {
   const [isReplying, setIsReplying] = useState(false);
-  const [isEditing, setIsEditing] = useState(false);
   const [replyText, setReplyText] = useState('');
-  const [editText, setEditText] = useState(comment.content);
   const [showReplies, setShowReplies] = useState(false);
   const [replies, setReplies] = useState([]);
   const [loadingReplies, setLoadingReplies] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const [isTranslating, setIsTranslating] = useState(false);
+  const [translatedContent, setTranslatedContent] = useState(null);
+  const [detectedLanguage, setDetectedLanguage] = useState(null);
+  const [translationError, setTranslationError] = useState(null);
+
+  useEffect(() => {
+    setIsTranslating(false);
+    setTranslatedContent(null);
+    setDetectedLanguage(null);
+    setTranslationError(null);
+  }, [comment.id]);
+
+  const handleTranslate = async () => {
+    if (isTranslating) return;
+
+    if (translatedContent) {
+      setTranslatedContent(null);
+      setDetectedLanguage(null);
+      return;
+    }
+
+    setIsTranslating(true);
+    setTranslationError(null);
+
+    try {
+      console.log(`🌐 Translating comment ${comment.id} content...`);
+      
+      // ✅ GỌI GOOGLE TRANSLATION API
+      const result = await ApiService.translate(comment.content, 'vi');
+      
+      if (result.success) {
+        setTranslatedContent(result.translatedText);
+        setDetectedLanguage(result.detectedSourceLanguage);
+        console.log(`✅ Comment ${comment.id} translation completed:`, {
+          from: result.detectedSourceLanguage,
+          text: result.translatedText.substring(0, 50) + '...'
+        });
+      } else {
+        throw new Error(result.message || 'Translation failed');
+      }
+
+    } catch (error) {
+      console.error(`❌ Comment ${comment.id} translation error:`, error);
+      setTranslationError('翻譯失敗，請稍後再試');
+    } finally {
+      setIsTranslating(false);
+    }
+  };
 
   const loadReplies = async () => {
     if (loadingReplies || comment.isReply) return;
@@ -725,140 +1132,59 @@ const Comment = ({ comment, onReply, onEdit, onDelete, onLike, currentUserId, po
     }
   };
 
-  const handleEditSubmit = async (e) => {
-    e.preventDefault();
-    if (!editText.trim() || isSubmitting) return;
-
-    setIsSubmitting(true);
-    try {
-      const result = await ApiService.editComment(
-        comment.id,
-        currentUserId,
-        editText.trim()
-      );
-
-      if (result.success) {
-        console.log('✅ 編輯成功:', result.comment);
-        setIsEditing(false);
-        if (onEdit) onEdit(comment.id, editText.trim());
-      } else {
-        alert(`編輯失敗: ${result.message}`);
-      }
-    } catch (error) {
-      console.error('❌ 編輯錯誤:', error);
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  const handleDelete = async () => {
-    const confirmDelete = window.confirm('確定要刪除這則評論嗎？此操作無法復原！');
-    if (!confirmDelete) return;
-
-    try {
-      const result = await ApiService.deleteComment(comment.id, currentUserId);
-      if (result.success) {
-        console.log('✅ 刪除成功');
-        if (onDelete) onDelete(comment.id);
-      } else {
-        alert(`刪除失敗: ${result.message}`);
-      }
-    } catch (error) {
-      console.error('❌ 刪除錯誤:', error);
-    }
-  };
-
-  const handleLike = async () => {
-    try {
-      const result = await ApiService.likePost(comment.id, currentUserId);
-      if (result.success) {
-        console.log('✅ 按讚成功');
-        if (onLike) onLike(comment.id);
-      } else {
-        alert(`按讚失敗: ${result.message}`);
-      }
-    } catch (error) {
-      console.error('❌ 按讚錯誤:', error);
-    }
-  };
-
-  const isOwner = comment.userid === currentUserId || comment.userid === String(currentUserId);
-
   return (
     <div className={`comment ${comment.isReply ? 'comment-reply' : ''}`}>
       <div className="comment-header">
         <div className="comment-avatar">
-          <img
-            src={`https://ui-avatars.com/api/?name=${encodeURIComponent(comment.author)}&background=random&size=32`}
-            alt="評論者頭像"
+          <AvatarImage 
+            userId={comment.userid || comment.author}
+            userName={comment.author}
+            size={32}
+            clickable={true}
           />
         </div>
         <div className="comment-info">
           <div className="comment-author">{comment.author}</div>
           <div className="comment-time">{comment.time}</div>
         </div>
-        {isOwner && (
-          <div className="comment-owner-actions">
-            <button
-              className="comment-action-btn edit"
-              onClick={() => setIsEditing(!isEditing)}
-              title="編輯評論"
-            >
-              ✏️
-            </button>
-            <button
-              className="comment-action-btn delete"
-              onClick={handleDelete}
-              title="刪除評論"
-            >
-              🗑️
-            </button>
-          </div>
-        )}
       </div>
 
       <div className="comment-content">
-        {isEditing ? (
-          <form onSubmit={handleEditSubmit} className="comment-edit-form">
-            <textarea
-              value={editText}
-              onChange={(e) => setEditText(e.target.value)}
-              placeholder="編輯您的評論..."
-              rows="2"
-              maxLength="500"
-            />
-            <div className="comment-edit-actions">
-              <button
-                type="submit"
-                disabled={!editText.trim() || isSubmitting}
-                className="comment-save-btn"
-              >
-                {isSubmitting ? '儲存中...' : '儲存'}
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setIsEditing(false);
-                  setEditText(comment.content);
-                }}
-                className="comment-cancel-btn"
-              >
-                取消
-              </button>
-            </div>
-          </form>
-        ) : (
-          <p>{comment.content}</p>
+        <button
+          className={`comment-translate-button ${isTranslating ? 'translating' : ''} ${translatedContent ? 'active' : ''}`}
+          onClick={handleTranslate}
+          disabled={isTranslating}
+          title={translatedContent ? '隱藏翻譯' : '翻譯此評論'}
+        >
+          <TranslateIcon size={14} />
+        </button>
+
+        <p>{comment.content}</p>
+
+        {translatedContent && (
+          <div className="comment-translated-content">
+            <span className="translate-label">
+              🌐 翻譯 {detectedLanguage && `(從 ${getLanguageName(detectedLanguage)})`}:
+            </span>
+            <p>{translatedContent}</p>
+          </div>
+        )}
+
+        {translationError && (
+          <div className="comment-translation-error">
+            ⚠️ {translationError}
+          </div>
         )}
       </div>
 
       <div className="comment-actions">
         <button
-          className="comment-action-btn like"
-          onClick={handleLike}
-          title="按讚評論"
+          className={`comment-action-btn like ${commentState?.isLiked ? 'active-amen' : ''}`}
+          onClick={() => onLike(comment.id)}
+          disabled={commentState?.isLiking}
+          title={commentState?.isLiked ? '取消 Amen' : 'Amen 評論'}
         >
-          👍 {comment.likes || 0}
+          {commentState?.isLiking ? 'Processing...' : `AMEN (${commentState?.likeCount || 0})`}
         </button>
 
         {!comment.isReply && (
@@ -927,11 +1253,11 @@ const Comment = ({ comment, onReply, onEdit, onDelete, onLike, currentUserId, po
               <Comment
                 key={reply.id}
                 comment={reply}
-                onEdit={onEdit}
-                onDelete={onDelete}
+                onReply={onReply}
                 onLike={onLike}
                 currentUserId={currentUserId}
                 postDocid={postDocid}
+                commentState={commentState}
               />
             ))
           )}
@@ -941,9 +1267,8 @@ const Comment = ({ comment, onReply, onEdit, onDelete, onLike, currentUserId, po
   );
 };
 
-// ==================== ✅ POST COMPONENT ====================
-const Post = ({ post, allPosts, onLike, onComment, onWitnessCreated, currentUserId, selectedCategory }) => {
-  const [isLiking, setIsLiking] = useState(false);
+// ==================== POST COMPONENT ====================
+const Post = ({ post, allPosts, onLike, onComment, onWitnessCreated, currentUserId, selectedCategory, refreshBalance }) => {
   const [isCommenting, setIsCommenting] = useState(false);
   const [commentText, setCommentText] = useState('');
   const [comments, setComments] = useState([]);
@@ -951,30 +1276,126 @@ const Post = ({ post, allPosts, onLike, onComment, onWitnessCreated, currentUser
   const [hasMoreComments, setHasMoreComments] = useState(false);
   const [loadingComments, setLoadingComments] = useState(false);
 
+  const [commentStates, setCommentStates] = useState({});
+
   const isLikingRef = useRef(false);
 
-  const [likeCount, setLikeCount] = useState(post.likes || 0);
-  const [hasLiked, setHasLiked] = useState(false);
+  const [likeCount, setLikeCount] = useState(post.amen_count || post.likes || 0);
+  const [isLiked, setIsLiked] = useState(post.amened || post.isLiked || false);
+  const [isLiking, setIsLiking] = useState(false);
 
   const [witnessText, setWitnessText] = useState('');
   const [isSubmittingWitness, setIsSubmittingWitness] = useState(false);
   const [witnessCount, setWitnessCount] = useState(0);
 
+  const [hasWitnessed, setHasWitnessed] = useState(false);
+
+  const [witnessImageFile, setWitnessImageFile] = useState(null);
+  const [witnessImagePreview, setWitnessImagePreview] = useState(null);
+
   const [activeForm, setActiveForm] = useState(null);
 
+  const [isTranslating, setIsTranslating] = useState(false);
+  const [translatedContent, setTranslatedContent] = useState(null);
+  const [detectedLanguage, setDetectedLanguage] = useState(null);
+  const [translationError, setTranslationError] = useState(null);
+
   useEffect(() => {
-    if (post.likes !== undefined) setLikeCount(post.likes);
+    setLikeCount(post.amen_count || post.likes || 0);
+    setIsLiked(post.amened || post.isLiked || false);
+  }, [post.amen_count, post.likes, post.amened, post.isLiked]);
+
+  useEffect(() => {
+    const userWitness = allPosts.find(
+      p => p.parent_docid === post.id && 
+           p.event === 'witness' && 
+           (p.userid === currentUserId || p.author === currentUserId)
+    );
+    setHasWitnessed(!!userWitness);
     
+    console.log(`🔍 Post ${post.id} - User ${currentUserId} witnessed:`, !!userWitness);
+  }, [allPosts, post.id, currentUserId]);
+
+  useEffect(() => {
+    setIsTranslating(false);
+    setTranslatedContent(null);
+    setDetectedLanguage(null);
+    setTranslationError(null);
+  }, [post.id]);
+
+  const handleTranslate = async () => {
+    if (isTranslating) return;
+
+    if (translatedContent) {
+      setTranslatedContent(null);
+      setDetectedLanguage(null);
+      return;
+    }
+
+    setIsTranslating(true);
+    setTranslationError(null);
+
+    try {
+      console.log(`🌐 Translating post ${post.id} content...`);
+      
+      // ✅ GỌI GOOGLE TRANSLATION API
+      const result = await ApiService.translate(post.content, 'vi');
+      
+      if (result.success) {
+        setTranslatedContent(result.translatedText);
+        setDetectedLanguage(result.detectedSourceLanguage);
+        console.log(`✅ Post ${post.id} translation completed:`, {
+          from: result.detectedSourceLanguage,
+          text: result.translatedText.substring(0, 50) + '...'
+        });
+      } else {
+        throw new Error(result.message || 'Translation failed');
+      }
+
+    } catch (error) {
+      console.error(`❌ Post ${post.id} translation error:`, error);
+      setTranslationError('翻譯失敗，請稍後再試');
+    } finally {
+      setIsTranslating(false);
+    }
+  };
+
+  useEffect(() => {
     const postWitnesses = allPosts.filter(
       p => p.parent_docid === post.id && p.event === 'witness'
     );
     setWitnessCount(postWitnesses.length);
-  }, [post.likes, allPosts, post.id]);
+  }, [allPosts, post.id]);
 
   const [transcriptData, setTranscriptData] = useState(null);
   const [isLoadingTranscript, setIsLoadingTranscript] = useState(false);
   const [isDeletingRecord, setIsDeletingRecord] = useState(false);
   const [showTranscriptPanel, setShowTranscriptPanel] = useState(false);
+
+  const handleWitnessImageChange = (e) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (!file.type.startsWith('image/')) {
+        alert('⚠️ Vui lòng chỉ chọn file ảnh!');
+        return;
+      }
+      
+      if (file.size > 5 * 1024 * 1024) {
+        alert('⚠️ Kích thước ảnh không được vượt quá 5MB!');
+        return;
+      }
+      
+      setWitnessImageFile(file);
+      
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setWitnessImagePreview(reader.result);
+      };
+      reader.readAsDataURL(file);
+      
+      console.log('📸 Witness image selected:', file.name, `(${(file.size / 1024).toFixed(2)} KB)`);
+    }
+  };
 
   const handleWitnessSubmit = async (e) => {
     e.preventDefault();
@@ -983,24 +1404,35 @@ const Post = ({ post, allPosts, onLike, onComment, onWitnessCreated, currentUser
     setIsSubmittingWitness(true);
     try {
       console.log(`✨ 新增見證到貼文 docid=${post.id}:`, witnessText.trim());
-      
+      console.log(`📸 Has image: ${!!witnessImageFile}`);
+
       const result = await ApiService.createWitness(
         currentUserId,
         witnessText.trim(),
-        post.id
+        post.id,
+        witnessImageFile
       );
 
       if (result.success) {
         console.log('✅ 見證新增成功:', result.witness);
-        
+
         setWitnessText('');
+        setWitnessImageFile(null);
+        setWitnessImagePreview(null);
         setActiveForm(null);
         
+        setHasWitnessed(true);
+        setWitnessCount(prev => prev + 1);
+
+        if (refreshBalance) {
+          await refreshBalance();
+        }
+
         if (onWitnessCreated && typeof onWitnessCreated === 'function') {
           console.log('🔄 Chuyển sang Tribe Prayer - Witness Wall...');
           onWitnessCreated(post.id);
         }
-        
+
       } else {
         alert(`見證新增失敗: ${result.message}`);
       }
@@ -1013,9 +1445,16 @@ const Post = ({ post, allPosts, onLike, onComment, onWitnessCreated, currentUser
   };
 
   const handleToggleWitnessForm = () => {
+    if (hasWitnessed && activeForm !== 'witness') {
+      alert('⚠️ 您已經為此貼文建立過見證了！\n每個貼文只能建立一次見證。');
+      return;
+    }
+
     if (activeForm === 'witness') {
       setActiveForm(null);
       setWitnessText('');
+      setWitnessImageFile(null);
+      setWitnessImagePreview(null);
     } else {
       setActiveForm('witness');
       setCommentText('');
@@ -1034,14 +1473,33 @@ const Post = ({ post, allPosts, onLike, onComment, onWitnessCreated, currentUser
       const pagedComments = allReplies.slice(startIndex, startIndex + pageSize);
 
       const formattedComments = pagedComments.map(c => ({
-          id: c.docid,
-          author: c.userid,
-          content: c.content,
-          time: c.datetime || '剛剛',
-          likes: c.amen_count || 0,
-          isReply: true,
-          userid: c.userid
+        id: c.docid,
+        author: c.userid,
+        content: c.content,
+        time: c.datetime || '剛剛',
+        likes: c.amen_count || 0,
+        isLiked: c.amened || false,
+        isReply: true,
+        userid: c.userid
       }));
+
+      const newCommentStates = {};
+      formattedComments.forEach(comment => {
+        newCommentStates[comment.id] = {
+          likeCount: comment.likes || 0,
+          isLiked: comment.isLiked || false,
+          isLiking: false
+        };
+      });
+
+      if (!append) {
+        setCommentStates(newCommentStates);
+      } else {
+        setCommentStates(prev => ({
+          ...prev,
+          ...newCommentStates
+        }));
+      }
 
       setComments(prevComments =>
         append ? [...prevComments, ...formattedComments] : formattedComments
@@ -1064,6 +1522,8 @@ const Post = ({ post, allPosts, onLike, onComment, onWitnessCreated, currentUser
     } else {
       setActiveForm('comment');
       setWitnessText('');
+      setWitnessImageFile(null);
+      setWitnessImagePreview(null);
       if (comments.length === 0) {
         loadComments(1, false);
         setCommentPage(1);
@@ -1124,7 +1584,7 @@ const Post = ({ post, allPosts, onLike, onComment, onWitnessCreated, currentUser
     }
   };
 
-  const TranscriptPanel = () => (
+  const TranscriptPanel = ()=> (
     <div className="transcript-panel">
       <div className="transcript-header">
         <h4>🎵 錄音轉錄結果</h4>
@@ -1161,40 +1621,105 @@ const Post = ({ post, allPosts, onLike, onComment, onWitnessCreated, currentUser
   const handleLike = async () => {
     if (isLikingRef.current) return;
     isLikingRef.current = true;
-    
-    const prevCount = likeCount;
-    const willIncrease = !post.isLiked;
-    const optimisticCount = willIncrease ? prevCount + 1 : Math.max(0, prevCount - 1);
+    setIsLiking(true);
 
-    setHasLiked(true);
-    setLikeCount(optimisticCount);
+    const prevCount = likeCount;
+    const prevLiked = isLiked;
+    
+    const newLiked = !prevLiked;
+    const newCount = newLiked ? prevCount + 1 : Math.max(0, prevCount - 1);
+
+    setIsLiked(newLiked);
+    setLikeCount(newCount);
 
     try {
       const result = await ApiService.likePost(post.id, currentUserId);
-      
+
       if (result.success) {
-        const finalCount = result.data?.amen_count !== undefined ? result.data.amen_count : optimisticCount;
-        const finalLiked = result.data?.amened !== undefined ? result.data.amened : !post.isLiked;
+        const finalCount = result.data?.amen_count !== undefined ? result.data.amen_count : newCount;
+        const finalLiked = result.data?.amened !== undefined ? result.data.amened : newLiked;
 
         setLikeCount(finalCount);
-        
-        setTimeout(() => {
-          setHasLiked(false);
-        }, 300);
-        
+        setIsLiked(finalLiked);
+
         if (onLike) {
           onLike(post.id, finalLiked, finalCount);
+        }
+
+        if (refreshBalance) {
+          await refreshBalance();
+        }
+
+        console.log(`✅ Amen ${newLiked ? 'added' : 'removed'} for post ${post.id}:`, finalCount);
+      } else {
+        throw new Error(result.message || 'API Error');
+      }
+    } catch (error) {
+      console.error('❌ Amen error:', error);
+      setIsLiked(prevLiked);
+      setLikeCount(prevCount);
+    } finally {
+      isLikingRef.current = false;
+      setIsLiking(false);
+    }
+  };
+
+  const handleLikeComment = async (commentId) => {
+    const currentState = commentStates[commentId];
+    if (!currentState || currentState.isLiking) return;
+
+    const prevCount = currentState.likeCount;
+    const prevLiked = currentState.isLiked;
+    
+    const newLiked = !prevLiked;
+    const newCount = newLiked ? prevCount + 1 : Math.max(0, prevCount - 1);
+
+    setCommentStates(prev => ({
+      ...prev,
+      [commentId]: {
+        ...prev[commentId],
+        isLiked: newLiked,
+        likeCount: newCount,
+        isLiking: true
+      }
+    }));
+
+    try {
+      const result = await ApiService.likeComment(commentId, currentUserId);
+
+      if (result.success) {
+        const finalCount = result.data?.amen_count !== undefined ? result.data.amen_count : newCount;
+        const finalLiked = result.data?.amened !== undefined ? result.data.amened : newLiked;
+
+        setCommentStates(prev => ({
+          ...prev,
+          [commentId]: {
+            ...prev[commentId],
+            likeCount: finalCount,
+            isLiked: finalLiked,
+            isLiking: false
+          }
+        }));
+
+        console.log(`✅ Comment amen ${newLiked ? 'added' : 'removed'} ${commentId}:`, finalCount);
+
+        if (refreshBalance) {
+          await refreshBalance();
         }
       } else {
         throw new Error(result.message || 'API Error');
       }
     } catch (error) {
-      console.error('Like error:', error);
-      setHasLiked(false);
-      setLikeCount(prevCount);
-    } finally {
-      isLikingRef.current = false;
-      setIsLiking(false);
+      console.error('❌ Comment amen error:', error);
+      setCommentStates(prev => ({
+        ...prev,
+        [commentId]: {
+          ...prev[commentId],
+          isLiked: prevLiked,
+          likeCount: prevCount,
+          isLiking: false
+        }
+      }));
     }
   };
 
@@ -1208,15 +1733,31 @@ const Post = ({ post, allPosts, onLike, onComment, onWitnessCreated, currentUser
       const result = await ApiService.addComment({
         userid: currentUserId,
         content: commentText.trim(),
-        docid: post.id, 
-        sn: post.sn 
+        docid: post.id,
+        sn: post.sn
       });
 
       if (result.success) {
         console.log('✅ 評論新增成功:', result.comment);
+
+        const newCommentId = result.comment?.docid || `temp-${Date.now()}`;
+
+        setCommentStates(prev => ({
+          ...prev,
+          [newCommentId]: {
+            likeCount: 0,
+            isLiked: false,
+            isLiking: false
+          }
+        }));
+
         setCommentText('');
         loadComments(1, false);
         if (onComment) onComment(post.id, commentText.trim());
+
+        if (refreshBalance) {
+          await refreshBalance();
+        }
       } else {
         alert(`評論失敗: ${result.message}`);
       }
@@ -1228,36 +1769,30 @@ const Post = ({ post, allPosts, onLike, onComment, onWitnessCreated, currentUser
     }
   };
 
-  const handleCommentReply = (commentId, reply) => { console.log(`💬 回覆評論 ${commentId}:`, reply); };
-  const handleCommentEdit = (commentId, newContent) => { console.log(`✏️ 編輯評論 ${commentId}:`, newContent); };
-  const handleCommentDelete = (commentId) => { console.log(`🗑️ 刪除評論 ${commentId}`); };
-  const handleCommentLike = (commentId) => { console.log(`👍 按讚評論 ${commentId}`); };
-
   return (
     <div className="post-card">
       <div className="post-header">
         <div className="post-avatar">
-          <img
-            src={`https://ui-avatars.com/api/?name=${encodeURIComponent(post.author)}&background=random`}
-            alt="用戶頭像"
+          <AvatarImage 
+            userId={post.userid || post.author}
+            userName={post.author}
+            size={48}
+            clickable={true}
           />
         </div>
         <div className="post-info">
           <div className="post-author">{post.author}</div>
           <div className="post-time">{post.time || post.datetime || '剛剛'}</div>
         </div>
-        
-        {/* ✅ BADGES CONTAINER - MỚI */}
+
         <div className="post-badges-container">
-          {/* Privacy Badge */}
           <div className="post-privacy-badge">
             {(!post.privacy || post.privacy === 'public') && <span>Public</span>}
             {post.privacy === 'family' && <span>Family</span>}
             {post.privacy === 'tribe' && <span>Tribe</span>}
             {(post.privacy === 'individual' || post.privacy === 'private') && <span>Individual</span>}
           </div>
-          
-          {/* ✅ Category Badge - MỚI */}
+
           <div className="post-category-badge">
             {post.category === 'Personal & Family' && <span>Personal & Family</span>}
             {post.category === 'Church & Ministry' && <span>Church & Ministry</span>}
@@ -1269,8 +1804,33 @@ const Post = ({ post, allPosts, onLike, onComment, onWitnessCreated, currentUser
       </div>
 
       <div className="post-content">
+        <button
+          className={`post-translate-button ${isTranslating ? 'translating' : ''} ${translatedContent ? 'active' : ''}`}
+          onClick={handleTranslate}
+          disabled={isTranslating}
+          title={translatedContent ? '隱藏翻譯' : '翻譯此貼文'}
+        >
+          <TranslateIcon size={18} />
+        </button>
+
         {post.title && <h3>{post.title}</h3>}
         <p>{post.content}</p>
+
+        {translatedContent && (
+          <div className="post-translated-content">
+            <span className="translate-label">
+              🌐 翻譯 {detectedLanguage && `(從 ${getLanguageName(detectedLanguage)})`}:
+            </span>
+            <p>{translatedContent}</p>
+          </div>
+        )}
+
+        {translationError && (
+          <div className="post-translation-error">
+            ⚠️ {translationError}
+          </div>
+        )}
+
         {post.image && (
           <div className="post-image">
             <img src={post.image} alt="貼文圖片" />
@@ -1305,11 +1865,12 @@ const Post = ({ post, allPosts, onLike, onComment, onWitnessCreated, currentUser
 
       <div className="post-actions">
         <button
-          className={`action-button action-amen ${hasLiked ? 'active-amen' : ''}`}
+          className={`action-button action-amen ${isLiked ? 'active-amen' : ''}`}
           onClick={handleLike}
           disabled={isLiking}
+          title={isLiked ? '取消 Amen' : 'Amen 此貼文'}
         >
-          {isLiking ? 'Processing...' : (hasLiked ? `AMENED (${likeCount})` : `AMEN (${likeCount})`)}
+          {isLiking ? 'Processing...' : `AMEN (${likeCount})`}
         </button>
 
         <button
@@ -1319,11 +1880,13 @@ const Post = ({ post, allPosts, onLike, onComment, onWitnessCreated, currentUser
           PRAY FOR ME ({post.calculatedComments || 0})
         </button>
 
-        <button 
-          className={`action-button action-witness ${activeForm === 'witness' ? 'active-witness' : ''}`}
+        <button
+          className={`action-button action-witness ${activeForm === 'witness' ? 'active-witness' : ''} ${hasWitnessed ? 'witnessed-done' : ''}`}
           onClick={handleToggleWitnessForm}
+          disabled={hasWitnessed}
+          title={hasWitnessed ? '您已經為此貼文建立過見證' : '分享見證'}
         >
-          WITNESS ({witnessCount})
+          {hasWitnessed ? `✓ WITNESSED (${witnessCount})` : `WITNESS (${witnessCount})`}
         </button>
       </div>
 
@@ -1337,9 +1900,49 @@ const Post = ({ post, allPosts, onLike, onComment, onWitnessCreated, currentUser
               rows="4"
               maxLength="1000"
             />
+            
+            <div className="witness-image-upload">
+              <label htmlFor={`witness-image-${post.id}`} className="image-upload-label">
+                📷 Thêm ảnh
+              </label>
+              <input
+                id={`witness-image-${post.id}`}
+                type="file"
+                accept="image/*"
+                onChange={handleWitnessImageChange}
+                style={{ display: 'none' }}
+              />
+              
+              {witnessImagePreview && (
+                <div className="image-preview-container">
+                  <img 
+                    src={witnessImagePreview} 
+                    alt="Preview" 
+                    className="image-preview"
+                  />
+                  <button
+                    type="button"
+                    className="remove-image-btn"
+                    onClick={() => {
+                      setWitnessImageFile(null);
+                      setWitnessImagePreview(null);
+                    }}
+                  >
+                    ✕
+                  </button>
+                </div>
+              )}
+            </div>
+            
             <div className="form-info">
               <span className="char-count">{witnessText.length}/1000</span>
+              {witnessImageFile && (
+                <span className="file-info">
+                  📎 {witnessImageFile.name} ({(witnessImageFile.size / 1024).toFixed(2)} KB)
+                </span>
+              )}
             </div>
+            
             <div className="form-actions">
               <button
                 type="submit"
@@ -1353,6 +1956,8 @@ const Post = ({ post, allPosts, onLike, onComment, onWitnessCreated, currentUser
                 onClick={() => {
                   setActiveForm(null);
                   setWitnessText('');
+                  setWitnessImageFile(null);
+                  setWitnessImagePreview(null);
                 }}
                 className="cancel-btn"
               >
@@ -1366,15 +1971,20 @@ const Post = ({ post, allPosts, onLike, onComment, onWitnessCreated, currentUser
       {activeForm === 'comment' && (
         <div className="form-container comment-form-wrapper">
           <form className="comment-form" onSubmit={handleCommentSubmit}>
-            <textarea
-              value={commentText}
-              onChange={(e) => setCommentText(e.target.value)}
-              placeholder="寫下您的評論..."
-              rows="3"
-              maxLength="500"
-            />
-            <div className="form-info">
-              <span className="char-count">{commentText.length}/500</span>
+            <div className="comment-input-container">
+              <textarea
+                value={commentText}
+                onChange={(e) => setCommentText(e.target.value)}
+                placeholder="寫下您的評論..."
+                rows="3"
+                maxLength="500"
+              />
+
+              <VoiceRecordButton
+                onTranscriptComplete={(transcript) => {
+                  setCommentText(prev => prev + (prev ? ' ' : '') + transcript);
+                }}
+              />
             </div>
             <div className="form-actions">
               <button
@@ -1409,12 +2019,11 @@ const Post = ({ post, allPosts, onLike, onComment, onWitnessCreated, currentUser
                   <Comment
                     key={comment.id}
                     comment={comment}
-                    onReply={handleCommentReply}
-                    onEdit={handleCommentEdit}
-                    onDelete={handleCommentDelete}
-                    onLike={handleCommentLike}
+                    onReply={(commentId, reply) => console.log(`💬 回覆評論 ${commentId}:`, reply)}
+                    onLike={handleLikeComment}
                     currentUserId={currentUserId}
                     postDocid={post.id}
+                    commentState={commentStates[comment.id]}
                   />
                 ))
               ) : (
@@ -1448,7 +2057,7 @@ const MainApp = ({ user, onLogout }) => {
   const location = useLocation();
 
   const initialCategory = location.state?.category || 'Personal & Family';
-  
+
   const [activeTab, setActiveTab] = useState('Home');
   const [showTribeDetail, setShowTribeDetail] = useState(false);
   const [posts, setPosts] = useState([]);
@@ -1456,13 +2065,42 @@ const MainApp = ({ user, onLogout }) => {
   const [privacyFilter, setPrivacyFilter] = useState('all');
   const [loading, setLoading] = useState(false);
   const [notificationCount] = useState(0);
-  const [coinAmount] = useState(200000);
-  
-  const [selectedCategory, setSelectedCategory] = useState(initialCategory);
-  
-  const [viewMode, setViewMode] = useState('original');
 
-  const userTribeId = user?.tribe;
+  const [coinAmount, setCoinAmount] = useState(0);
+  const [loadingBalance, setLoadingBalance] = useState(true);
+
+  const [currentTribeId, setCurrentTribeId] = useState(() => {
+    const storedUser = JSON.parse(localStorage.getItem('userData') || '{}');
+    return storedUser.tribe !== undefined ? storedUser.tribe : user?.tribe;
+  });
+
+  const [selectedCategory, setSelectedCategory] = useState(initialCategory);
+  const [viewMode, setViewMode] = useState('original');
+  const [viewScope, setViewScope] = useState('my');
+  const [showActivityForm, setShowActivityForm] = useState(false);
+  const [activities, setActivities] = useState([]);
+
+  const hasTribe = currentTribeId !== null && currentTribeId !== undefined;
+
+  useEffect(() => {
+    const storedUser = JSON.parse(localStorage.getItem('userData') || '{}');
+
+    if (storedUser.tribe !== undefined && storedUser.tribe !== currentTribeId) {
+      console.log(`🔄 Syncing tribe from localStorage: ${storedUser.tribe}`);
+      setCurrentTribeId(storedUser.tribe);
+    }
+  }, [user, currentTribeId]);
+
+  useEffect(() => {
+    const storedUser = JSON.parse(localStorage.getItem('userData') || '{}');
+    console.log('🔍 DEBUG - Current State:');
+    console.log('   - currentTribeId:', currentTribeId);
+    console.log('   - hasTribe:', hasTribe);
+    console.log('   - user.tribe:', user?.tribe);
+    console.log('   - localStorage.tribe:', storedUser.tribe);
+  }, [currentTribeId, user, hasTribe]);
+
+  const userTribeId = currentTribeId;
   let tribeNameProp;
   let tribeLogoProp;
 
@@ -1474,6 +2112,70 @@ const MainApp = ({ user, onLogout }) => {
     tribeNameProp = tribeData?.name || 'Unknown';
     tribeLogoProp = tribeData?.icon || null;
   }
+
+  useEffect(() => {
+    const fetchBalance = async () => {
+      const userId = user?.id || user?.userId || ApiService.getCurrentUserId();
+      if (!userId) {
+        console.warn('⚠️ Không tìm thấy user ID');
+        setLoadingBalance(false);
+        return;
+      }
+
+      console.log('💰 Loading YCoin balance for user:', userId);
+      const result = await ApiService.getUserBalance(userId);
+
+      if (result.success) {
+        setCoinAmount(result.balance);
+        console.log('✅ Balance loaded:', result.balance);
+      } else {
+        console.error('❌ Failed to load balance:', result.message);
+        setCoinAmount(0);
+      }
+
+      setLoadingBalance(false);
+    };
+
+    fetchBalance();
+  }, [user]);
+
+  const refreshBalance = async () => {
+    const userId = user?.id || user?.userId || ApiService.getCurrentUserId();
+    if (!userId) return;
+
+    console.log('💰 Refreshing YCoin balance...');
+    const result = await ApiService.getUserBalance(userId);
+
+    if (result.success) {
+      setCoinAmount(result.balance);
+      console.log('✅ Balance refreshed:', result.balance);
+    }
+  };
+
+  const handleTribeSelected = async (newTribeId) => {
+    console.log(`✅ Tribe selected: ${newTribeId}`);
+
+    setCurrentTribeId(newTribeId);
+
+    if (user) {
+      user.tribe = newTribeId;
+    }
+
+    try {
+      const storedUser = JSON.parse(localStorage.getItem('userData') || '{}');
+      storedUser.tribe = newTribeId;
+      localStorage.setItem('userData', JSON.stringify(storedUser));
+      console.log('💾 Tribe đã được lưu vào localStorage:', storedUser);
+    } catch (error) {
+      console.error('❌ Lỗi khi lưu tribe vào localStorage:', error);
+    }
+
+    setShowTribeDetail(false);
+
+    setTimeout(() => {
+      alert('支派選擇成功！您的支派已更新。');
+    }, 100);
+  };
 
   const handleTribeLogoClick = () => {
     console.log('🏛️ 支派 Logo 被點擊');
@@ -1507,89 +2209,176 @@ const MainApp = ({ user, onLogout }) => {
     navigate('/create-post', { replace: true });
   };
 
-  const handleNotificationClick = () => {};
-  const handleCoinClick = () => {};
-  const handleLogoClick = () => { 
+  const handleNotificationClick = () => { };
+
+  const handleCoinClick = () => {
+    console.log('💰 Coin clicked from context - navigating to YB History');
+    navigate('/yb-history');
+  };
+
+  const handleLogoClick = () => {
     handleTabChange('Home');
   };
+
   const handleFamilyClick = () => {
     console.log('👨‍👩‍👧‍👦 Navigate to Friends List');
     navigate('/friends');
   };
-    // ✅ THÊM HÀM NÀY
+
   const handleBlessingClick = () => {
     console.log('🍀 Blessings & Luck clicked - Logout');
     handleLogout();
   };
+
+  const handleShowActivityForm = () => {
+    if (!hasTribe) {
+      alert('⚠️ 您尚未選擇支派！\n請先選擇您的支派才能建立活動。');
+      return;
+    }
+    setShowActivityForm(true);
+  };
+
+  const handleCloseActivityForm = () => {
+    setShowActivityForm(false);
+    fetchActivities();
+  };
+
+  const fetchActivities = async () => {
+    if (!hasTribe) {
+      console.log('⚠️ User chưa có tribe, không fetch activities');
+      setActivities([]);
+      setLoading(false);
+      return;
+    }
+
+    console.log('📡 Fetching activities from API...');
+    setLoading(true);
+
+    try {
+      const params = {
+        page: 1,
+        limit: 50,
+        tribe: currentTribeId,
+        is_published: true
+      };
+
+      const result = await ApiService.getActivities(params);
+
+      if (result.success) {
+        console.log('✅ Activities loaded:', result.activities);
+
+        console.log('📸 Activities with images:');
+        result.activities.forEach((activity, index) => {
+          console.log(`Activity ${index + 1}:`, {
+            id: activity.id,
+            title: activity.title,
+            cover_image: activity.cover_image,
+            cover_image_full: getActivityImageUrl(activity.cover_image),
+            images: activity.images,
+            images_full: activity.images?.map(img => getActivityImageUrl(img)) || []
+          });
+        });
+
+        const transformedActivities = result.activities.map(activity => ({
+          id: activity.id,
+          author: activity.created_by || activity.userid || 'Unknown',
+          datetime: activity.created_at || activity.datetime || '剛剛',
+          eventName: activity.title,
+          eventDate: activity.event_date,
+          eventLocation: activity.location,
+          activityTime: activity.event_time,
+          privacy: activity.privacy || 'public',
+          description: activity.description || '',
+          maxParticipants: activity.max_participants || null,
+          tribe: activity.tribe,
+          coverImage: activity.cover_image || null,
+          images: activity.images || []
+        }));
+
+        setActivities(transformedActivities);
+      } else {
+        console.error('❌ Failed to load activities:', result.message);
+        setActivities([]);
+      }
+    } catch (error) {
+      console.error('💥 Error fetching activities:', error);
+      setActivities([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const getFilteredPosts = () => {
     if (privacyFilter === 'all') return posts;
     return posts.filter(post => post.privacy === privacyFilter);
   };
 
-  const handleLikePost = (postId, newLikedStatus, newCount) => {
+  const handleLikePost = async (postId, newLikedStatus, newCount) => {
     setPosts(prevPosts =>
       prevPosts.map(post =>
         post.id === postId
-          ? { 
-              ...post, 
-              likes: newCount, 
-              isLiked: newLikedStatus, 
-              amen_count: newCount,
-              amened: newLikedStatus
-            } 
+          ? {
+            ...post,
+            likes: newCount,
+            isLiked: newLikedStatus,
+            amen_count: newCount,
+            amened: newLikedStatus
+          }
           : post
       )
     );
+
+    await refreshBalance();
   };
 
   const handleCommentPost = async (postId, commentText) => {
     console.log(`💬 新評論於貼文 ${postId}:`, commentText);
     await fetchPosts();
+
+    await refreshBalance();
   };
 
-const handleWitnessCreated = async (postId) => {
-  console.log(`✨ Witness created for post ${postId}`);
-  
-  try {
-    // ✅ TÌM POST VỪA ĐƯỢC WITNESS ĐỂ LẤY CATEGORY CỦA NÓ
-    const witnessedPost = posts.find(p => p.id === postId) || 
-                         allPosts.find(p => p.docid === postId);
-    
-    if (!witnessedPost) {
-      console.error('❌ Không tìm thấy post được witness');
-      return;
+  const handleWitnessCreated = async (postId) => {
+    console.log(`✨ Witness created for post ${postId}`);
+
+    try {
+      const witnessedPost = posts.find(p => p.id === postId) ||
+        allPosts.find(p => p.docid === postId);
+
+      if (!witnessedPost) {
+        console.error('❌ Không tìm thấy post được witness');
+        return;
+      }
+
+      const postCategory = witnessedPost.category || selectedCategory;
+
+      console.log(`📂 Post category: ${postCategory}, keeping same category...`);
+
+      if (postCategory !== selectedCategory) {
+        setSelectedCategory(postCategory);
+      }
+
+      console.log('👁️ Setting view mode to witness...');
+      setViewMode('witness');
+
+      console.log('🗑️ Clearing cache...');
+      ApiService.clearCache();
+
+      console.log(`🔄 Fetching posts for ${postCategory}...`);
+      await fetchPosts(postCategory);
+
+      await refreshBalance();
+
+      setTimeout(() => {
+        console.log('⬆️ Scrolling to top...');
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }, 100);
+
+      console.log(`✅ Đã chuyển sang ${postCategory} - Witness Wall`);
+    } catch (error) {
+      console.error('❌ Lỗi khi chuyển trang:', error);
     }
-
-    const postCategory = witnessedPost.category || selectedCategory;
-    
-    console.log(`📂 Post category: ${postCategory}, keeping same category...`);
-    
-    // ✅ GIỮ NGUYÊN CATEGORY CỦA POST (KHÔNG CHUYỂN SANG TRIBE PRAYER)
-    if (postCategory !== selectedCategory) {
-      setSelectedCategory(postCategory);
-    }
-    
-    console.log('👁️ Setting view mode to witness...');
-    setViewMode('witness');
-    
-    console.log('🗑️ Clearing cache...');
-    ApiService.clearCache();
-    
-    console.log(`🔄 Fetching posts for ${postCategory}...`);
-    await fetchPosts(postCategory);
-    
-    setTimeout(() => {
-      console.log('⬆️ Scrolling to top...');
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    }, 100);
-    
-    console.log(`✅ Đã chuyển sang ${postCategory} - Witness Wall`);
-  } catch (error) {
-    console.error('❌ Lỗi khi chuyển trang:', error);
-  }
-};
-
-
+  };
 
   const mapCategoryToPrivacy = useCallback((category) => {
     if (!category) return 'public';
@@ -1614,11 +2403,16 @@ const handleWitnessCreated = async (postId) => {
 
   const handleCategoryClick = (category) => {
     console.log(`📂 切換分類至: ${category}`);
-    
-    if (selectedCategory === category) {
-        return;
+
+    if (category === 'Tribe Prayer' && !hasTribe) {
+      alert('⚠️ 您尚未選擇支派！\n請先選擇您的支派才能使用 Tribe Prayer 功能。');
+      return;
     }
-    
+
+    if (selectedCategory === category) {
+      return;
+    }
+
     setSelectedCategory(category);
     fetchPosts(category);
   };
@@ -1633,13 +2427,20 @@ const handleWitnessCreated = async (postId) => {
       const categoryToFetch = categoryOverride !== undefined ? categoryOverride : selectedCategory;
 
       const currentUserId = user?.id || user?.userId || ApiService.getCurrentUserId();
-      
+
       const filters = {
         viewer_userid: currentUserId
       };
-      
+
       if (categoryToFetch) {
         filters.category = categoryToFetch;
+      }
+
+      if (viewScope === 'my') {
+        filters.userid = currentUserId;
+        console.log('🏠 Home mode: Filtering posts by current user only');
+      } else {
+        console.log('🌍 Prayer Hub mode: Showing all posts');
       }
 
       let result = await ApiService.getPosts(1, 50, true, filters);
@@ -1659,6 +2460,7 @@ const handleWitnessCreated = async (postId) => {
         const transformedPosts = filteredPosts.map(post => ({
           id: post.docid,
           sn: post.sn,
+          userid: post.userid,
           likes: post.amen_count !== undefined ? post.amen_count : 0,
           isLiked: (post.amened === true || post.amened === 1 || post.amened === 'true'),
           calculatedComments: commentsCountMap[post.docid] || 0,
@@ -1670,14 +2472,16 @@ const handleWitnessCreated = async (postId) => {
           time: post.datetime || '剛剛',
           image: post.image || null,
           audioRecordId: post.uuid || null,
-          comments: 0 
+          comments: 0,
+          amen_count: post.amen_count,
+          amened: post.amened
         }));
-        
+
         setPosts(transformedPosts);
-        setAllPosts(result.posts); 
+        setAllPosts(result.posts);
       } else {
         console.log('⚠️ API 回應為空或失敗');
-        setPosts([]); 
+        setPosts([]);
         setAllPosts([]);
       }
     } catch (error) {
@@ -1686,13 +2490,13 @@ const handleWitnessCreated = async (postId) => {
     } finally {
       setLoading(false);
     }
-  }, [getDemoPosts, user, selectedCategory, mapCategoryToPrivacy]);
-  
+  }, [getDemoPosts, user, selectedCategory, mapCategoryToPrivacy, viewScope]);
+
   useEffect(() => {
     console.log('🏠 MainApp 載入，使用者:', user);
     fetchPosts(initialCategory);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); 
+  }, []);
 
   const handleCloseTribeDetail = () => {
     setShowTribeDetail(false);
@@ -1700,7 +2504,13 @@ const handleWitnessCreated = async (postId) => {
 
   if (showTribeDetail) {
     if (userTribeId === null || userTribeId === undefined) {
-      return <NoTribeDetail onBack={handleCloseTribeDetail} />;
+      return (
+        <NoTribeDetail
+          onBack={handleCloseTribeDetail}
+          onTribeSelected={handleTribeSelected}
+          user={user}
+        />
+      );
     }
     return (
       <TribeDetail
@@ -1708,6 +2518,8 @@ const handleWitnessCreated = async (postId) => {
         tribeName={tribeNameProp}
         tribeIcon={tribeLogoProp}
         onBack={handleCloseTribeDetail}
+        onTribeSelected={handleTribeSelected}
+        user={user}
       />
     );
   }
@@ -1719,7 +2531,7 @@ const handleWitnessCreated = async (postId) => {
       <div className="app-container">
         <UserHeader
           user={user}
-          coins={coinAmount}
+          coins={loadingBalance ? '...' : coinAmount}
           tribeLogo={tribeLogoProp}
           tribeName={tribeNameProp}
           familyIcon={Mdi}
@@ -1728,9 +2540,8 @@ const handleWitnessCreated = async (postId) => {
           onCoinClick={handleCoinClick}
           onLogoClick={handleLogoClick}
           onTribeLogoClick={handleTribeLogoClick}
-          onFamilyClick={handleFamilyClick} // ✅ THÊM PROP NÀY
-          onBlessingClick={handleBlessingClick} // ✅ THÊM DÒNG NÀY
-
+          onFamilyClick={handleFamilyClick}
+          onBlessingClick={handleBlessingClick}
         />
 
         <div className="top-action-bar">
@@ -1740,7 +2551,7 @@ const handleWitnessCreated = async (postId) => {
             size="medium"
           />
           <CoinDisplay
-            amount={coinAmount}
+            amount={loadingBalance ? '...' : coinAmount}
             onClick={handleCoinClick}
             size="medium"
           />
@@ -1749,8 +2560,8 @@ const handleWitnessCreated = async (postId) => {
         <hr className="divider-line" />
 
         <div className="category-buttons">
-          <div 
-            className="category-item" 
+          <div
+            className="category-item"
             onClick={() => handleCategoryClick('Personal & Family')}
           >
             <RectButton
@@ -1759,97 +2570,101 @@ const handleWitnessCreated = async (postId) => {
               size="medium"
               active={selectedCategory === 'Personal & Family'}
             />
-            <CategoryLabel 
-              text="Personal & Family" 
-              isActive={selectedCategory === 'Personal & Family'} 
+            <CategoryLabel
+              text="Personal & Family"
+              isActive={selectedCategory === 'Personal & Family'}
             />
           </div>
-          <div 
-              className="category-item"
-              onClick={() => handleCategoryClick('Church & Ministry')}
-            >
-              <RectButton 
-                image={church} 
-                imageAlt="Church & Ministry" 
-                size="medium" 
-                active={selectedCategory === 'Church & Ministry'}
-              />
-              <CategoryLabel 
-                text="Church & Ministry" 
-                isActive={selectedCategory === 'Church & Ministry'}
-              />
+
+          <div
+            className="category-item"
+            onClick={() => handleCategoryClick('Church & Ministry')}
+          >
+            <RectButton
+              image={church}
+              imageAlt="Church & Ministry"
+              size="medium"
+              active={selectedCategory === 'Church & Ministry'}
+            />
+            <CategoryLabel
+              text="Church & Ministry"
+              isActive={selectedCategory === 'Church & Ministry'}
+            />
           </div>
-          <div 
-              className="category-item"
-              onClick={() => handleCategoryClick('Kingdom Prayer')}
-            >
-              <RectButton 
-                image={kingdom} 
-                imageAlt="Kingdom Prayer" 
-                size="medium" 
-                active={selectedCategory === 'Kingdom Prayer'}
-              />
-              <CategoryLabel 
-                text="Kingdom Prayer" 
-                isActive={selectedCategory === 'Kingdom Prayer'}
-              />
+
+          <div
+            className="category-item"
+            onClick={() => handleCategoryClick('Kingdom Prayer')}
+          >
+            <RectButton
+              image={kingdom}
+              imageAlt="Kingdom Prayer"
+              size="medium"
+              active={selectedCategory === 'Kingdom Prayer'}
+            />
+            <CategoryLabel
+              text="Kingdom Prayer"
+              isActive={selectedCategory === 'Kingdom Prayer'}
+            />
           </div>
-          <div 
-              className="category-item"
-              onClick={() => handleCategoryClick('Tribe Prayer')}
-            >
-              <RectButton 
-                image={tribe} 
-                imageAlt="Tribes Prayer" 
-                size="medium" 
-                active={selectedCategory === 'Tribe Prayer'}
-              />
-              <CategoryLabel 
-                text="Tribe Prayer" 
-                isActive={selectedCategory === 'Tribe Prayer'}
-              />
+
+          <div
+            className="category-item"
+            onClick={() => handleCategoryClick('Tribe Prayer')}
+            style={{ opacity: hasTribe ? 1 : 0.5 }}
+          >
+            <RectButton
+              image={tribe}
+              imageAlt="Tribes Prayer"
+              size="medium"
+              active={selectedCategory === 'Tribe Prayer'}
+            />
+            <CategoryLabel
+              text={hasTribe ? "Tribe Prayer" : "Tribe Prayer 🔒"}
+              isActive={selectedCategory === 'Tribe Prayer'}
+            />
           </div>
         </div>
-        
+
         <hr className="divider-line" />
 
         <div className="filter-bar">
           <div className="filter-controls">
-            <RectButton 
-              icon="" 
+            <RectButton
+              icon=""
               onClick={() => {
                 setViewMode('original');
                 handleRefreshPosts();
-              }} 
-              disabled={loading} 
-              size="small" 
+              }}
+              disabled={loading}
+              size="small"
               variant="secondary"
               active={viewMode === 'original'}
             >
               {loading ? '載入中...' : 'Original Post'}
             </RectButton>
-            
-            <RectButton 
-              icon="" 
+
+            <RectButton
+              icon=""
               onClick={() => {
                 setViewMode('witness');
                 console.log('Show Witness Wall');
-              }} 
-              size="small" 
+              }}
+              size="small"
               variant="secondary"
               active={viewMode === 'witness'}
             >
               Witness Wall
             </RectButton>
-            
-            {selectedCategory === 'Tribe Prayer' && (
-              <RectButton 
-                icon="" 
+
+            {hasTribe && selectedCategory === 'Tribe Prayer' && (
+              <RectButton
+                icon=""
                 onClick={() => {
                   setViewMode('activity');
-                  console.log('Show Activity');
-                }} 
-                size="small" 
+                  fetchActivities();
+                }}
+                size="small"
                 variant="secondary"
                 active={viewMode === 'activity'}
               >
@@ -1868,11 +2683,127 @@ const handleWitnessCreated = async (postId) => {
               </div>
             )}
 
-            {!loading && viewMode === 'witness' ? (
-              <WitnessWall 
+            {!loading && viewMode === 'activity' ? (
+              !hasTribe ? (
+                <div className="no-tribe-message">
+                  <div className="no-tribe-icon">🏛️</div>
+                  <h3>尚未選擇支派</h3>
+                  <p>請先選擇您的支派才能查看和建立活動</p>
+                  <button
+                    className="select-tribe-btn"
+                    onClick={handleTribeLogoClick}
+                  >
+                    選擇支派
+                  </button>
+                </div>
+              ) : showActivityForm ? (
+                <ActivityForm
+                  user={user}
+                  onBack={handleCloseActivityForm}
+                />
+              ) : (
+                <div className="activity-view">
+                  <button
+                    className="add-activity-button"
+                    onClick={handleShowActivityForm}
+                  >
+                    +
+                  </button>
+
+                  <div className="activities-list">
+                    {activities.length > 0 ? (
+                      activities.map(activity => (
+                        <div key={activity.id} className="activity-card">
+                          <div className="activity-header">
+                            <div className="activity-avatar">
+                              <AvatarImage 
+                                userId={activity.author}
+                                userName={activity.author}
+                                size={48}
+                                clickable={true}
+                              />
+                            </div>
+                            <div className="activity-info">
+                              <div className="activity-author">{activity.author}</div>
+                              <div className="activity-time">{activity.datetime}</div>
+                            </div>
+                            <div className="activity-privacy-badge">
+                              <span>{activity.privacy}</span>
+                            </div>
+                          </div>
+
+                          {activity.coverImage && (
+                            <div className="activity-cover-image">
+                              <img
+                                src={getActivityImageUrl(activity.coverImage)}
+                                alt={activity.eventName}
+                                onError={(e) => {
+                                  console.error('❌ Cover image failed to load:', activity.coverImage);
+                                  e.target.style.display = 'none';
+                                }}
+                                onLoad={() => {
+                                  console.log('✅ Cover image loaded:', activity.coverImage);
+                                }}
+                              />
+                            </div>
+                          )}
+
+                          <div className="activity-content">
+                            <h3>{activity.eventName}</h3>
+                            <p className="activity-date">📅 {activity.eventDate}</p>
+                            <p className="activity-location">📍 {activity.eventLocation}</p>
+                            {activity.activityTime && (
+                              <p className="activity-time">⏰ {activity.activityTime}</p>
+                            )}
+                            {activity.description && (
+                              <p className="activity-description">{activity.description}</p>
+                            )}
+                            {activity.maxParticipants && (
+                              <p className="activity-participants">👥 最多 {activity.maxParticipants} 人</p>
+                            )}
+                          </div>
+
+                          {activity.images && activity.images.length > 0 && (
+                            <div className="activity-images-gallery">
+                              {activity.images.map((imgUrl, idx) => (
+                                <img
+                                  key={idx}
+                                  src={getActivityImageUrl(imgUrl)}
+                                  alt={`Activity ${idx + 1}`}
+                                  onClick={() => {
+                                    const fullUrl = getActivityImageUrl(imgUrl);
+                                    window.open(fullUrl, '_blank');
+                                  }}
+                                  onError={(e) => {
+                                    console.error(`❌ Image ${idx + 1} failed to load:`, imgUrl);
+                                    e.target.style.display = 'none';
+                                  }}
+                                  onLoad={() => {
+                                    console.log(`✅ Image ${idx + 1} loaded:`, imgUrl);
+                                  }}
+                                />
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      ))
+                    ) : (
+                      <div className="no-activities">
+                        <div className="no-activities-icon">📅</div>
+                        <h3>尚無活動</h3>
+                        <p>目前沒有活動，成為第一個建立活動的人！</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )
+            ) : !loading && viewMode === 'witness' ? (
+              <WitnessWall
                 selectedCategory={selectedCategory}
                 currentUserId={user?.id}
                 allPosts={allPosts}
+                refreshBalance={refreshBalance}
+                viewScope={viewScope}
               />
             ) : !loading && filteredPosts.length > 0 ? (
               <div className="posts-feed">
@@ -1886,6 +2817,7 @@ const handleWitnessCreated = async (postId) => {
                     onWitnessCreated={handleWitnessCreated}
                     currentUserId={user?.id}
                     selectedCategory={selectedCategory}
+                    refreshBalance={refreshBalance}
                   />
                 ))}
               </div>
@@ -1894,8 +2826,8 @@ const handleWitnessCreated = async (postId) => {
                 <div className="no-posts-icon">📭</div>
                 <h4>沒有符合此隱私設定的貼文</h4>
                 <p>
-                  {selectedCategory 
-                    ? `目前分類：${selectedCategory} 尚無資料` 
+                  {selectedCategory
+                    ? `目前分類：${selectedCategory} 尚無資料`
                     : '嘗試切換到其他隱私設定查看現有貼文'}
                 </p>
               </div>
@@ -1904,67 +2836,70 @@ const handleWitnessCreated = async (postId) => {
         </div>
 
         <div className="bottom-navigation">
-          <CircleButton 
-            provider="Home" 
-            iconSrc={Home} 
+          <CircleButton
+            provider="Home"
+            iconSrc={Home}
             onClick={() => {
-              console.log('🏠 Home clicked');
+              console.log('🏠 Home clicked - Showing MY posts only');
+              setViewScope('my');
               handleTabChange('Home');
+              fetchPosts(selectedCategory);
             }}
             isActive={activeTab === 'Home'}
-            size="medium" 
-            ariaLabel="首頁" 
+            size="medium"
+            ariaLabel="首頁"
           />
-          
-          <CircleButton 
-            provider="PrayerHub" 
-            iconSrc={Search} 
+
+          <CircleButton
+            provider="PrayerHub"
+            iconSrc={Search}
             onClick={() => {
-              console.log('🙏 Prayer Hub clicked');
+              console.log('🙏 Prayer Hub clicked - Showing ALL posts');
+              setViewScope('all');
               setActiveTab('PrayerHub');
               navigate('/prayer-hub');
             }}
             isActive={activeTab === 'PrayerHub'}
-            size="medium" 
-            ariaLabel="Prayer Hub" 
+            size="medium"
+            ariaLabel="Prayer Hub"
           />
-          
-          <CircleButton 
-            provider="Add" 
-            iconSrc={Add} 
+
+          <CircleButton
+            provider="Add"
+            iconSrc={Add}
             onClick={() => {
               console.log('➕ Add clicked');
               handleCreatePost();
             }}
             isActive={activeTab === 'Add'}
-            size="medium" 
-            ariaLabel="新增貼文" 
+            size="medium"
+            ariaLabel="新增貼文"
           />
-          
-        <CircleButton 
-          provider="Search" 
-          iconSrc={Profile} 
-          onClick={() => {
-            console.log('👥 Navigate to Friends List');
-            setActiveTab('Search');
-            navigate('/addfriend'); // ✅ CHUYỂN ĐẾN ADD FRIEND
-          }}
-          isActive={activeTab === 'Search'}
-          size="medium" 
-          ariaLabel="搜尋好友" 
-        />
 
-          
-          <CircleButton 
-            provider="Nova" 
-            iconSrc={Nova} 
+          <CircleButton
+            provider="Search"
+            iconSrc={Profile}
             onClick={() => {
-              console.log('🚪 Logout clicked');
-              
+              console.log('👥 Navigate to Friends List');
+              setActiveTab('Search');
+              navigate('/addfriend');
+            }}
+            isActive={activeTab === 'Search'}
+            size="medium"
+            ariaLabel="搜尋好友"
+          />
+
+          <CircleButton
+            provider="Nova"
+            iconSrc={Nova}
+            onClick={() => {
+              console.log('🤖 Nova AI clicked');
+              setActiveTab('Nova');
+              navigate('/nova');
             }}
             isActive={activeTab === 'Nova'}
-            size="medium" 
-            ariaLabel="nova小天使" 
+            size="medium"
+            ariaLabel="Nova AI Assistant"
           />
         </div>
       </div>

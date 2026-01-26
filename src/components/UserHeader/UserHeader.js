@@ -1,6 +1,7 @@
-// export default UserHeader;
-// ./src/components/UserHeader/UserHeader.js
+// src/components/UserHeader/UserHeader.jsx
 import React from 'react';
+import { useNavigate } from 'react-router-dom'; // ✅ THÊM
+import AvatarImage from '../AvatarImage/AvatarImage';
 import './UserHeader.css';
 
 const UserHeader = ({ 
@@ -10,7 +11,7 @@ const UserHeader = ({
   tribeName,
   familyIcon,
   blessingIcon,
-  blessingText = "LOGOUT",  // ✅ THÊM PROP MỚI VỚI DEFAULT VALUE
+  blessingText = "LOGOUT",
   onNotificationClick,
   onCoinClick,
   onLogoClick,
@@ -19,6 +20,8 @@ const UserHeader = ({
   onBlessingClick,
   notificationCount = 0
 }) => {
+  const navigate = useNavigate(); // ✅ THÊM
+
   const getUserName = () => {
     if (!user) return 'Guest';
     return user.displayName || 
@@ -28,12 +31,20 @@ const UserHeader = ({
            'Guest';
   };
 
-  const getAvatarUrl = () => {
-    if (user?.avatar) return user.avatar;
-    if (user?.photoURL) return user.photoURL;
-    
-    const name = getUserName();
-    return `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=4A5F8C&color=fff&size=128`;
+  // ✅ LẤY USER ID CHO AVATAR
+  const getUserId = () => {
+    return user?.id || user?.userId || user?.uid || user?.email;
+  };
+
+  // ✅ THÊM: Handle click vào avatar để vào Profile
+  const handleAvatarClick = () => {
+    const userId = getUserId();
+    console.log('👤 Avatar clicked in UserHeader, navigating to profile:', userId);
+    navigate('/profile', { 
+      state: { 
+        userId: userId
+      } 
+    });
   };
 
   const isNotTribe = tribeName === 'not tribe';
@@ -45,16 +56,22 @@ const UserHeader = ({
       {/* 第一行: 頭像 + 名稱 | 通知 + 金幣 */}
       <div className="header-row-1">
         <div className="user-info-section">
-          <div className="user-avatar-large">
-            <img
-              src={getAvatarUrl()}
-              alt="User Avatar"
-              className="avatar-img"
-              onError={(e) => {
-                e.target.src = `https://ui-avatars.com/api/?name=User&background=4A5F8C&color=fff&size=128`;
-              }}
+          {/* ✅ SỬA: Thêm onClick để navigate đến Profile */}
+          <div 
+            className="user-avatar-large" 
+            onClick={handleAvatarClick}
+            style={{ cursor: 'pointer' }}
+            title="View Profile"
+          >
+            <AvatarImage
+              userId={getUserId()}
+              userName={getUserName()}
+              size={64}
+              clickable={false} // ✅ Set false vì đã có onClick wrapper
+              editable={false}  // ✅ Không cho edit ở đây, chỉ edit trong Profile page
             />
           </div>
+
           <div className="user-name-tag">
              {getUserName()}
           </div>
@@ -134,20 +151,17 @@ const UserHeader = ({
             )}
           </button>
 
-          {/* ✅✅✅ Blessing/Logout 按鈕 - CONDITIONAL RENDER */}
+          {/* Blessing/Logout 按鈕 */}
           <button 
             className={blessingText ? "tribe-action-btn logout-button" : "tribe-action-btn"}
             onClick={onBlessingClick}
             title={blessingText || "Blessings & Luck"}
           >
             {blessingText ? (
-              // ✅ HIỂN THỊ TEXT NẾU CÓ blessingText
               <span className="logout-text">{blessingText}</span>
             ) : blessingIcon ? (
-              // ✅ HIỂN THỊ ICON NẾU KHÔNG CÓ TEXT NHƯNG CÓ ICON
               <img src={blessingIcon} alt="Blessing" className="tribe-action-icon-img" />
             ) : (
-              // ✅ HIỂN THỊ DEFAULT SVG NẾU KHÔNG CÓ CẢ TEXT VÀ ICON
               <svg viewBox="0 0 24 24" className="tribe-action-icon">
                 <path d="M17.5 12C19.43 12 21 10.43 21 8.5C21 6.57 19.43 5 17.5 5C16.37 5 15.37 5.54 14.74 6.38L12 9.88L9.26 6.38C8.63 5.54 7.63 5 6.5 5C4.57 5 3 6.57 3 8.5C3 10.43 4.57 12 6.5 12C7.21 12 7.87 11.79 8.42 11.43L12 14.5L15.58 11.43C16.13 11.79 16.79 12 17.5 12ZM6.5 7C7.33 7 8 7.67 8 8.5C8 9.33 7.33 10 6.5 10C5.67 10 5 9.33 5 8.5C5 7.67 5.67 7 6.5 7ZM17.5 7C18.33 7 19 7.67 19 8.5C19 9.33 18.33 10 17.5 10C16.67 10 16 9.33 16 8.5C16 7.67 16.67 7 17.5 7ZM12 16L7 20H17L12 16Z" fill="currentColor"/>
               </svg>

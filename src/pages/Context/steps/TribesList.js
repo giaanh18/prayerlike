@@ -1,5 +1,3 @@
-// ./src/pages/Context/steps/TribesList.js
-
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import './TribesList.css';
@@ -30,7 +28,8 @@ import Nova from '../../../assets/icons/Nova.png';
 import CircleButton from '../../../components/CircleButton/CircleButton';
 import AppBackground from '../../../components/AppBackground/AppBackground';
 
-const TribesList = ({ onBack }) => {
+// ✅ NHẬN THÊM PROPS: onTribeSelected và user
+const TribesList = ({ onBack, onTribeSelected, user }) => {
   const navigate = useNavigate();
   
   // --- 狀態管理 ---
@@ -55,7 +54,7 @@ const TribesList = ({ onBack }) => {
     { id: 12, name: 'Benjamin', icon: benjaminIcon, color: '#9370DB' },
   ];
 
-  // --- 分頁邏輯（與 Step6 相同）---
+  // --- 分頁邏輯 ---
   const tribesPerPage = 6;
   const totalPages = Math.ceil(tribes.length / tribesPerPage);
   const currentTribes = tribes.slice(
@@ -81,7 +80,7 @@ const TribesList = ({ onBack }) => {
     }
   };
 
-  // ✅ 核心修改：完全複製 SignUp.js 的 handleTribeSubmission 邏輯
+  // ✅ API 提交函式
   const handleTribeSubmission = async (tribeData) => {
     const tribeId = tribeData?.id;
 
@@ -133,7 +132,7 @@ const TribesList = ({ onBack }) => {
     }
   };
 
-  // ✅ 確認按鈕處理（修正版）
+  // ✅ 確認按鈕處理（使用 callback 而不是 reload）
   const handleConfirm = async () => {
     if (isLoading) return;
 
@@ -153,7 +152,7 @@ const TribesList = ({ onBack }) => {
       if (userDataStr) {
         try {
           const userData = JSON.parse(userDataStr);
-          userData.tribe = selectedTribe.id; // 更新 tribe_id
+          userData.tribe = selectedTribe.id;
           localStorage.setItem('userData', JSON.stringify(userData));
           console.log('💾 [TribesList] 本地 userData 已更新:', userData);
         } catch (e) {
@@ -164,26 +163,28 @@ const TribesList = ({ onBack }) => {
       // ✅ 3. 關閉 Modal
       setShowWarning(false);
 
-      console.log('🔙 [TribesList] 支派更新成功，準備返回首頁並刷新');
+      console.log('🔙 [TribesList] 支派更新成功');
 
-      // ✅ 4. 強制重新載入頁面（確保 Context.js 重新讀取 userData）
-      // 方案一：使用 window.location.href（完全重新載入）
-      window.location.href = '/context';
-      
-      // 方案二：使用 navigate + state（觸發重新渲染）
-      // navigate('/context', { 
-      //   replace: true, 
-      //   state: { tribeUpdated: true, timestamp: Date.now() } 
-      // });
+      // ✅ 4. 呼叫 callback 通知 MainApp 更新 UI
+      if (onTribeSelected) {
+        console.log('📢 [TribesList] 呼叫 onTribeSelected callback...');
+        await onTribeSelected(selectedTribe.id);
+      }
+
+      // ✅ 5. 返回上一頁（MainApp 會自動顯示新的 tribe）
+      if (onBack) {
+        onBack();
+      }
 
     } catch (error) {
       console.error('💥 [TribesList] 更新支派失敗:', error);
 
-      // 顯示詳細錯誤訊息
       let errorMessage = error.message || '未知錯誤';
 
       // 處理會話過期的情況
-      if (error.message.includes('Unauthorized') || error.message.includes('Session') || error.message.includes('會話過期')) {
+      if (error.message.includes('Unauthorized') || 
+          error.message.includes('Session') || 
+          error.message.includes('會話過期')) {
         errorMessage = '會話已過期，請重新登入。';
         alert(`❌ ${errorMessage}`);
         setTimeout(() => {
@@ -399,7 +400,7 @@ const TribesList = ({ onBack }) => {
           />
         </div>
 
-        {/* ✅ Loading Overlay（與 SignUp.js 相同）*/}
+        {/* ✅ Loading Overlay */}
         {isLoading && (
           <div style={{
             position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
