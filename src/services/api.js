@@ -160,6 +160,23 @@ const ApiService = {
     }
   },
 
+  
+  processAvatarUrl: (url) => {
+    if (!url) return null; // 或是回傳預設圖片路徑
+
+    // 情況 1: 已經是完整的 HTTP/HTTPS URL (例如 Google 頭像)
+    if (url.startsWith('http://') || url.startsWith('https://')) {
+      return url;
+    }
+
+    // 情況 2: 自行上傳的相對路徑 (例如 uploads/avatars/...)
+    // 移除開頭可能多餘的 '/' 以確保路徑拼接正確
+    const cleanPath = url.startsWith('/') ? url.slice(1) : url;
+    
+    // 拼接 API_BASE_URL
+    return `${API_BASE_URL}/${cleanPath}`;
+  },
+
   // ==================== 🔐 AUTH API ====================
 
   loginWithEmail: async (email, successUrl = null) => {
@@ -664,9 +681,24 @@ const ApiService = {
       });
 
       if (data && data.status === 'success' && data.data) {
+        // 取得原始列表
+        const rawWitnesses = data.data.witnesses || [];
+        
+        // 🔄 遍歷並修正 avatar_url
+        const processedWitnesses = rawWitnesses.map(witness => ({
+          ...witness,
+          // 修正見證人的頭像
+          avatar_url: ApiService.processAvatarUrl(witness.avatar_url),
+          // 如果有 original_post，也一併修正其中的頭像
+          original_post: witness.original_post ? {
+            ...witness.original_post,
+            avatar_url: ApiService.processAvatarUrl(witness.original_post.avatar_url)
+          } : null
+        }));
+
         return {
           success: true,
-          witnesses: data.data.witnesses || [],
+          witnesses: processedWitnesses, // 回傳處理後的資料
           pagination: data.data.pageinfo || {},
           message: data.message
         };
