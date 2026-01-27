@@ -160,6 +160,7 @@ const WitnessWall = ({ currentUserId, allPosts, privacyFilter, categoryFilter, r
                       <AvatarImage 
                         userId={originalPost.userid || originalPost.author}
                         userName={originalPost.userid || originalPost.author}
+                        src={originalPost.avatar_url}
                         size={48}
                         clickable={true}
                       />
@@ -183,6 +184,7 @@ const WitnessWall = ({ currentUserId, allPosts, privacyFilter, categoryFilter, r
                     <AvatarImage 
                       userId={witness.userid}
                       userName={witness.userid}
+                      src={witness.avatar_url}
                       size={48}
                       clickable={true}
                     />
@@ -540,7 +542,8 @@ const Post = ({ post, allPosts, onLike, onComment, currentUserId, selectedCatego
         likes: c.amen_count || 0,
         isLiked: c.amened || false,
         isReply: true,
-        userid: c.userid
+        userid: c.userid,
+        avatar_url: c.avatar_url
       }));
 
       const newCommentStates = {};
@@ -1159,6 +1162,7 @@ const PrayerHub = ({ user, onLogout }) => {
           time: post.datetime || '剛剛',
           image: post.image || null,
           audioRecordId: post.uuid || null,
+          avatar_url: post.avatar_url
         }));
         
         console.log(`✅ Loaded ${transformedPosts.length} posts`);

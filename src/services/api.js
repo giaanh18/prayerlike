@@ -1807,73 +1807,39 @@ const ApiService = {
       return `${API_BASE_URL}/${avatarUrl}?t?t=${Date.now()}`;
     }
     
-    return `${AUTH_API_URL}/profile/avatar?user_id=${encodeURIComponent(userId)}&t=${Date.now()}`;
+    return null;
   },
 
   getUserAvatar: async (userId) => {
     try {
-      if (!userId) {
-        throw new ApiError('User ID không được để trống', 400);
-      }
+      const currentUserId = ApiService.getCurrentUserId();
 
-      console.log(`🖼️ Lấy avatar cho user: ${userId}`);
-
-      const profileResult = await ApiService.getUserProfile(userId);
-
-      if (profileResult.success && profileResult.profile && profileResult.profile.avatar_url) {
-        let avatarUrl = profileResult.profile.avatar_url;
-        
-        if (avatarUrl.startsWith('uploads/')) {
-          avatarUrl = `${API_BASE_URL}/${avatarUrl}`;
-        }
-        
-        return {
-          success: true,
-          avatar_url: avatarUrl,
-          user_id: profileResult.profile.user_id || userId,
-          profile: profileResult.profile,
-          message: 'Lấy avatar thành công'
-        };
-      }
-
-      try {
-        const avatarUrl = `${AUTH_API_URL}/profile/avatar?user_id=${encodeURIComponent(userId)}`;
-        
-        const response = await fetch(avatarUrl, {
-          method: 'GET',
-          credentials: 'include',
-          headers: { 'accept': 'image/*' }
-        });
-
-        if (response.ok) {
+      // ✅ 關鍵修復：如果是查詢「自己」的頭像 (例如在 UserHeader)
+      if (userId === currentUserId) {
+        // 從 Session 中獲取最新的個人資料
+        const sessionResult = await ApiService.getAuthSession();
+        if (sessionResult.success && sessionResult.user) {
+          const avatarUrl = sessionResult.user.avatar_url || sessionResult.user.profile?.picture;
           return {
             success: true,
-            avatar_url: avatarUrl,
-            user_id: userId,
-            message: 'Lấy avatar thành công'
+            avatar_url: ApiService.processAvatarUrl(avatarUrl),
+            user_id: userId
           };
         }
-      } catch (avatarError) {
-        console.warn('⚠️ Không thể lấy avatar trực tiếp:', avatarError.message);
       }
 
+      // 🛑 如果是查詢「別人」，因為 API (auth/profile?user_id=...) 有 bug 會回傳錯人，
+      // 所以這裡直接回傳 null，讓前端顯示預設圖或縮寫，或者依賴前端傳入的 src。
       return {
-        success: true,
+        success: false,
         avatar_url: null,
         user_id: userId,
-        message: 'User chưa có avatar'
+        message: '無法直接查詢其他使用者的頭像'
       };
 
     } catch (error) {
-      console.error('❌ Lấy avatar thất bại:', error);
-      
-      return { 
-        success: false, 
-        avatar_url: null,
-        user_id: userId,
-        message: error.message,
-        error: error.message
-      };
+      console.error('❌ Get user avatar failed:', error);
+      return { success: false, avatar_url: null };
     }
   },
 
