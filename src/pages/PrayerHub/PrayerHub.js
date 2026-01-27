@@ -225,7 +225,7 @@ const Comment = ({ comment, onReply, onEdit, onDelete, onLike, currentUserId, po
     setTranslationError(null);
   }, [comment.id]);
 
-  const handleTranslate = async () => {
+    const handleTranslate = async () => {
     if (isTranslating) return;
 
     if (translatedContent) {
@@ -237,18 +237,30 @@ const Comment = ({ comment, onReply, onEdit, onDelete, onLike, currentUserId, po
     setTranslationError(null);
 
     try {
-      console.log(`🌐 Translating comment ${comment.id}...`);
-      await new Promise(resolve => setTimeout(resolve, 800));
-      const mockTranslation = `[Translated] ${comment.content}`;
-      setTranslatedContent(mockTranslation);
-      console.log(`✅ Comment ${comment.id} translation completed`);
+      console.log(`🌐 Translating comment ${comment.id} to 繁體中文...`);
+      
+      // ✅ GỌI GOOGLE TRANSLATION API
+      const result = await ApiService.translate(comment.content, 'zh-TW');
+      
+      if (result.success) {
+        setTranslatedContent(result.translatedText);
+        console.log(`✅ Comment ${comment.id} translation completed:`, {
+          from: result.detectedSourceLanguage,
+          to: 'zh-TW',
+          text: result.translatedText.substring(0, 50) + '...'
+        });
+      } else {
+        throw new Error(result.message || 'Translation failed');
+      }
+
     } catch (error) {
       console.error(`❌ Comment ${comment.id} translation error:`, error);
-      setTranslationError('翻譯失敗');
+      setTranslationError('翻譯失敗，請稍後再試');
     } finally {
       setIsTranslating(false);
     }
   };
+
 
   const loadReplies = async () => {
     if (loadingReplies || comment.isReply) return;
@@ -468,7 +480,7 @@ const Post = ({ post, allPosts, onLike, onComment, currentUserId, selectedCatego
     setTranslationError(null);
   }, [post.id]);
 
-  const handleTranslate = async () => {
+    const handleTranslate = async () => {
     if (isTranslating) return;
 
     if (translatedContent) {
@@ -480,18 +492,30 @@ const Post = ({ post, allPosts, onLike, onComment, currentUserId, selectedCatego
     setTranslationError(null);
 
     try {
-      console.log(`🌐 Translating post ${post.id}...`);
-      await new Promise(resolve => setTimeout(resolve, 800));
-      const mockTranslation = `[Translated] ${post.content}`;
-      setTranslatedContent(mockTranslation);
-      console.log(`✅ Post ${post.id} translation completed`);
+      console.log(`🌐 Translating post ${post.id} to 繁體中文...`);
+      
+      // ✅ GỌI GOOGLE TRANSLATION API
+      const result = await ApiService.translate(post.content, 'zh-TW');
+      
+      if (result.success) {
+        setTranslatedContent(result.translatedText);
+        console.log(`✅ Post ${post.id} translation completed:`, {
+          from: result.detectedSourceLanguage,
+          to: 'zh-TW',
+          text: result.translatedText.substring(0, 50) + '...'
+        });
+      } else {
+        throw new Error(result.message || 'Translation failed');
+      }
+
     } catch (error) {
       console.error(`❌ Post ${post.id} translation error:`, error);
-      setTranslationError('翻譯失敗');
+      setTranslationError('翻譯失敗，請稍後再試');
     } finally {
       setIsTranslating(false);
     }
   };
+
 
   const [transcriptData, setTranscriptData] = useState(null);
   const [isLoadingTranscript, setIsLoadingTranscript] = useState(false);

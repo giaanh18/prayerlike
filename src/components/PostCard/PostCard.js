@@ -1,5 +1,6 @@
-// ./src/components/PostCard/PostCard.js
+// src/components/PostCard/PostCard.js
 import React, { useState } from 'react';
+import AvatarImage from '../AvatarImage/AvatarImage'; // 引入 AvatarImage
 import './PostCard.css';
 
 const PostCard = ({ 
@@ -18,7 +19,7 @@ const PostCard = ({
     if (isLiking || !onLike) return;
     setIsLiking(true);
     try {
-      await onLike(post.id);
+      await onLike(post.id || post.docid); // 相容 docid
     } finally {
       setIsLiking(false);
     }
@@ -49,14 +50,19 @@ const PostCard = ({
       {/* 貼文標頭 */}
       <div className="post-card-header">
         <div className="post-author-info">
+          {/* 🟢 使用 AvatarImage 取代原本的 img */}
+          {/* 關鍵：傳入 src={post.avatar_url} 避免 N+1 重複請求 */}
           <div className="post-author-avatar">
-            <img
-              src={post.authorAvatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(post.author)}&background=random`}
-              alt={post.author}
+            <AvatarImage 
+              userId={post.userid}
+              userName={post.author}
+              src={post.avatar_url} 
+              size={40}
+              clickable={true} // 點擊頭像可跳轉個人頁
             />
           </div>
           <div className="post-author-details">
-            <div className="post-author-name">{post.author}</div>
+            <div className="post-author-name">{post.author || 'Unknown User'}</div>
             <div className="post-time">{post.time || '剛剛'}</div>
           </div>
         </div>
@@ -69,9 +75,11 @@ const PostCard = ({
       {/* 貼文內容 */}
       <div className="post-card-content">
         {post.title && <h3 className="post-title">{post.title}</h3>}
+        
         <p className={`post-text ${isExpanded ? 'expanded' : ''}`}>
           {post.content}
         </p>
+        
         {post.content && post.content.length > 150 && (
           <button 
             className="post-expand-btn"
@@ -81,12 +89,14 @@ const PostCard = ({
           </button>
         )}
         
+        {/* 貼文附圖 */}
         {post.image && (
           <div className="post-image-container">
-            <img src={post.image} alt="貼文圖片" />
+            <img src={post.image} alt="貼文內容" loading="lazy" />
           </div>
         )}
 
+        {/* 錄音檔顯示 */}
         {post.audioRecordId && (
           <div className="post-audio-info">
             <span className="audio-icon">🎵</span>
@@ -117,7 +127,7 @@ const PostCard = ({
 
         <button
           className="post-action-btn"
-          onClick={() => onComment && onComment(post.id)}
+          onClick={() => onComment && onComment(post.id || post.docid)}
         >
           <span className="action-icon">💬</span>
           <span className="action-text">留言</span>
@@ -128,7 +138,7 @@ const PostCard = ({
 
         <button
           className="post-action-btn"
-          onClick={() => onShare && onShare(post.id)}
+          onClick={() => onShare && onShare(post.id || post.docid)}
         >
           <span className="action-icon">↗️</span>
           <span className="action-text">見證</span>

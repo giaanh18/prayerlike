@@ -354,7 +354,7 @@ const ApiService = {
 
   // ==================== 📝 POSTS & INTERACTION API ====================
   
-  getPosts: async (page = 1, limit = 10, forceRefresh = false, filters = {}) => {
+  getPosts: async (page = 1, limit = 100, forceRefresh = false, filters = {}) => {
     const cacheKey = `posts_${page}_${limit}_${JSON.stringify(filters)}`;
 
     if (!forceRefresh && cache.has(cacheKey)) {
@@ -382,9 +382,29 @@ const ApiService = {
       });
 
       if (data && data.status === 'success' && data.data) {
+        // 取得原始貼文列表
+        const rawPosts = data.data.posts || [];
+
+        // 🔄 處理貼文中的頭像路徑
+        const processedPosts = rawPosts.map(post => ({
+          ...post,
+          // 1. 處理發文者的頭像
+          avatar_url: ApiService.processAvatarUrl 
+            ? ApiService.processAvatarUrl(post.avatar_url) 
+            : (post.avatar_url?.startsWith('http') ? post.avatar_url : (post.avatar_url ? `${API_BASE_URL}/${post.avatar_url}` : null)),
+          
+          // 2. 如果是分享貼文，也要處理原始貼文作者的頭像
+          original_post: post.original_post ? {
+            ...post.original_post,
+            avatar_url: ApiService.processAvatarUrl 
+              ? ApiService.processAvatarUrl(post.original_post.avatar_url)
+              : (post.original_post.avatar_url?.startsWith('http') ? post.original_post.avatar_url : (post.original_post.avatar_url ? `${API_BASE_URL}/${post.original_post.avatar_url}` : null))
+          } : null
+        }));
+
         const result = {
           success: true,
-          posts: data.data.posts || [], 
+          posts: processedPosts, // 使用處理後的列表
           pagination: data.data.pageinfo || {},
           filters: data.data.filter || {},
           message: data.message || 'Lấy posts thành công'
@@ -670,7 +690,8 @@ const ApiService = {
     }
   },
 
-  getWitnessList: async (page = 1, limit = 10) => {
+  getWitnessList: async (page = 1, limit = 100) => {
+  // ✅ Thay đổi: limit = 10 → limit = 100
     try {
       const params = new URLSearchParams({ page, limit });
       const url = `${POSTS_API_URL}/witness-list?${params.toString()}`;
@@ -1692,15 +1713,16 @@ const ApiService = {
 
   getUserProfile: async (userId) => {
     try {
+      // 1. 如果沒有傳入 userId，嘗試抓取當前登入者的 ID
       if (!userId) {
         userId = ApiService.getCurrentUserId();
       }
 
       if (!userId) {
-        throw new ApiError('User ID không được để trống', 400);
+        throw new ApiError('User ID 不可為空', 400);
       }
 
-      console.log(`👤 Lấy profile user: ${userId}`);
+      console.log(`👤 獲取 Profile: ${userId}`);
 
       const url = `${AUTH_API_URL}/profile?user_id=${encodeURIComponent(userId)}`;
 
@@ -1711,31 +1733,50 @@ const ApiService = {
         timeout: 10000
       });
 
-      return {
-        success: true,
-        profile: {
-          id: data.user_id || data.id,
-          user_id: data.user_id || data.id,
-          name: data.name,
-          email: data.email,
-          avatar_url: data.avatar_url || null,
-          has_custom_avatar: !!data.avatar_url,
-          tribe: data.tribe,
-          coins: data.coins || 0,
-          created_at: data.created_at
-        },
-        message: 'Lấy profile thành công'
-      };
+      // 🔍 2. 解析後端回傳的資料結構
+      // 後端現在回傳格式為: { "ok": true, "profile": { ... } }
+      let profileData = null;
+      if (data && data.profile) {
+        profileData = data.profile;
+      } else if (data && (data.user_id || data.id)) {
+        // 相容舊格式 (如果有的話)
+        profileData = data;
+      }
+
+      if (profileData) {
+        // 🛠️ 3. 關鍵修正：在這裡統一處理頭像網址
+        // 如果是 uploads/ 結尾的相對路徑，會自動補上 domain
+        const processedAvatar = ApiService.processAvatarUrl(profileData.avatar_url);
+
+        return {
+          success: true,
+          profile: {
+            id: profileData.id,
+            user_id: profileData.user_id || profileData.id,
+            name: profileData.name,
+            email: profileData.email,
+            avatar_url: processedAvatar,  // ✅ 修正後的完整網址
+            has_custom_avatar: !!processedAvatar,
+            tribe: profileData.tribe,
+            coins: profileData.coins || 0,
+            created_at: profileData.created_at,
+            updated_at: profileData.updated_at
+          },
+          message: '獲取 Profile 成功'
+        };
+      }
+
+      throw new ApiError('資料格式不符', 500, data);
 
     } catch (error) {
-      console.error('❌ Lấy profile thất bại:', error);
+      console.error('❌ 獲取 Profile 失敗:', error);
       
       if (error.statusCode === 422 || error.statusCode === 400) {
-        console.warn('⚠️ API không hỗ trợ user_id parameter');
+        console.warn('⚠️ API 不支援 user_id 參數');
         return {
           success: false,
           profile: null,
-          message: 'API không hỗ trợ lấy profile của user khác',
+          message: 'API 不支援獲取該使用者的 Profile',
           error: error.message
         };
       }

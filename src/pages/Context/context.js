@@ -156,7 +156,7 @@ const WitnessWall = ({
     current_page: 1,
     total_pages: 1,
     total_items: 0,
-    per_page: 10,
+    per_page: 100, // ✅ THAY ĐỔI: 10 → 100
     has_next: false,
     has_prev: false
   });
@@ -195,8 +195,7 @@ const WitnessWall = ({
     try {
       console.log(`🌐 Translating original post ${postId} in Witness Wall...`);
       
-      // ✅ GỌI GOOGLE TRANSLATION API
-      const result = await ApiService.translate(content, 'vi');
+      const result = await ApiService.translate(content, 'zh-TW');
       
       if (result.success) {
         setTranslationStates(prev => ({
@@ -235,6 +234,7 @@ const WitnessWall = ({
     try {
       console.log(`✨ Loading Witness Wall - Page ${page}, Category: ${selectedCategory}, ViewScope: ${viewScope}`);
 
+      // ✅ THAY ĐỔI: limit = 100
       const result = await ApiService.getWitnessList(page, 100);
 
       if (result.success) {
@@ -302,7 +302,8 @@ const WitnessWall = ({
 
         console.log(`✅ Filtered ${filteredWitnesses.length}/${result.witnesses.length} witnesses for category: ${selectedCategory}${viewScope === 'my' ? ' (MY POSTS ONLY)' : ''}`);
 
-        const perPage = 20;
+        // ✅ THAY ĐỔI: perPage = 100
+        const perPage = 100;
         const startIndex = (page - 1) * perPage;
         const endIndex = startIndex + perPage;
         const paginatedWitnesses = filteredWitnesses.slice(startIndex, endIndex);
@@ -1062,8 +1063,7 @@ const Comment = ({ comment, onReply, onLike, currentUserId, postDocid, commentSt
     try {
       console.log(`🌐 Translating comment ${comment.id} content...`);
       
-      // ✅ GỌI GOOGLE TRANSLATION API
-      const result = await ApiService.translate(comment.content, 'vi');
+      const result = await ApiService.translate(comment.content, 'zh-TW');
       
       if (result.success) {
         setTranslatedContent(result.translatedText);
@@ -1338,8 +1338,7 @@ const Post = ({ post, allPosts, onLike, onComment, onWitnessCreated, currentUser
     try {
       console.log(`🌐 Translating post ${post.id} content...`);
       
-      // ✅ GỌI GOOGLE TRANSLATION API
-      const result = await ApiService.translate(post.content, 'vi');
+      const result = await ApiService.translate(post.content, 'zh-TW');
       
       if (result.success) {
         setTranslatedContent(result.translatedText);
@@ -2080,6 +2079,11 @@ const MainApp = ({ user, onLogout }) => {
   const [showActivityForm, setShowActivityForm] = useState(false);
   const [activities, setActivities] = useState([]);
 
+  // ✅ THÊM: State cho pagination
+  const [currentPage, setCurrentPage] = useState(1);
+  const [hasMorePosts, setHasMorePosts] = useState(false);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+
   const hasTribe = currentTribeId !== null && currentTribeId !== undefined;
 
   useEffect(() => {
@@ -2365,7 +2369,7 @@ const MainApp = ({ user, onLogout }) => {
       ApiService.clearCache();
 
       console.log(`🔄 Fetching posts for ${postCategory}...`);
-      await fetchPosts(postCategory);
+      await fetchPosts(postCategory, 1, false);
 
       await refreshBalance();
 
@@ -2393,7 +2397,9 @@ const MainApp = ({ user, onLogout }) => {
     setLoading(true);
     try {
       ApiService.clearCache();
-      await fetchPosts(selectedCategory);
+      setCurrentPage(1);
+      setHasMorePosts(false);
+      await fetchPosts(selectedCategory, 1, false);
     } catch (error) {
       console.error('💥 重新載入貼文錯誤:', error);
     } finally {
@@ -2414,18 +2420,25 @@ const MainApp = ({ user, onLogout }) => {
     }
 
     setSelectedCategory(category);
-    fetchPosts(category);
+    setCurrentPage(1);
+    setHasMorePosts(false);
+    fetchPosts(category, 1, false);
   };
 
   const getDemoPosts = useCallback(() => [], [user?.name]);
 
-  const fetchPosts = useCallback(async (categoryOverride) => {
-    setLoading(true);
+  // ✅ SỬA: fetchPosts với pagination support
+  const fetchPosts = useCallback(async (categoryOverride, pageNumber = 1, append = false) => {
+    if (append) {
+      setIsLoadingMore(true);
+    } else {
+      setLoading(true);
+    }
+    
     try {
-      console.log('📡 從API取得貼文...');
+      console.log(`📡 從API取得貼文 - Page ${pageNumber}...`);
 
       const categoryToFetch = categoryOverride !== undefined ? categoryOverride : selectedCategory;
-
       const currentUserId = user?.id || user?.userId || ApiService.getCurrentUserId();
 
       const filters = {
@@ -2443,10 +2456,11 @@ const MainApp = ({ user, onLogout }) => {
         console.log('🌍 Prayer Hub mode: Showing all posts');
       }
 
-      let result = await ApiService.getPosts(1, 50, true, filters);
+      // ✅ THAY ĐỔI: Gọi API với page number và limit 100
+      let result = await ApiService.getPosts(pageNumber, 100, true, filters);
 
       if (result && result.success && result.posts && result.posts.length > 0) {
-        console.log('✅ 貼文取得成功:', result.posts);
+        console.log(`✅ 貼文取得成功 - Page ${pageNumber}:`, result.posts.length, 'posts');
 
         const commentsCountMap = {};
         result.posts.forEach(p => {
@@ -2477,24 +2491,54 @@ const MainApp = ({ user, onLogout }) => {
           amened: post.amened
         }));
 
-        setPosts(transformedPosts);
-        setAllPosts(result.posts);
+        // ✅ THAY ĐỔI: Append hoặc replace posts
+        if (append) {
+          setPosts(prevPosts => [...prevPosts, ...transformedPosts]);
+          setAllPosts(prevPosts => [...prevPosts, ...result.posts]);
+        } else {
+          setPosts(transformedPosts);
+          setAllPosts(result.posts);
+        }
+
+        // ✅ THAY ĐỔI: Kiểm tra có thêm posts không
+        const pagination = result.pagination || {};
+        setHasMorePosts(pagination.has_next || result.posts.length === 100);
+        
       } else {
         console.log('⚠️ API 回應為空或失敗');
-        setPosts([]);
-        setAllPosts([]);
+        if (!append) {
+          setPosts([]);
+          setAllPosts([]);
+        }
+        setHasMorePosts(false);
       }
     } catch (error) {
       console.error('💥 取得貼文時發生錯誤:', error);
-      setPosts([]);
+      if (!append) {
+        setPosts([]);
+      }
+      setHasMorePosts(false);
     } finally {
-      setLoading(false);
+      if (append) {
+        setIsLoadingMore(false);
+      } else {
+        setLoading(false);
+      }
     }
   }, [getDemoPosts, user, selectedCategory, mapCategoryToPrivacy, viewScope]);
 
+  // ✅ THÊM: Hàm load more posts
+  const handleLoadMorePosts = () => {
+    const nextPage = currentPage + 1;
+    setCurrentPage(nextPage);
+    fetchPosts(selectedCategory, nextPage, true);
+  };
+
   useEffect(() => {
     console.log('🏠 MainApp 載入，使用者:', user);
-    fetchPosts(initialCategory);
+    setCurrentPage(1);
+    setHasMorePosts(false);
+    fetchPosts(initialCategory, 1, false);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -2820,6 +2864,19 @@ const MainApp = ({ user, onLogout }) => {
                     refreshBalance={refreshBalance}
                   />
                 ))}
+                
+                {/* ✅ THÊM: Nút Load More */}
+                {hasMorePosts && (
+                  <div className="load-more-posts">
+                    <button
+                      onClick={handleLoadMorePosts}
+                      disabled={isLoadingMore}
+                      className="load-more-btn"
+                    >
+                      {isLoadingMore ? '載入中...' : '載入更多貼文 (100 篇)'}
+                    </button>
+                  </div>
+                )}
               </div>
             ) : !loading ? (
               <div className="no-posts">
@@ -2843,7 +2900,9 @@ const MainApp = ({ user, onLogout }) => {
               console.log('🏠 Home clicked - Showing MY posts only');
               setViewScope('my');
               handleTabChange('Home');
-              fetchPosts(selectedCategory);
+              setCurrentPage(1);
+              setHasMorePosts(false);
+              fetchPosts(selectedCategory, 1, false);
             }}
             isActive={activeTab === 'Home'}
             size="medium"
