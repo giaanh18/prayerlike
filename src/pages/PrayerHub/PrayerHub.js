@@ -319,6 +319,7 @@ const Comment = ({ comment, onReply, onEdit, onDelete, onLike, currentUserId, po
           <AvatarImage 
             userId={comment.userid || comment.author}
             userName={comment.author}
+            src={comment.avatar_url}
             size={32}
             clickable={true}
           />
@@ -834,6 +835,7 @@ const Post = ({ post, allPosts, onLike, onComment, currentUserId, selectedCatego
           <AvatarImage 
             userId={post.userid || post.author}
             userName={post.author}
+            src={post.avatar_url}
             size={48}
             clickable={true}
           />

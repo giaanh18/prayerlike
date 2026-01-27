@@ -731,6 +731,7 @@ const WitnessWall = ({
                       <AvatarImage 
                         userId={originalPost.userid || originalPost.author}
                         userName={originalPost.userid || originalPost.author}
+                        src={originalPost.avatar_url}
                         size={48}
                         clickable={true}
                       />
@@ -909,6 +910,7 @@ const WitnessWall = ({
                     <AvatarImage 
                       userId={witness.userid}
                       userName={witness.userid}
+                      src={witness.avatar_url}
                       size={48}
                       clickable={true}
                     />
@@ -1139,6 +1141,7 @@ const Comment = ({ comment, onReply, onLike, currentUserId, postDocid, commentSt
           <AvatarImage 
             userId={comment.userid || comment.author}
             userName={comment.author}
+            src={comment.avatar_url}
             size={32}
             clickable={true}
           />
@@ -1775,6 +1778,7 @@ const Post = ({ post, allPosts, onLike, onComment, onWitnessCreated, currentUser
           <AvatarImage 
             userId={post.userid || post.author}
             userName={post.author}
+            src={post.avatar_url}
             size={48}
             clickable={true}
           />
@@ -2488,7 +2492,8 @@ const MainApp = ({ user, onLogout }) => {
           audioRecordId: post.uuid || null,
           comments: 0,
           amen_count: post.amen_count,
-          amened: post.amened
+          amened: post.amened,
+          avatar_url: post.avatar_url
         }));
 
         // ✅ THAY ĐỔI: Append hoặc replace posts

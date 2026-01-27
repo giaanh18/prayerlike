@@ -268,6 +268,12 @@ const ApiService = {
       console.log('📥 Raw session data:', data);
 
       if (data && data.authenticated && data.account) {
+
+        const rawAvatarUrl = data.account.avatar_url || 
+                             data.profile?.avatar_url || 
+                             data.profile?.picture;
+        const processedAvatarUrl = ApiService.processAvatarUrl(rawAvatarUrl);
+
         const user = {
           id: data.account.user_id,
           userId: data.account.user_id,
@@ -278,7 +284,8 @@ const ApiService = {
           profile: data.profile,
           created_at: data.account.created_at,
           updated_at: data.account.updated_at,
-          accountId: data.account.id
+          accountId: data.account.id,
+          avatar_url: processedAvatarUrl,
         };
 
         console.log('✅ Session parsed (NEW structure):', user);

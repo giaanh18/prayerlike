@@ -2,6 +2,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom';
 import AuthAPI from './services/authApi';
+import ApiService from './services/api';
 import Login from './pages/Login/login';
 import SignUp from './pages/SignUp/SignUp';
 import OAuthCallback from './pages/OAuthCallback/OAuthCallback';
@@ -46,21 +47,74 @@ function AppRoutes() {
     const checkAuth = async () => {
       try {
         const token = localStorage.getItem('token');
-        const userData = localStorage.getItem('user');
+        const localUserData = localStorage.getItem('user');
         
-        if (token && userData) {
-          const parsedUser = JSON.parse(userData);
+        // 1. 先載入本地資料，讓畫面快速呈現 (Optimistic UI)
+        if (token && localUserData) {
+          const parsedUser = JSON.parse(localUserData);
           setUser(parsedUser);
           setIsLoggedIn(true);
-          
-          if (isDevelopment) {
-            console.log('✅ User authenticated:', parsedUser);
+        }
+
+        // 2. 🟢 [關鍵修正] 主動向伺服器確認 Session 並獲取最新資料
+        if (token) {
+          console.log('🔄 Verifying session with server...');
+          try {
+            const sessionData = await AuthAPI.getSession();
+            
+            if (sessionData && sessionData.authenticated) {
+              console.log('✅ Session verified:', sessionData);
+
+              const account = sessionData.account || {};
+              const profile = sessionData.profile || {};
+
+              // 🟢 [解析頭貼] 優先順序：Account (自訂) > Profile (Google)
+              const rawAvatar = account.avatar_url || profile.avatar_url || profile.picture;
+              // 🟢 [處理路徑] 轉為絕對路徑
+              const processedAvatar = ApiService.processAvatarUrl(rawAvatar);
+
+              // 整合最新的 User 物件
+              const freshUser = {
+                id: account.user_id || account.id, // 確保 ID 正確
+                name: account.name || profile.name,
+                email: account.email || profile.email,
+                tribe: account.tribe || profile.tribe,
+                avatar: processedAvatar, // 給 UI 顯示用
+                avatar_url: processedAvatar, // 同步欄位
+                token: token // 保留 Token
+              };
+
+              // 更新 State 與 LocalStorage
+              setUser(freshUser);
+              localStorage.setItem('user', JSON.stringify(freshUser));
+              setIsLoggedIn(true);
+              
+              if (isDevelopment) {
+                console.log('✅ User data refreshed from server:', freshUser);
+              }
+            } else {
+              // Session 無效 (例如 Token 過期)
+              console.warn('❌ Session invalid/expired');
+              throw new Error('Session expired');
+            }
+          } catch (serverError) {
+            console.error('❌ Server auth check failed:', serverError);
+            // 如果是 401/403 錯誤，代表 Token 失效，強制登出
+            if (serverError.message && (serverError.message.includes('401') || serverError.message.includes('403'))) {
+              localStorage.removeItem('token');
+              localStorage.removeItem('user');
+              setUser(null);
+              setIsLoggedIn(false);
+            }
+            // 其他網路錯誤則保留本地登入狀態 (Offline mode)
           }
         }
       } catch (error) {
         console.error('❌ Auth check error:', error);
         localStorage.removeItem('token');
         localStorage.removeItem('user');
+        setUser(null);
+        setIsLoggedIn(false);
       } finally {
         setIsCheckingAuth(false);
       }

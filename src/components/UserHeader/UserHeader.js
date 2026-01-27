@@ -2,6 +2,7 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom'; // ✅ THÊM
 import AvatarImage from '../AvatarImage/AvatarImage';
+import ApiService from '../../services/api';
 import './UserHeader.css';
 
 const UserHeader = ({ 
@@ -11,7 +12,7 @@ const UserHeader = ({
   tribeName,
   familyIcon,
   blessingIcon,
-  blessingText = "LOGOUT",
+  blessingText = null,
   onNotificationClick,
   onCoinClick,
   onLogoClick,
@@ -50,6 +51,7 @@ const UserHeader = ({
   const isNotTribe = tribeName === 'not tribe';
   const displayTribeName = tribeName || 'TRIBE';
   const tribeLogoStyle = isNotTribe ? { backgroundColor: '#D9D9D9' } : {};
+  const processedAvatarUrl = ApiService.processAvatarUrl(user?.avatar_url || user?.avatar);
 
   return (
     <div className="user-header">
@@ -66,6 +68,7 @@ const UserHeader = ({
             <AvatarImage
               userId={getUserId()}
               userName={getUserName()}
+              src={processedAvatarUrl}
               size={64}
               clickable={false} // ✅ Set false vì đã có onClick wrapper
               editable={false}  // ✅ Không cho edit ở đây, chỉ edit trong Profile page
