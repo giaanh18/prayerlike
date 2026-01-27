@@ -1162,7 +1162,7 @@ const PrayerHub = ({ user, onLogout }) => {
           time: post.datetime || '剛剛',
           image: post.image || null,
           audioRecordId: post.uuid || null,
-          avatar_url: post.avatar_url
+          avatar_url: ApiService.processAvatarUrl(post.avatar_url)
         }));
         
         console.log(`✅ Loaded ${transformedPosts.length} posts`);

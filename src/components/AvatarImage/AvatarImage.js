@@ -1,7 +1,7 @@
 // src/components/AvatarImage/AvatarImage.js
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ApiService } from '../../services/api';
+import ApiService from '../../services/api';
 import defaultAvatar from '../../assets/icons/Profileicon.png';
 import './AvatarImage.css';
 
