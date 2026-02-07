@@ -372,14 +372,18 @@ const WitnessWall = ({
 
   const handleNextPage = () => {
     if (pagination.has_next) {
-      setCurrentPage(prev => prev + 1);
+      const nextPage = currentPage + 1;
+      setCurrentPage(nextPage);
+      loadWitnesses(nextPage);
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
   };
 
   const handlePrevPage = () => {
     if (pagination.has_prev) {
-      setCurrentPage(prev => Math.max(1, prev - 1));
+      const prevPage = currentPage - 1;
+      setCurrentPage(prevPage);
+      loadWitnesses(prevPage);
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
   };
@@ -489,7 +493,7 @@ const WitnessWall = ({
         throw new Error(result.message || 'API Error');
       }
     } catch (error) {
-      console.error('❌ Like comment error:', error);
+      console.error('❌ Comment amen error:', error);
       setCommentStates(prev => ({
         ...prev,
         [commentId]: {
@@ -2531,12 +2535,31 @@ const MainApp = ({ user, onLogout }) => {
       }
     }
   }, [getDemoPosts, user, selectedCategory, mapCategoryToPrivacy, viewScope]);
+  
 
   // ✅ THÊM: Hàm load more posts
   const handleLoadMorePosts = () => {
     const nextPage = currentPage + 1;
     setCurrentPage(nextPage);
     fetchPosts(selectedCategory, nextPage, true);
+  };
+
+  const handleNextPage = () => {
+    if (hasMorePosts) {
+      const nextPage = currentPage + 1;
+      setCurrentPage(nextPage);
+      fetchPosts(selectedCategory, nextPage, false);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  };
+
+  const handlePrevPage = () => {
+    if (currentPage > 1) {
+      const prevPage = currentPage - 1;
+      setCurrentPage(prevPage);
+      fetchPosts(selectedCategory, prevPage, false);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
   };
 
   useEffect(() => {
@@ -2871,17 +2894,41 @@ const MainApp = ({ user, onLogout }) => {
                 ))}
                 
                 {/* ✅ THÊM: Nút Load More */}
-                {hasMorePosts && (
-                  <div className="load-more-posts">
-                    <button
-                      onClick={handleLoadMorePosts}
-                      disabled={isLoadingMore}
-                      className="load-more-btn"
-                    >
-                      {isLoadingMore ? '載入中...' : '載入更多貼文 (100 篇)'}
-                    </button>
-                  </div>
-                )}
+                <div className="pagination-controls" style={{ display: 'flex', justifyContent: 'center', gap: '20px', padding: '20px 0' }}>
+                  <button
+                    onClick={handlePrevPage}
+                    disabled={currentPage === 1 || loading}
+                    className="pagination-btn"
+                    style={{
+                      padding: '8px 16px',
+                      borderRadius: '20px',
+                      border: 'none',
+                      backgroundColor: currentPage === 1 ? '#ccc' : '#4CAF50',
+                      color: 'white',
+                      cursor: currentPage === 1 ? 'not-allowed' : 'pointer'
+                    }}
+                  >
+                    ← 上一頁
+                  </button>
+
+                  <span style={{ color: 'white', alignSelf: 'center' }}>第 {currentPage} 頁</span>
+
+                  <button
+                    onClick={handleNextPage}
+                    disabled={!hasMorePosts || loading}
+                    className="pagination-btn"
+                    style={{
+                      padding: '8px 16px',
+                      borderRadius: '20px',
+                      border: 'none',
+                      backgroundColor: !hasMorePosts ? '#ccc' : '#4CAF50',
+                      color: 'white',
+                      cursor: !hasMorePosts ? 'not-allowed' : 'pointer'
+                    }}
+                  >
+                    下一頁 →
+                  </button>
+                </div>
               </div>
             ) : !loading ? (
               <div className="no-posts">
@@ -2972,4 +3019,3 @@ const MainApp = ({ user, onLogout }) => {
 };
 
 export default MainApp;
-

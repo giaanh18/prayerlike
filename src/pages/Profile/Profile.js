@@ -1,4 +1,4 @@
-// src/pages/Profile/Profile.jsx
+// src/pages/Profile/Profile.js
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import ApiService from '../../services/api';
@@ -45,10 +45,6 @@ const Profile = ({ user, onLogout }) => {
   const [error, setError] = useState(null);
   const [isOwnProfile, setIsOwnProfile] = useState(true);
   
-  const [isEditingName, setIsEditingName] = useState(false);
-  const [newName, setNewName] = useState('');
-  const [isSavingName, setIsSavingName] = useState(false);
-
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
 
   useEffect(() => {
@@ -80,26 +76,39 @@ const Profile = ({ user, onLogout }) => {
       setSession(sessionResult.session);
       
       if (!viewingOwnProfile) {
+        // 檢視他人檔案
         setProfile({
           id: targetUserId,
           name: targetUserId,
           email: 'Hidden',
           tribe: null,
           provider: 'unknown',
+          avatar_url: null, 
           isPublicView: true
         });
-        setNewName('');
+        // ❌ 已移除 setNewName('');
       } else {
+        // 檢視自己檔案
         const userData = sessionResult.user;
+        const rawAccount = sessionResult.session?.account || {};
+        const rawProfile = sessionResult.session?.profile || {};
+
+        // 從 account 或 profile 取得原始頭像路徑
+        const rawAvatarUrl = rawAccount.avatar_url || rawProfile.avatar_url || rawProfile.picture;
+        
+        // 使用 ApiService 進行路徑補全
+        const finalAvatarUrl = ApiService.processAvatarUrl(rawAvatarUrl);
+
         setProfile({
           id: userData.id || userData.userId,
           name: userData.name,
           email: userData.email,
           tribe: userData.tribe,
           provider: sessionResult.session?.provider || 'email',
+          avatar_url: finalAvatarUrl, // 將處理後的網址存入 state
           isPublicView: false
         });
-        setNewName(userData.name || '');
+        // ❌ 已移除 setNewName(userData.name || '');
       }
       
     } catch (err) {
@@ -118,7 +127,7 @@ const Profile = ({ user, onLogout }) => {
             provider: userData.provider || 'email',
             isPublicView: false
           });
-          setNewName(userData.name || '');
+          // ❌ 已移除 setNewName(userData.name || '');
           setError(null);
           setIsOwnProfile(true);
         }
@@ -127,76 +136,6 @@ const Profile = ({ user, onLogout }) => {
       }
     } finally {
       setLoading(false);
-    }
-  };
-
-  const handleEditName = () => {
-    if (!isOwnProfile) {
-      alert('⚠️ 您無法編輯其他用戶的資料');
-      return;
-    }
-    setIsEditingName(true);
-  };
-
-  const handleCancelEditName = () => {
-    setIsEditingName(false);
-    setNewName(profile?.name || '');
-  };
-
-  const handleSaveName = async () => {
-    if (!isOwnProfile) {
-      alert('⚠️ 您無法編輯其他用戶的資料');
-      return;
-    }
-    
-    if (!newName.trim()) {
-      alert('⚠️ 名稱不能為空');
-      return;
-    }
-
-    setIsSavingName(true);
-    
-    try {
-      console.log('💾 Updating name to:', newName);
-      
-      const response = await fetch('https://pray-api.yalinelena.church/auth/profile', {
-        method: 'POST',
-        credentials: 'include',
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json'
-        },
-        body: JSON.stringify({
-          name: newName.trim()
-        })
-      });
-
-      const data = await response.json();
-
-      if (response.ok && data.ok) {
-        console.log('✅ Name updated successfully:', data.profile);
-        
-        setProfile(prev => ({
-          ...prev,
-          name: data.profile.name,
-          updated_at: data.profile.updated_at
-        }));
-        
-        const userData = JSON.parse(localStorage.getItem('userData') || '{}');
-        userData.name = data.profile.name;
-        localStorage.setItem('userData', JSON.stringify(userData));
-        
-        setIsEditingName(false);
-        alert('✅ 名稱更新成功！');
-      } else {
-        throw new Error(data.message || data.detail || '更新失敗');
-      }
-      
-    } catch (err) {
-      console.error('❌ Update name error:', err);
-      alert(`❌ 更新名稱失敗: ${err.message}`);
-    } finally {
-      setIsSavingName(false);
     }
   };
 
@@ -222,8 +161,8 @@ const Profile = ({ user, onLogout }) => {
       return;
     }
 
-    if (file.size > 5 * 1024 * 1024) {
-      alert('⚠️ 圖片大小不能超過 5MB');
+    if (file.size > 10 * 1024 * 1024) {
+      alert('⚠️ 圖片大小不能超過 10MB');
       return;
     }
 
@@ -271,7 +210,7 @@ const Profile = ({ user, onLogout }) => {
     }
   };
 
-  // ✅ THÊM: Handler cho Terms & Conditions
+  // Terms & Conditions Handlers
   const handlePrivacyPolicy = () => {
     window.open('https://your-website.com/privacy-policy', '_blank');
   };
@@ -358,6 +297,7 @@ const Profile = ({ user, onLogout }) => {
             <AvatarImage 
               userId={profile?.id}
               userName={profile?.name}
+              src={profile?.avatar_url}
               size={120}
               clickable={false}
               editable={isOwnProfile}
@@ -390,43 +330,9 @@ const Profile = ({ user, onLogout }) => {
 
           <div className="info-item">
             <label>暱稱 (Nickname)</label>
-            {isEditingName && isOwnProfile ? (
-              <div className="edit-name-container">
-                <input
-                  type="text"
-                  value={newName}
-                  onChange={(e) => setNewName(e.target.value)}
-                  placeholder="輸入新名稱"
-                  maxLength={50}
-                  className="name-input"
-                />
-                <div className="edit-actions">
-                  <button 
-                    onClick={handleSaveName} 
-                    disabled={isSavingName || !newName.trim()}
-                    className="save-btn"
-                  >
-                    {isSavingName ? '儲存中...' : '✓ 儲存'}
-                  </button>
-                  <button 
-                    onClick={handleCancelEditName}
-                    disabled={isSavingName}
-                    className="cancel-btn"
-                  >
-                    ✕ 取消
-                  </button>
-                </div>
-              </div>
-            ) : (
-              <div className="info-value">
-                <span>{profile?.name || '未設定'}</span>
-                {isOwnProfile && (
-                  <button onClick={handleEditName} className="change-btn">
-                    Change
-                  </button>
-                )}
-              </div>
-            )}
+            <div className="info-value">
+              <span>{profile?.name || '未設定'}</span>
+            </div>
           </div>
 
           <div className="info-item">
@@ -444,14 +350,9 @@ const Profile = ({ user, onLogout }) => {
               </div>
             </div>
           )}
-
-          {isOwnProfile && (
-            <>
-            </>
-          )}
         </div>
 
-        {/* ✅ TERMS & CONDITIONS SECTION - CHỈ HIỂN THỊ CHO OWN PROFILE */}
+        {/* TERMS & CONDITIONS SECTION */}
         {isOwnProfile && (
           <div className="terms-section">
             <h2 className="terms-title">TERMS & CONDITIONS</h2>

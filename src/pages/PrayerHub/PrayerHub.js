@@ -1047,6 +1047,10 @@ const PrayerHub = ({ user, onLogout }) => {
   const [allPosts, setAllPosts] = useState([]);
   const [loading, setLoading] = useState(false);
 
+  // 新增：分頁狀態
+  const [currentPage, setCurrentPage] = useState(1);
+  const [hasNextPage, setHasNextPage] = useState(false);
+
   const privacyRef = useRef(null);
   const prayerCategoryRef = useRef(null);
   const navigatingRef = useRef(false);
@@ -1112,13 +1116,14 @@ const PrayerHub = ({ user, onLogout }) => {
     }
   };
 
-  const fetchPosts = useCallback(async () => {
+  const fetchPosts = useCallback(async (page = 1) => {
     if (selectedPrayerCategory === 'Tribe Prayer' && !hasTribe) {
       alert('⚠️ 無法載入 Tribe Prayer：您尚未選擇支派！');
       setSelectedPrayerCategory(null);
       return;
     }
 
+    setCurrentPage(page);
     setLoading(true);
     try {
       const currentUserId = user?.id || user?.userId || ApiService.getCurrentUserId();
@@ -1137,7 +1142,7 @@ const PrayerHub = ({ user, onLogout }) => {
 
       console.log('📡 Fetching posts with filters:', filters);
 
-      let result = await ApiService.getPosts(1, 50, true, filters);
+      let result = await ApiService.getPosts(page, 100, true, filters);
 
       if (result && result.success && result.posts && result.posts.length > 0) {
         const commentsCountMap = {};
@@ -1169,24 +1174,45 @@ const PrayerHub = ({ user, onLogout }) => {
         
         console.log(`✅ Loaded ${transformedPosts.length} posts`);
         setPosts(transformedPosts);
-        setAllPosts(result.posts); 
+        setAllPosts(result.posts);
+        setHasNextPage(!!result.pagination?.has_next || result.posts.length === 100);
+        
       } else {
         console.log('ℹ️ No posts found');
         setPosts([]);
         setAllPosts([]);
+        setHasNextPage(false);
       }
     } catch (error) {
       console.error('💥 取得貼文時發生錯誤:', error);
       setPosts([]);
       setAllPosts([]);
+      setHasNextPage(false);
     } finally {
       setLoading(false);
     }
   }, [user, selectedPrivacy, selectedPrayerCategory, hasTribe]);
 
   useEffect(() => {
-    fetchPosts();
+    setCurrentPage(1);
+    fetchPosts(1);
   }, [fetchPosts]);
+
+  const handleNextPage = () => {
+    const nextPage = currentPage + 1;
+    setCurrentPage(nextPage);
+    fetchPosts(nextPage);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handlePrevPage = () => {
+    if (currentPage > 1) {
+      const prevPage = currentPage - 1;
+      setCurrentPage(prevPage);
+      fetchPosts(prevPage);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  };
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -1510,6 +1536,43 @@ const PrayerHub = ({ user, onLogout }) => {
                     refreshBalance={refreshBalance}
                   />
                 ))}
+
+                {/* ✅ 分頁按鈕 */}
+                <div className="pagination-controls" style={{ display: 'flex', justifyContent: 'center', gap: '20px', padding: '20px 0' }}>
+                  <button 
+                    onClick={handlePrevPage} 
+                    disabled={currentPage === 1 || loading}
+                    className="pagination-btn"
+                    style={{
+                      padding: '8px 16px',
+                      borderRadius: '20px',
+                      border: 'none',
+                      backgroundColor: currentPage === 1 ? '#ccc' : '#4CAF50',
+                      color: 'white',
+                      cursor: currentPage === 1 ? 'not-allowed' : 'pointer'
+                    }}
+                  >
+                    ← 上一頁
+                  </button>
+                  
+                  <span style={{ color: 'white', alignSelf: 'center' }}>第 {currentPage} 頁</span>
+
+                  <button 
+                    onClick={handleNextPage} 
+                    disabled={!hasNextPage || loading}
+                    className="pagination-btn"
+                    style={{
+                      padding: '8px 16px',
+                      borderRadius: '20px',
+                      border: 'none',
+                      backgroundColor: !hasNextPage ? '#ccc' : '#4CAF50',
+                      color: 'white',
+                      cursor: !hasNextPage ? 'not-allowed' : 'pointer'
+                    }}
+                  >
+                    下一頁 →
+                  </button>
+                </div>
               </div>
             ) : (
               <div className="no-posts">
