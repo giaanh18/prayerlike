@@ -211,105 +211,108 @@ const Profile = ({ user, onLogout }) => {
     }
   };
 
-  const privacyPolicyText = `《禱告如香 Pray Like Incense》
+  const privacyPolicyText = `Pray Like Incense
 
-個人資料保護與隱私權政策（台灣個資法版）
+Personal Data Protection and Privacy Policy (Taiwan PDPA Version)
 
-一、前言
+1. Introduction
 
-《禱告如香 Pray Like Incense》（以下簡稱「本服務」）重視每一位使用者的隱私與個人資料保護。本政策依據《個人資料保護法》及相關法令訂定，說明本服務如何蒐集、處理、利用及保護使用者的個人資料。
-
-⸻
-
-二、個人資料之蒐集目的
-
-本服務蒐集個人資料之目的，僅限於下列用途：
-  1. 使用者帳號建立與身分識別
-  2. 禱告事項發布、回應（Amen）、代禱互動功能
-  3. 多語翻譯、系統通知與服務優化
-  4. 帳務管理、系統維護與安全控管
-  5. 與本服務宗旨相關之內部統計與分析（不涉及個人識別）
-
-蒐集目的均屬於合理、必要且與宗教及社群服務直接相關之範圍。
+Pray Like Incense (hereinafter referred to as “the Service”) values the privacy and personal data protection of every user.
+This Policy is established in accordance with the Personal Data Protection Act of Taiwan and relevant regulations, and explains how the Service collects, processes, uses, and protects users’ personal data.
 
 ⸻
 
-三、蒐集之個人資料類別
+2. Purposes of Personal Data Collection
 
-本服務可能蒐集的個人資料包含但不限於：
-  • 基本資料：
-  • 電子郵件信箱
-  • 使用者名稱（暱稱）
-  • 語言偏好
-  • 使用紀錄資料：
-  • 登入時間
-  • 禱告與回應紀錄
-  • 系統操作行為（僅作為技術與安全用途）
+The Service collects personal data solely for the following purposes:
+	1.	User account registration and identity verification
+	2.	Publishing prayer requests, responses (Amen), and intercessory interaction features
+	3.	Multilingual translation, system notifications, and service optimization
+	4.	Account management, system maintenance, and security control
+	5.	Internal statistics and analysis related to the Service’s mission (without personal identification)
 
-⚠️ 本服務不主動蒐集身分證字號、地址、電話、金融帳戶、醫療或其他敏感性個人資料。
+All collection purposes are reasonable, necessary, and directly related to religious and community services.
 
 ⸻
 
-四、個人資料之利用期間、地區、對象與方式
-  1. 期間：
-自使用者註冊起，至帳號刪除或服務終止為止。
-  2. 地區：
-主要於台灣地區進行處理，若因雲端服務需要跨境儲存，亦將採取合理之安全防護措施。
-  3. 對象：
-僅限本服務之必要管理人員或依法受委託之技術服務提供者，不會出售、交換或出租予第三方。
-  4. 方式：
-以自動化或非自動化方式，於合法、安全之系統環境中進行。
+3. Categories of Personal Data Collected
+
+The personal data collected by the Service may include, but is not limited to, the following:
+
+Basic Information:
+	•	Email address
+	•	Username (nickname)
+	•	Language preference
+
+Usage Records:
+	•	Login time
+	•	Prayer and response records
+	•	System operation behavior (for technical and security purposes only)
+
+⚠️ The Service does not proactively collect national identification numbers, physical addresses, phone numbers, financial account information, medical data, or other sensitive personal data.
 
 ⸻
 
-五、資料安全與保護措施
-
-本服務採取合理之技術及管理措施，以防止個人資料遭未授權存取、竄改、洩漏或毀損，包括但不限於：
-  • 存取權限控管
-  • 系統防護與加密傳輸
-  • 管理人員保密義務
-  • 定期檢視與改善安全措施
-
-⸻
-
-六、使用者之權利
-
-依《個人資料保護法》第三條規定，使用者得就其個人資料行使以下權利：
-  1. 查詢或請求閱覽
-  2. 請求製給複製本
-  3. 請求補充或更正
-  4. 請求停止蒐集、處理或利用
-  5. 請求刪除
-
-使用者可透過本服務提供之聯絡方式提出申請。
+4. Period, Area, Subjects, and Methods of Personal Data Use
+	1.	Period:
+From the date of user registration until account deletion or termination of the Service.
+	2.	Area:
+Primarily processed within Taiwan. If cross-border data storage is required due to cloud services, reasonable security protection measures will be implemented.
+	3.	Subjects:
+Limited to necessary administrative personnel of the Service or legally commissioned technical service providers. The Service will not sell, exchange, or rent personal data to any third party.
+	4.	Methods:
+Personal data is processed by automated or non-automated means within lawful and secure system environments.
 
 ⸻
 
-七、資料自主與公開設定
+5. Data Security and Protection Measures
 
-使用者於本服務中所發布之禱告內容，可自行選擇：
-  • 公開顯示
-  • 僅限特定群組
-  • 個人私密紀錄
-
-所有公開行為均基於使用者自主設定，本服務不會擅自變更其公開範圍。
-
-⸻
-
-八、政策修訂
-
-本服務保留隨法令調整或服務需求修訂本政策之權利，修訂後將公告於本服務相關頁面，不另行個別通知。
+The Service adopts reasonable technical and administrative measures to prevent unauthorized access, alteration, leakage, or destruction of personal data, including but not limited to:
+	•	Access control management
+	•	System protection and encrypted data transmission
+	•	Confidentiality obligations for administrators
+	•	Regular review and improvement of security measures
 
 ⸻
 
-九、聯絡方式（更新版）
+6. User Rights
 
-如對本政策、個人資料保護事項，或欲行使《個人資料保護法》所定之相關權利，請透過以下官方管道與我們聯繫：
+In accordance with Article 3 of the Personal Data Protection Act, users may exercise the following rights regarding their personal data:
+	1.	Request access or review
+	2.	Request a copy
+	3.	Request supplementation or correction
+	4.	Request cessation of collection, processing, or use
+	5.	Request deletion
 
-官方聯絡信箱：
+Users may submit such requests through the contact channels provided by the Service.
+
+⸻
+
+7. Data Autonomy and Privacy Settings
+
+Users may choose the visibility of prayer content published within the Service, including:
+	•	Public display
+	•	Limited to specific groups
+	•	Personal private records
+
+All disclosure settings are determined by the user. The Service will not alter visibility settings without user authorization.
+
+⸻
+
+8. Policy Amendments
+
+The Service reserves the right to revise this Policy in response to legal amendments or service requirements. Revised versions will be announced on relevant Service pages without individual notice.
+
+⸻
+
+9. Contact Information
+
+If you have any questions regarding this Policy, personal data protection matters, or wish to exercise rights under the Personal Data Protection Act, please contact us through the following official channel:
+
+Official Contact Email:
 📧 info@yalinelena.church
 
-本服務將於合理期間內回覆並協助處理相關申請。`;
+The Service will respond and assist with related requests within a reasonable timeframe.`;
 
   const handlePrivacyPolicy = () => {
     setShowPrivacyDialog(true);
