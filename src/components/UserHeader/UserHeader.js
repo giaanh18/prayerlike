@@ -158,17 +158,16 @@ const UserHeader = ({
           <button 
             className={blessingText ? "tribe-action-btn logout-button" : "tribe-action-btn"}
             onClick={onBlessingClick}
-            title={blessingText || "Blessings & Luck"}
+            title="Logout"
           >
-            {blessingText ? (
-              <span className="logout-text">{blessingText}</span>
-            ) : blessingIcon ? (
-              <img src={blessingIcon} alt="Blessing" className="tribe-action-icon-img" />
-            ) : (
-              <svg viewBox="0 0 24 24" className="tribe-action-icon">
-                <path d="M17.5 12C19.43 12 21 10.43 21 8.5C21 6.57 19.43 5 17.5 5C16.37 5 15.37 5.54 14.74 6.38L12 9.88L9.26 6.38C8.63 5.54 7.63 5 6.5 5C4.57 5 3 6.57 3 8.5C3 10.43 4.57 12 6.5 12C7.21 12 7.87 11.79 8.42 11.43L12 14.5L15.58 11.43C16.13 11.79 16.79 12 17.5 12ZM6.5 7C7.33 7 8 7.67 8 8.5C8 9.33 7.33 10 6.5 10C5.67 10 5 9.33 5 8.5C5 7.67 5.67 7 6.5 7ZM17.5 7C18.33 7 19 7.67 19 8.5C19 9.33 18.33 10 17.5 10C16.67 10 16 9.33 16 8.5C16 7.67 16.67 7 17.5 7ZM12 16L7 20H17L12 16Z" fill="currentColor"/>
-              </svg>
-            )}
+            <span style={{ 
+              color: '#8B6F47',      // 設定為與金幣文字相同的深棕色
+              fontSize: '10px',      // 稍微縮小字體以適應圓圈
+              fontWeight: 'bold',    // 加粗讓文字更清晰
+              lineHeight: '1' 
+            }}>
+              Logout
+            </span>
           </button>
         </div>
       </div>
