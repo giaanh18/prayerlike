@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import AuthAPI from '../../services/authApi';
+import ApiService from '../../services/api';
 import useEmailVerification from '../../hooks/useEmailVerification';
 
 import LoginBackground from '../../components/LoginBackground/LoginBackground';
@@ -122,11 +123,21 @@ const Login = ({ onLogin }) => {
         }
 
         // ✅ Profile 完整 → 登入成功
+        const rawAvatar =
+          sessionData?.account?.avatar_url ||
+          sessionData?.profile?.avatar_url ||
+          sessionData?.profile?.picture ||
+          profile?.avatar_url ||
+          profile?.avatar ||
+          profile?.picture;
+        const processedAvatar = ApiService.processAvatarUrl(rawAvatar);
+
         const userData = {
           id: profile.user_id || profile.id,
           name: profile.name,
           email: sessionEmail || profile.email,
-          avatar: profile.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(profile.name || 'User')}&background=667eea&color=fff`,
+          avatar: processedAvatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(profile.name || 'User')}&background=667eea&color=fff`,
+          avatar_url: processedAvatar || null,
           token: sessionData.app_token || 'session-token',
           loginMethod: userEmail ? 'email_verification' : 'social_login',
           tribe: profile.tribe
@@ -137,7 +148,7 @@ const Login = ({ onLogin }) => {
         
         setTimeout(() => {
           setLoginSuccessMessage('');
-          onLogin(userData);
+          onLogin(userData, userData.token);
           
           setTimeout(() => {
             navigate('/main', { replace: true });

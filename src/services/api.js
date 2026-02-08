@@ -54,6 +54,25 @@ const StorageService = {
 
 const cache = new Map();
 
+const buildAbsoluteUrl = (url) => {
+  if (!url || (typeof url === 'string' && !url.trim())) {
+    return null;
+  }
+
+  const stringUrl = typeof url === 'string' ? url.trim() : `${url}`.trim();
+
+  if (!stringUrl) {
+    return null;
+  }
+
+  if (stringUrl.startsWith('http://') || stringUrl.startsWith('https://') || stringUrl.startsWith('data:')) {
+    return stringUrl;
+  }
+
+  const cleanPath = stringUrl.startsWith('/') ? stringUrl.slice(1) : stringUrl;
+  return `${API_BASE_URL}/${cleanPath}`;
+};
+
 // ==================== 🚀 MAIN API SERVICE ====================
 
 const ApiService = {
@@ -161,21 +180,9 @@ const ApiService = {
   },
 
   
-  processAvatarUrl: (url) => {
-    if (!url) return null; // 或是回傳預設圖片路徑
+  processAvatarUrl: (url) => buildAbsoluteUrl(url),
 
-    // 情況 1: 已經是完整的 HTTP/HTTPS URL (例如 Google 頭像)
-    if (url.startsWith('http://') || url.startsWith('https://')) {
-      return url;
-    }
-
-    // 情況 2: 自行上傳的相對路徑 (例如 uploads/avatars/...)
-    // 移除開頭可能多餘的 '/' 以確保路徑拼接正確
-    const cleanPath = url.startsWith('/') ? url.slice(1) : url;
-    
-    // 拼接 API_BASE_URL
-    return `${API_BASE_URL}/${cleanPath}`;
-  },
+  processMediaUrl: (url) => buildAbsoluteUrl(url),
 
   // ==================== 🔐 AUTH API ====================
 
@@ -713,16 +720,34 @@ const ApiService = {
         const rawWitnesses = data.data.witnesses || [];
         
         // 🔄 遍歷並修正 avatar_url
-        const processedWitnesses = rawWitnesses.map(witness => ({
-          ...witness,
-          // 修正見證人的頭像
-          avatar_url: ApiService.processAvatarUrl(witness.avatar_url),
-          // 如果有 original_post，也一併修正其中的頭像
-          original_post: witness.original_post ? {
-            ...witness.original_post,
-            avatar_url: ApiService.processAvatarUrl(witness.original_post.avatar_url)
-          } : null
-        }));
+        const processedWitnesses = rawWitnesses.map(witness => {
+          const processedImage = ApiService.processMediaUrl
+            ? ApiService.processMediaUrl(witness.image_url || witness.image)
+            : (witness.image_url || witness.image);
+
+          let processedOriginalPost = null;
+          if (witness.original_post) {
+            const originalImageSource = witness.original_post.image_url || witness.original_post.image;
+            const processedOriginalImage = ApiService.processMediaUrl
+              ? ApiService.processMediaUrl(originalImageSource)
+              : originalImageSource;
+
+            processedOriginalPost = {
+              ...witness.original_post,
+              avatar_url: ApiService.processAvatarUrl(witness.original_post.avatar_url),
+              image_url: processedOriginalImage,
+              image: processedOriginalImage
+            };
+          }
+
+          return {
+            ...witness,
+            avatar_url: ApiService.processAvatarUrl(witness.avatar_url),
+            image_url: processedImage,
+            image: processedImage,
+            original_post: processedOriginalPost
+          };
+        });
 
         return {
           success: true,

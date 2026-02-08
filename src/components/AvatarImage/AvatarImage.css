@@ -12,6 +12,7 @@
   border-radius: 50%;
   background: rgba(255, 255, 255, 0.05);
   transition: all 0.3s ease;
+  box-sizing: border-box;
 }
 
 /* ✅ Clickable avatar styles */
@@ -43,6 +44,7 @@
   border: none;
   transition: all 0.3s ease;
   display: block;
+  box-sizing: border-box;
 }
 
 .avatar-image:hover {

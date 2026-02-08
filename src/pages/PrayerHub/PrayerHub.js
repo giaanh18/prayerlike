@@ -76,6 +76,42 @@ const WitnessWall = ({ currentUserId, allPosts, privacyFilter, categoryFilter, r
   const [witnesses, setWitnesses] = useState([]);
   const [loading, setLoading] = useState(false);
 
+  // Helper to normalize media URLs returned from the API
+  const getNormalizedImageUrl = (rawUrl) => {
+    if (!rawUrl) return null;
+    if (ApiService.processMediaUrl) {
+      return ApiService.processMediaUrl(rawUrl);
+    }
+    if (ApiService.processAvatarUrl) {
+      return ApiService.processAvatarUrl(rawUrl);
+    }
+    return rawUrl;
+  };
+
+  const formatPrivacyLabel = (privacy) => {
+    if (!privacy) return null;
+    const stringPrivacy = privacy.toString();
+    return stringPrivacy.charAt(0).toUpperCase() + stringPrivacy.slice(1);
+  };
+
+  const renderMediaBlock = (imageUrl, label, category, privacy) => {
+    if (!imageUrl) return null;
+    return (
+      <div className="witness-media">
+        <img src={imageUrl} alt={label} loading="lazy" />
+        <div className="witness-media-caption">
+          <span className="witness-media-label">{label}</span>
+          <div className="witness-media-tags">
+            {category && <span className="media-tag">{category}</span>}
+            {privacy && (
+              <span className="media-tag privacy">{formatPrivacyLabel(privacy)}</span>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   useEffect(() => {
     const loadWitnesses = async () => {
       setLoading(true);
@@ -151,6 +187,12 @@ const WitnessWall = ({ currentUserId, allPosts, privacyFilter, categoryFilter, r
           const originalPost = witness.original_post || 
             allPosts?.find(p => p.docid === witness.parent_docid);
 
+          const originalImageUrl = originalPost
+            ? getNormalizedImageUrl(originalPost.image || originalPost.image_url)
+            : null;
+
+          const witnessImageUrl = getNormalizedImageUrl(witness.image || witness.image_url);
+
           return (
             <div key={witness.docid} className="witness-wall-post-card">
               {originalPost && (
@@ -175,6 +217,13 @@ const WitnessWall = ({ currentUserId, allPosts, privacyFilter, categoryFilter, r
                     {originalPost.title && <h3>{originalPost.title}</h3>}
                     <p>{originalPost.content}</p>
                   </div>
+
+                  {renderMediaBlock(
+                    originalImageUrl,
+                    '原始貼文圖片',
+                    originalPost?.category,
+                    originalPost?.privacy
+                  )}
                 </div>
               )}
 
@@ -199,6 +248,13 @@ const WitnessWall = ({ currentUserId, allPosts, privacyFilter, categoryFilter, r
                   {witness.title && <h4>{witness.title}</h4>}
                   <p>{witness.content}</p>
                 </div>
+
+                {renderMediaBlock(
+                  witnessImageUrl,
+                  '見證圖片',
+                  witness.category,
+                  witness.privacy
+                )}
               </div>
             </div>
           );
@@ -331,7 +387,8 @@ const Comment = ({ comment, onReply, onEdit, onDelete, onLike, currentUserId, po
       </div>
 
       <div className="comment-content">
-        {/* ✅ GIỮ LẠI NÚT DỊCH */}
+        <p>{comment.content}</p>
+
         <button
           className={`comment-translate-button ${isTranslating ? 'translating' : ''} ${translatedContent ? 'active' : ''}`}
           onClick={handleTranslate}
@@ -339,9 +396,8 @@ const Comment = ({ comment, onReply, onEdit, onDelete, onLike, currentUserId, po
           title={translatedContent ? '隱藏翻譯' : '翻譯此評論'}
         >
           <TranslateIcon size={14} />
+          <span className="translate-button-text">{translatedContent ? '隱藏' : '翻譯'}</span>
         </button>
-
-        <p>{comment.content}</p>
 
         {translatedContent && (
           <div className="comment-translated-content">
@@ -864,6 +920,9 @@ const Post = ({ post, allPosts, onLike, onComment, currentUserId, selectedCatego
       </div>
 
       <div className="post-content">
+        {post.title && <h3>{post.title}</h3>}
+        <p>{post.content}</p>
+
         <button
           className={`post-translate-button ${isTranslating ? 'translating' : ''} ${translatedContent ? 'active' : ''}`}
           onClick={handleTranslate}
@@ -871,10 +930,8 @@ const Post = ({ post, allPosts, onLike, onComment, currentUserId, selectedCatego
           title={translatedContent ? '隱藏翻譯' : '翻譯此貼文'}
         >
           <TranslateIcon size={18} />
+          <span className="translate-button-text">{translatedContent ? '隱藏翻譯' : '翻譯'}</span>
         </button>
-
-        {post.title && <h3>{post.title}</h3>}
-        <p>{post.content}</p>
 
         {translatedContent && (
           <div className="post-translated-content">

@@ -47,7 +47,7 @@ function AppRoutes() {
     const checkAuth = async () => {
       try {
         const token = localStorage.getItem('token');
-        const localUserData = localStorage.getItem('user');
+        const localUserData = localStorage.getItem('user') || localStorage.getItem('userData');
         
         // 1. 先載入本地資料，讓畫面快速呈現 (Optimistic UI)
         if (token && localUserData) {
@@ -87,6 +87,8 @@ function AppRoutes() {
               // 更新 State 與 LocalStorage
               setUser(freshUser);
               localStorage.setItem('user', JSON.stringify(freshUser));
+              localStorage.setItem('userData', JSON.stringify(freshUser));
+              localStorage.setItem('currentUser', JSON.stringify(freshUser));
               setIsLoggedIn(true);
               
               if (isDevelopment) {
@@ -103,6 +105,8 @@ function AppRoutes() {
             if (serverError.message && (serverError.message.includes('401') || serverError.message.includes('403'))) {
               localStorage.removeItem('token');
               localStorage.removeItem('user');
+              localStorage.removeItem('userData');
+              localStorage.removeItem('currentUser');
               setUser(null);
               setIsLoggedIn(false);
             }
@@ -113,6 +117,8 @@ function AppRoutes() {
         console.error('❌ Auth check error:', error);
         localStorage.removeItem('token');
         localStorage.removeItem('user');
+        localStorage.removeItem('userData');
+        localStorage.removeItem('currentUser');
         setUser(null);
         setIsLoggedIn(false);
       } finally {
@@ -127,6 +133,8 @@ function AppRoutes() {
     try {
       localStorage.setItem('token', token);
       localStorage.setItem('user', JSON.stringify(userData));
+      localStorage.setItem('userData', JSON.stringify(userData));
+      localStorage.setItem('currentUser', JSON.stringify(userData));
       setUser(userData);
       setIsLoggedIn(true);
       setPendingSignup(null);
@@ -145,6 +153,8 @@ function AppRoutes() {
     try {
       localStorage.removeItem('token');
       localStorage.removeItem('user');
+      localStorage.removeItem('userData');
+      localStorage.removeItem('currentUser');
       setUser(null);
       setIsLoggedIn(false);
       setPendingSignup(null);

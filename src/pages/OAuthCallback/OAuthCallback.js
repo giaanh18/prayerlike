@@ -2,6 +2,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import AuthAPI from '../../services/authApi';
+import ApiService from '../../services/api';
 import './OAuthCallback.css';
 
 const OAuthCallback = ({ onLogin }) => {
@@ -94,11 +95,21 @@ const handleOAuthCallback = async () => {
         throw new Error('Profile is null or invalid');
       }
 
+      const rawAvatar =
+        session.account?.avatar_url ||
+        session.profile?.avatar_url ||
+        session.profile?.picture ||
+        profile?.avatar_url ||
+        profile?.avatar ||
+        profile?.picture;
+      const processedAvatar = ApiService.processAvatarUrl(rawAvatar);
+
       const userData = {
         id: profile.user_id || profile.id,
         name: profile.name,
         email: profile.email || email,
-        avatar: profile.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(profile.name)}&background=667eea&color=fff`,
+        avatar: processedAvatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(profile.name)}&background=667eea&color=fff`,
+        avatar_url: processedAvatar || null,
         token: session.app_token || 'session-token',
         loginMethod: provider
       };
@@ -107,7 +118,7 @@ const handleOAuthCallback = async () => {
       setStatus('登入成功！正在進入系統...');
       
       // ✅ 6. Call onLogin callback
-      onLogin(userData);
+      onLogin(userData, userData.token);
       
       // ✅ 7. Navigate to main
       setTimeout(() => {

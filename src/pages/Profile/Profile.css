@@ -149,6 +149,81 @@
     color: #FFFFFF;
 }
 
+/* ==================== PRIVACY POLICY CARD ==================== */
+
+/* ==================== PRIVACY POLICY DIALOG ==================== */
+
+.privacy-dialog-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(4px);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 10000;
+}
+
+.privacy-dialog {
+    background: #FFFFFF;
+    border-radius: 20px;
+    width: min(720px, 92vw);
+    max-height: 85vh;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.privacy-dialog-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 18px 22px;
+    background: #f6f2ea;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.privacy-dialog-header h2 {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 700;
+    color: #1a2332;
+}
+
+.privacy-dialog-close {
+    border: none;
+    background: transparent;
+    font-size: 18px;
+    cursor: pointer;
+    color: #4a5568;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.2s ease;
+}
+
+.privacy-dialog-close:hover {
+    background: rgba(0, 0, 0, 0.08);
+}
+
+.privacy-dialog-body {
+    padding: 20px 24px;
+    overflow: auto;
+}
+
+.privacy-dialog-text {
+    color: #4a5568;
+    font-size: 14px;
+    line-height: 1.8;
+    margin: 0;
+    white-space: pre-wrap;
+    font-family: inherit;
+}
+
 /* ==================== INFO SECTION - SIÊU BỰ ==================== */
 
 .profile-info-section {
@@ -463,6 +538,7 @@
     align-items: center;
     padding: 22px 0;
     border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    flex-wrap: nowrap;
 }
 
 .terms-item:last-of-type {
@@ -473,6 +549,7 @@
     font-size: 16px;
     font-weight: 500;
     color: rgba(255, 255, 255, 0.9);
+    white-space: nowrap;
 }
 
 .terms-read-btn {
@@ -486,6 +563,7 @@
     cursor: pointer;
     transition: all 0.3s ease;
     white-space: nowrap;
+    flex-shrink: 0;
 }
 
 .terms-read-btn:hover {
@@ -530,9 +608,6 @@
     }
 
     .terms-item {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 12px;
         padding: 18px 0;
     }
 
@@ -541,7 +616,6 @@
     }
 
     .terms-read-btn {
-        align-self: flex-start;
         padding: 8px 14px;
         font-size: 13px;
     }

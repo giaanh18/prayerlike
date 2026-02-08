@@ -759,6 +759,9 @@ const WitnessWall = ({
                   </div>
 
                   <div className="post-content">
+                    {originalPost.title && <h3>{originalPost.title}</h3>}
+                    <p>{originalPost.content}</p>
+
                     <button
                       className={`post-translate-button ${translationState.isTranslating ? 'translating' : ''} ${translationState.translatedContent ? 'active' : ''}`}
                       onClick={() => handleTranslateOriginalPost(originalPost.docid, originalPost.content)}
@@ -766,10 +769,8 @@ const WitnessWall = ({
                       title={translationState.translatedContent ? '隱藏翻譯' : '翻譯此貼文'}
                     >
                       <TranslateIcon size={18} />
+                      <span className="translate-button-text">{translationState.translatedContent ? '隱藏翻譯' : '翻譯'}</span>
                     </button>
-
-                    {originalPost.title && <h3>{originalPost.title}</h3>}
-                    <p>{originalPost.content}</p>
 
                     {translationState.translatedContent && (
                       <div className="post-translated-content">
@@ -1157,6 +1158,8 @@ const Comment = ({ comment, onReply, onLike, currentUserId, postDocid, commentSt
       </div>
 
       <div className="comment-content">
+        <p>{comment.content}</p>
+
         <button
           className={`comment-translate-button ${isTranslating ? 'translating' : ''} ${translatedContent ? 'active' : ''}`}
           onClick={handleTranslate}
@@ -1164,9 +1167,8 @@ const Comment = ({ comment, onReply, onLike, currentUserId, postDocid, commentSt
           title={translatedContent ? '隱藏翻譯' : '翻譯此評論'}
         >
           <TranslateIcon size={14} />
+          <span className="translate-button-text">{translatedContent ? '隱藏' : '翻譯'}</span>
         </button>
-
-        <p>{comment.content}</p>
 
         {translatedContent && (
           <div className="comment-translated-content">
@@ -1811,6 +1813,9 @@ const Post = ({ post, allPosts, onLike, onComment, onWitnessCreated, currentUser
       </div>
 
       <div className="post-content">
+        {post.title && <h3>{post.title}</h3>}
+        <p>{post.content}</p>
+
         <button
           className={`post-translate-button ${isTranslating ? 'translating' : ''} ${translatedContent ? 'active' : ''}`}
           onClick={handleTranslate}
@@ -1818,10 +1823,8 @@ const Post = ({ post, allPosts, onLike, onComment, onWitnessCreated, currentUser
           title={translatedContent ? '隱藏翻譯' : '翻譯此貼文'}
         >
           <TranslateIcon size={18} />
+          <span className="translate-button-text">{translatedContent ? '隱藏翻譯' : '翻譯'}</span>
         </button>
-
-        {post.title && <h3>{post.title}</h3>}
-        <p>{post.content}</p>
 
         {translatedContent && (
           <div className="post-translated-content">
@@ -1942,7 +1945,6 @@ const Post = ({ post, allPosts, onLike, onComment, onWitnessCreated, currentUser
             </div>
             
             <div className="form-info">
-              <span className="char-count">{witnessText.length}/1000</span>
               {witnessImageFile && (
                 <span className="file-info">
                   📎 {witnessImageFile.name} ({(witnessImageFile.size / 1024).toFixed(2)} KB)

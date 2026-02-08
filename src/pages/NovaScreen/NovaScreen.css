@@ -475,6 +475,20 @@
   border-left-color: var(--accent-primary);
 }
 
+.conversation-item.expired {
+  opacity: 0.5;
+}
+
+.conversation-expired-label {
+  margin-left: 8px;
+  font-size: 10px;
+  color: #f59e0b;
+  background: rgba(245, 158, 11, 0.2);
+  padding: 2px 6px;
+  border-radius: 10px;
+  vertical-align: middle;
+}
+
 .conversation-content {
   display: flex;
   gap: 10px;
@@ -625,6 +639,16 @@
   gap: 20px;
   max-width: 900px;
   margin: 0 auto;
+}
+
+.expired-conversation-notice {
+  background: rgba(239, 68, 68, 0.15);
+  border: 1px solid rgba(239, 68, 68, 0.4);
+  color: #fecaca;
+  padding: 10px 14px;
+  border-radius: 10px;
+  font-size: 13px;
+  text-align: center;
 }
 
 /* ==================== MESSAGE BUBBLES ==================== */
@@ -805,6 +829,11 @@
   left: 0;
   right: 0;
   z-index: 80;
+}
+
+.nova-input-container.expired .nova-input-wrapper {
+  opacity: 0.6;
+  filter: grayscale(0.2);
 }
 
 .nova-input-wrapper {

@@ -46,6 +46,7 @@ const Profile = ({ user, onLogout }) => {
   const [isOwnProfile, setIsOwnProfile] = useState(true);
   
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  const [showPrivacyDialog, setShowPrivacyDialog] = useState(false);
 
   useEffect(() => {
     loadProfile();
@@ -210,13 +211,112 @@ const Profile = ({ user, onLogout }) => {
     }
   };
 
-  // Terms & Conditions Handlers
+  const privacyPolicyText = `《禱告如香 Pray Like Incense》
+
+個人資料保護與隱私權政策（台灣個資法版）
+
+一、前言
+
+《禱告如香 Pray Like Incense》（以下簡稱「本服務」）重視每一位使用者的隱私與個人資料保護。本政策依據《個人資料保護法》及相關法令訂定，說明本服務如何蒐集、處理、利用及保護使用者的個人資料。
+
+⸻
+
+二、個人資料之蒐集目的
+
+本服務蒐集個人資料之目的，僅限於下列用途：
+  1. 使用者帳號建立與身分識別
+  2. 禱告事項發布、回應（Amen）、代禱互動功能
+  3. 多語翻譯、系統通知與服務優化
+  4. 帳務管理、系統維護與安全控管
+  5. 與本服務宗旨相關之內部統計與分析（不涉及個人識別）
+
+蒐集目的均屬於合理、必要且與宗教及社群服務直接相關之範圍。
+
+⸻
+
+三、蒐集之個人資料類別
+
+本服務可能蒐集的個人資料包含但不限於：
+  • 基本資料：
+  • 電子郵件信箱
+  • 使用者名稱（暱稱）
+  • 語言偏好
+  • 使用紀錄資料：
+  • 登入時間
+  • 禱告與回應紀錄
+  • 系統操作行為（僅作為技術與安全用途）
+
+⚠️ 本服務不主動蒐集身分證字號、地址、電話、金融帳戶、醫療或其他敏感性個人資料。
+
+⸻
+
+四、個人資料之利用期間、地區、對象與方式
+  1. 期間：
+自使用者註冊起，至帳號刪除或服務終止為止。
+  2. 地區：
+主要於台灣地區進行處理，若因雲端服務需要跨境儲存，亦將採取合理之安全防護措施。
+  3. 對象：
+僅限本服務之必要管理人員或依法受委託之技術服務提供者，不會出售、交換或出租予第三方。
+  4. 方式：
+以自動化或非自動化方式，於合法、安全之系統環境中進行。
+
+⸻
+
+五、資料安全與保護措施
+
+本服務採取合理之技術及管理措施，以防止個人資料遭未授權存取、竄改、洩漏或毀損，包括但不限於：
+  • 存取權限控管
+  • 系統防護與加密傳輸
+  • 管理人員保密義務
+  • 定期檢視與改善安全措施
+
+⸻
+
+六、使用者之權利
+
+依《個人資料保護法》第三條規定，使用者得就其個人資料行使以下權利：
+  1. 查詢或請求閱覽
+  2. 請求製給複製本
+  3. 請求補充或更正
+  4. 請求停止蒐集、處理或利用
+  5. 請求刪除
+
+使用者可透過本服務提供之聯絡方式提出申請。
+
+⸻
+
+七、資料自主與公開設定
+
+使用者於本服務中所發布之禱告內容，可自行選擇：
+  • 公開顯示
+  • 僅限特定群組
+  • 個人私密紀錄
+
+所有公開行為均基於使用者自主設定，本服務不會擅自變更其公開範圍。
+
+⸻
+
+八、政策修訂
+
+本服務保留隨法令調整或服務需求修訂本政策之權利，修訂後將公告於本服務相關頁面，不另行個別通知。
+
+⸻
+
+九、聯絡方式（更新版）
+
+如對本政策、個人資料保護事項，或欲行使《個人資料保護法》所定之相關權利，請透過以下官方管道與我們聯繫：
+
+官方聯絡信箱：
+📧 info@yalinelena.church
+
+本服務將於合理期間內回覆並協助處理相關申請。`;
+
   const handlePrivacyPolicy = () => {
-    window.open('https://your-website.com/privacy-policy', '_blank');
+    setShowPrivacyDialog(true);
   };
 
-  const handleTermsOfUse = () => {
-    window.open('https://your-website.com/terms-of-use', '_blank');
+  const handleClosePrivacyPolicy = () => {
+    setShowPrivacyDialog(false);
   };
 
   const handleDeleteAccount = () => {
@@ -275,6 +375,25 @@ const Profile = ({ user, onLogout }) => {
 
   return (
     <AppBackground backgroundColor="#2D3656">
+      {showPrivacyDialog && (
+        <div className="privacy-dialog-overlay" onClick={handleClosePrivacyPolicy}>
+          <div className="privacy-dialog" onClick={(e) => e.stopPropagation()}>
+            <div className="privacy-dialog-header">
+              <h2>Privacy Policy</h2>
+              <button
+                className="privacy-dialog-close"
+                onClick={handleClosePrivacyPolicy}
+                aria-label="Close privacy policy"
+              >
+                ✕
+              </button>
+            </div>
+            <div className="privacy-dialog-body">
+              <pre className="privacy-dialog-text">{privacyPolicyText}</pre>
+            </div>
+          </div>
+        </div>
+      )}
       <div className="profile-container">
         {/* HEADER */}
         <div className="profile-header">
@@ -360,13 +479,6 @@ const Profile = ({ user, onLogout }) => {
             <div className="terms-item">
               <span className="terms-label">Privacy Policy</span>
               <button className="terms-read-btn" onClick={handlePrivacyPolicy}>
-                Read in detail →
-              </button>
-            </div>
-
-            <div className="terms-item">
-              <span className="terms-label">Terms of Use</span>
-              <button className="terms-read-btn" onClick={handleTermsOfUse}>
                 Read in detail →
               </button>
             </div>
