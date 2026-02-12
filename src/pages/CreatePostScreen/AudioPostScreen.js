@@ -11,6 +11,11 @@ import Add from '../../assets/icons/Addicon.png';
 import Profile from '../../assets/icons/Profileicon.png';
 import Nova from '../../assets/icons/Nova.png';
 
+// ================= 環境檢測 =================
+const isInApp = () =>
+  typeof window !== "undefined" &&
+  typeof window.flutter_inappwebview !== "undefined";
+
 function AudioPostScreen({ onClose = () => {}, onUploadSuccess = () => {} }) {
   const navigate = useNavigate();
   // 🔴 除錯用狀態：將 Log 顯示在螢幕上
@@ -30,13 +35,47 @@ function AudioPostScreen({ onClose = () => {}, onUploadSuccess = () => {} }) {
   // 頁籤狀態管理
   const [activeTab, setActiveTab] = useState('Add');
 
+  // App 環境狀態
+  const [isAppEnvironment, setIsAppEnvironment] = useState(false);
+  const [flutterRecordId, setFlutterRecordId] = useState('');
+
   // Refs（僅保留需要的）
   const audioChunksRef = useRef([]);
+  const abortPollingRef = useRef(false);
+
+  // 環境檢測
+  useEffect(() => {
+    const inApp = isInApp();
+    setIsAppEnvironment(inApp);
+    if (inApp) {
+      addLog('✅ 偵測到 APP 環境');
+    } else {
+      addLog('🌐 目前是 WEB 環境');
+    }
+  }, []);
+
+  // 設置接收 Flutter recordId 的回調
+  useEffect(() => {
+    window.receiveAudioId = (id) => {
+      const recordId = String(id ?? "");
+      setFlutterRecordId(recordId);
+      addLog(`📌 從 Flutter 收到 recordId: ${recordId}`);
+      
+      if (recordId) {
+        handleFlutterRecordId(recordId);
+      }
+    };
+    
+    return () => {
+      delete window.receiveAudioId;
+    };
+  }, []);
 
   // 確保組件卸載時，釋放 URL 資源（不涉及任何麥克風權限）
   useEffect(() => {
     return () => {
       cleanupResources();
+      abortPollingRef.current = true;
     };
   }, []);
 
@@ -131,6 +170,46 @@ function AudioPostScreen({ onClose = () => {}, onUploadSuccess = () => {} }) {
     return () => window.removeEventListener('message', onMessage);
   }, [audioURL]);
 
+  // 處理 Flutter 返回的 recordId
+  const handleFlutterRecordId = async (receivedRecordId) => {
+    addLog('🔄 開始處理 Flutter recordId');
+    setRecordingState('uploading');
+    setUploadMessage('已收到錄音 ID，等待轉錄結果...');
+    abortPollingRef.current = false;
+
+    try {
+      const transcriptData = await pollForTranscript(receivedRecordId);
+      addLog('✅ 轉錄完成');
+      
+      const finalTranscript = transcriptData.transcript || '';
+      const finalAudioUrl = transcriptData.audio_url || '';
+
+      setRecordingState('success');
+      setUploadMessage('轉錄成功！');
+
+      cleanupResources();
+
+      const navigationState = { 
+        transcript: finalTranscript,
+        initialContent: finalTranscript, 
+        audioUrl: finalAudioUrl,
+        recordId: receivedRecordId,
+        fromAudio: true
+      };
+
+      navigate('/create-post/text', { state: navigationState });
+
+      if (onUploadSuccess) onUploadSuccess(transcriptData);
+      if (onClose) onClose();
+
+    } catch (error) {
+      console.error('❌ 處理 Flutter recordId 失敗:', error);
+      setRecordingState('error');
+      setUploadMessage(`處理失敗: ${error.message}`);
+      setActiveButton(null);
+    }
+  };
+
   const startRecording = async () => {
     setActiveButton('start');
 
@@ -138,16 +217,38 @@ function AudioPostScreen({ onClose = () => {}, onUploadSuccess = () => {} }) {
     cleanupResources();
 
     try {
-      // ✅ React 不做任何權限/麥克風存取，只通知 App 開始錄音
+      // ✅ 檢查是否在 App 環境
+      if (isAppEnvironment) {
+        addLog('📱 App 環境：嘗試呼叫 Flutter showOverlay');
+        
+        if (typeof window.flutter_inappwebview?.callHandler === "function") {
+          try {
+            const res = await window.flutter_inappwebview.callHandler("showOverlay");
+            addLog(`✅ showOverlay 成功: ${JSON.stringify(res)}`);
+            setRecordingState('recording');
+            setUploadMessage('等待 Flutter 返回錄音結果...');
+            return;
+          } catch (e) {
+            addLog(`⚠️ showOverlay 失敗: ${e.message}，改用 Web 錄音`);
+            console.error('呼叫 showOverlay 失敗', e);
+            // 如果 Flutter 調用失敗，繼續使用 Web 錄音
+          }
+        } else {
+          addLog('⚠️ 無 callHandler，改用 Web 錄音');
+        }
+      }
+
+      // Web 環境或 Flutter 調用失敗時，使用原有的錄音邏輯
+      addLog('🌐 使用 Web 錄音');
       window.AppBridge?.postMessage?.(JSON.stringify({ type: 'START_RECORDING' }));
 
       // UI 狀態切換
       setRecordingState('recording');
       setHasAudioInput(false);
 
-      // 不再使用 Web 端錄音，故不會在這裡產生 audioBlob/audioURL
     } catch (error) {
-      console.error('❌ 無法呼叫 App 開始錄音:', error);
+      console.error('❌ 無法開始錄音:', error);
+      addLog(`❌ 錄音錯誤: ${error.message}`);
       setRecordingState('error');
       setUploadMessage(`處理失敗: ${error.message}`);
       setActiveButton(null);
