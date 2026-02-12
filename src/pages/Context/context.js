@@ -769,7 +769,6 @@ const WitnessWall = ({
                       title={translationState.translatedContent ? '隱藏翻譯' : '翻譯此貼文'}
                     >
                       <TranslateIcon size={18} />
-                      <span className="translate-button-text">{translationState.translatedContent ? '隱藏翻譯' : '翻譯'}</span>
                     </button>
 
                     {translationState.translatedContent && (
@@ -1160,6 +1159,7 @@ const Comment = ({ comment, onReply, onLike, currentUserId, postDocid, commentSt
       <div className="comment-content">
         <p>{comment.content}</p>
 
+        {/* ✅ GIỮ LẠI NÚT DỊCH */}
         <button
           className={`comment-translate-button ${isTranslating ? 'translating' : ''} ${translatedContent ? 'active' : ''}`}
           onClick={handleTranslate}
@@ -1167,7 +1167,6 @@ const Comment = ({ comment, onReply, onLike, currentUserId, postDocid, commentSt
           title={translatedContent ? '隱藏翻譯' : '翻譯此評論'}
         >
           <TranslateIcon size={14} />
-          <span className="translate-button-text">{translatedContent ? '隱藏' : '翻譯'}</span>
         </button>
 
         {translatedContent && (
@@ -1823,7 +1822,6 @@ const Post = ({ post, allPosts, onLike, onComment, onWitnessCreated, currentUser
           title={translatedContent ? '隱藏翻譯' : '翻譯此貼文'}
         >
           <TranslateIcon size={18} />
-          <span className="translate-button-text">{translatedContent ? '隱藏翻譯' : '翻譯'}</span>
         </button>
 
         {translatedContent && (

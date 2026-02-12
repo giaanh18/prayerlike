@@ -986,9 +986,11 @@
 
 .witness-media img {
   width: 100%;
-  height: 220px;
-  object-fit: cover;
+  height: auto;
+  max-height: 300px;
+  object-fit: contain;
   display: block;
+  background-color: #f0f0f0;
 }
 
 .witness-media-caption {
@@ -1182,7 +1184,9 @@
   }
 
   .witness-media img {
-    height: 180px;
+    height: auto;
+    max-height: 280px;
+    object-fit: contain;
   }
 
   .witness-media-caption {
@@ -1248,7 +1252,9 @@
   }
 
   .witness-media img {
-    height: 150px;
+    height: auto;
+    max-height: 250px;
+    object-fit: contain;
   }
 
   .media-tag {
@@ -1276,3 +1282,27 @@
 }
 
 /* ==================== END OF FILE ==================== */
+
+/* Ensure translation button is visible on mobile */
+@media (max-width: 768px) {
+  .post-translate-button, .comment-translate-button {
+    min-width: 32px;
+    min-height: 32px;
+    padding: 6px 12px;
+  }
+}
+
+.post-image {
+  margin-top: 12px;
+  border-radius: 12px;
+  overflow: hidden;
+  background: #f8f9fb;
+}
+
+.post-image img {
+  width: 100%;
+  height: auto;
+  max-height: 400px;
+  object-fit: contain;
+  display: block;
+}

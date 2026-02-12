@@ -2600,27 +2600,21 @@ select:focus-visible {
 
 @media (max-width: 768px) {
   .post-translate-button {
-    width: 28px;
-    height: 28px;
-    padding: 5px;
-    border-radius: 5px;
+    padding: 6px 10px;
   }
 
   .post-translate-button svg {
-    width: 16px;
-    height: 16px;
+    width: 18px;
+    height: 18px;
   }
 
   .comment-translate-button {
-    width: 22px;
-    height: 22px;
-    padding: 3px;
-    border-radius: 4px;
+    padding: 4px 8px;
   }
 
   .comment-translate-button svg {
-    width: 13px;
-    height: 13px;
+    width: 14px;
+    height: 14px;
   }
 }
 
@@ -2630,11 +2624,8 @@ select:focus-visible {
   }
 
   .post-translate-button {
-    width: 26px;
-    height: 26px;
     top: 10px;
     right: 10px;
-    border-radius: 4px;
   }
 
   .comment-content {
@@ -2642,14 +2633,7 @@ select:focus-visible {
   }
 
   .comment-translate-button {
-    width: 20px;
-    height: 20px;
-    border-radius: 3px;
-  }
-
-  .comment-translate-button svg {
-    width: 12px;
-    height: 12px;
+    /* Auto size based on padding/icon */
   }
 }
 

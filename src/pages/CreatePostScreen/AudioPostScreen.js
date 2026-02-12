@@ -13,6 +13,13 @@ import Nova from '../../assets/icons/Nova.png';
 
 function AudioPostScreen({ onClose = () => {}, onUploadSuccess = () => {} }) {
   const navigate = useNavigate();
+  // 🔴 除錯用狀態：將 Log 顯示在螢幕上
+  const [debugLogs, setDebugLogs] = useState([]);
+  const addLog = (msg) => {
+    console.log(msg);
+    setDebugLogs(prev => [...prev.slice(-10), `${new Date().toLocaleTimeString()} ${msg}`]);
+  };
+
   const [recordingState, setRecordingState] = useState('idle');
   const [audioBlob, setAudioBlob] = useState(null);
   const [audioURL, setAudioURL] = useState(null);
@@ -23,158 +30,146 @@ function AudioPostScreen({ onClose = () => {}, onUploadSuccess = () => {} }) {
   // 頁籤狀態管理
   const [activeTab, setActiveTab] = useState('Add');
 
-  // Refs 用於管理錄音資源
-  const mediaRecorderRef = useRef(null);
+  // Refs（僅保留需要的）
   const audioChunksRef = useRef([]);
-  const audioContextRef = useRef(null);
-  const analyserRef = useRef(null);
-  const streamRef = useRef(null);
-  const animationFrameRef = useRef(null);
 
-  // ✅ [衝突迴避] 確保組件卸載時，絕對釋放麥克風權限
+  // 確保組件卸載時，釋放 URL 資源（不涉及任何麥克風權限）
   useEffect(() => {
     return () => {
       cleanupResources();
     };
   }, []);
 
-  // ✅ 資源清理函數：這是解決衝突的關鍵
-  // 在每次開始錄音前與結束後，都確保完全切斷與硬體的連結
+  // 資源清理函數：不再操作任何麥克風/錄音硬體，只清掉前端 URL 資源
   const cleanupResources = () => {
-    // 1. 停止波形偵測動畫
-    if (animationFrameRef.current) {
-      cancelAnimationFrame(animationFrameRef.current);
-      animationFrameRef.current = null;
-    }
-
-    // 2. 停止 MediaRecorder
-    if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
-      mediaRecorderRef.current.stop();
-    }
-
-    // 3. [核心] 停止所有音軌 (釋放麥克風給 OS/Flutter)
-    if (streamRef.current) {
-      streamRef.current.getTracks().forEach(track => {
-        track.stop();
-        // console.log("🛑 Track stopped (Mic released)"); 
-      });
-      streamRef.current = null;
-    }
-
-    // 4. 關閉 AudioContext
-    if (audioContextRef.current && audioContextRef.current.state !== 'closed') {
-      audioContextRef.current.close().catch(e => console.error("Close context error", e));
-      audioContextRef.current = null;
+    if (audioURL) {
+      URL.revokeObjectURL(audioURL);
     }
   };
+
+  // 接收 App 回傳的錄音結果（Base64 或 URL）
+  useEffect(() => {
+    const onMessage = (event) => {
+      let data = event?.data;
+      addLog(`📩 收到 msg. Type: ${typeof data}`);
+
+      // 1. 嘗試解析字串格式的 JSON (解決部分 App 傳回字串導致無反應的問題)
+      if (typeof data === 'string') {
+        try {
+          data = JSON.parse(data);
+          addLog('✅ JSON 解析成功');
+        } catch (e) {
+          addLog(`⚠️ JSON 解析失敗: ${e.message.slice(0, 20)}`);
+          // 不是 JSON 字串，忽略，繼續往下走 (有些 App 可能真的傳字串且不是 JSON)
+        }
+      }
+
+      if (!data || typeof data !== 'object') {
+        addLog('⚠️ 資料無效/非物件');
+        return;
+      }
+      
+      if (data.type) addLog(`🔍 Type: ${data.type}`);
+
+      // ✅ App 回傳錄音完成
+      if (data.type === 'AUDIO_RECORDING_READY') {
+        try {
+          const payload = data.payload || {};
+
+          // 1) App 直接給檔案 URL（例如本機檔案或 App 自己的 blob url）
+          if (payload.audioUrl) {
+            setAudioBlob(null);
+            setAudioURL(payload.audioUrl);
+            setRecordingState('preview');
+            setActiveButton(null);
+            return;
+          }
+
+          // 2) App 給 base64 + mimeType（Web 端轉成 Blob）
+          const base64 = payload.base64;
+          const mimeType = payload.mimeType || 'audio/webm';
+
+          if (!base64) throw new Error('Missing base64 audio payload');
+
+          const byteCharacters = atob(base64);
+          const byteNumbers = new Array(byteCharacters.length);
+          for (let i = 0; i < byteCharacters.length; i++) {
+            byteNumbers[i] = byteCharacters.charCodeAt(i);
+          }
+          const byteArray = new Uint8Array(byteNumbers);
+          const blob = new Blob([byteArray], { type: mimeType });
+
+          setAudioBlob(blob);
+          setAudioURL(URL.createObjectURL(blob));
+          setRecordingState('preview');
+          setActiveButton(null);
+        } catch (e) {
+          console.error('❌ 解析 App 錄音回傳失敗:', e);
+          setRecordingState('error');
+          setUploadMessage(`處理失敗: ${e.message}`);
+          setActiveButton(null);
+        }
+      }
+
+      // ✅ App 回傳錄音失敗
+      if (data.type === 'AUDIO_RECORDING_ERROR') {
+        const message = data.payload?.message || '錄音失敗';
+        console.error('❌ App 錄音錯誤:', message);
+        setRecordingState('error');
+        setUploadMessage(`處理失敗: ${message}`);
+        setActiveButton(null);
+      }
+
+      // （可選）App 回傳即時音量偵測
+      if (data.type === 'AUDIO_INPUT_LEVEL') {
+        const level = Number(data.payload?.level ?? 0);
+        setHasAudioInput(level > 0);
+      }
+    };
+
+    window.addEventListener('message', onMessage);
+    return () => window.removeEventListener('message', onMessage);
+  }, [audioURL]);
 
   const startRecording = async () => {
     setActiveButton('start');
 
-    // ✅ [衝突迴避] 開始前先強制清理，避免「前一次 Session 未釋放」導致的 Occupied 錯誤
+    // 開始前清理舊 URL（不涉及任何權限）
     cleanupResources();
 
     try {
-      console.log("🎤 請求麥克風權限...");
+      // ✅ React 不做任何權限/麥克風存取，只通知 App 開始錄音
+      window.AppBridge?.postMessage?.(JSON.stringify({ type: 'START_RECORDING' }));
 
-      // ✅ [相容性優化] 在 WebView 中，過於複雜的 constraints (如 noiseSuppression) 有時會導致失敗
-      // 先嘗試簡單的 audio: true，讓 Flutter 容易授權
-      const stream = await navigator.mediaDevices.getUserMedia({ 
-        audio: true 
-      });
-      
-      console.log("✅ 麥克風授權成功");
-      streamRef.current = stream;
-
-      // --- 初始化 AudioContext (用於波形顯示) ---
-      // 必須在使用者互動(Click)內建立，避免 WebView 自動播放策略阻擋
-      const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-      const analyser = audioContext.createAnalyser();
-      const microphone = audioContext.createMediaStreamSource(stream);
-      
-      analyser.fftSize = 256;
-      microphone.connect(analyser);
-      
-      audioContextRef.current = audioContext;
-      analyserRef.current = analyser;
-
-      const bufferLength = analyser.frequencyBinCount;
-      const dataArray = new Uint8Array(bufferLength);
-      
-      // 波形偵測迴圈
-      const checkAudioLevel = () => {
-        if (analyser) {
-          analyser.getByteFrequencyData(dataArray);
-          const average = dataArray.reduce((a, b) => a + b) / bufferLength;
-          setHasAudioInput(average > 10);
-          animationFrameRef.current = requestAnimationFrame(checkAudioLevel);
-        }
-      };
-      
-      // --- 初始化 MediaRecorder (用於錄製) ---
-      // 優先使用 webm (Android/Chrome)，若不支援則讓瀏覽器自動選擇
-      let options = { mimeType: 'audio/webm;codecs=opus' };
-      if (!MediaRecorder.isTypeSupported(options.mimeType)) {
-        options = undefined; // Fallback to default
-      }
-
-      const mediaRecorder = new MediaRecorder(stream, options);
-      mediaRecorderRef.current = mediaRecorder;
-      audioChunksRef.current = [];
-
-      mediaRecorder.ondataavailable = (event) => {
-        if (event.data.size > 0) {
-          audioChunksRef.current.push(event.data);
-        }
-      };
-
-      mediaRecorder.onstop = () => {
-        // 錄音結束，組合 Blob
-        // 注意：這裡若 options 為 undefined，type 可能需要動態判斷，但通常 'audio/webm' 或空字串即可
-        const mimeType = mediaRecorder.mimeType || 'audio/webm';
-        const audioBlob = new Blob(audioChunksRef.current, { type: mimeType });
-        
-        setAudioBlob(audioBlob);
-        setAudioURL(URL.createObjectURL(audioBlob));
-        setRecordingState('preview');
-        setActiveButton(null);
-        
-        // ✅ [衝突迴避] 錄音完成進入預覽時，立即釋放麥克風
-        // 這樣若使用者點擊播放錄音，不會因為麥克風還開著而產生回授或衝突
-        if (streamRef.current) {
-          streamRef.current.getTracks().forEach(track => track.stop());
-          streamRef.current = null;
-        }
-      };
-
-      mediaRecorder.start();
+      // UI 狀態切換
       setRecordingState('recording');
       setHasAudioInput(false);
-      checkAudioLevel(); // 啟動波形
 
+      // 不再使用 Web 端錄音，故不會在這裡產生 audioBlob/audioURL
     } catch (error) {
-      console.error('❌ 麥克風存取失敗:', error);
-      
-      // 錯誤處理：給予清楚的提示
-      let errorMessage = '無法存取麥克風';
-      if (error.name === 'NotAllowedError' || error.name === 'PermissionDeniedError') {
-        errorMessage = '請允許 App 存取麥克風權限';
-      } else if (error.name === 'NotFoundError') {
-        errorMessage = '找不到麥克風裝置';
-      } else if (error.name === 'NotReadableError') {
-        errorMessage = '麥克風被其他應用程式佔用中'; // 這裡抓出衝突
-      }
-
-      alert(`${errorMessage}\n(錯誤代碼: ${error.name})`);
+      console.error('❌ 無法呼叫 App 開始錄音:', error);
+      setRecordingState('error');
+      setUploadMessage(`處理失敗: ${error.message}`);
       setActiveButton(null);
-      cleanupResources();
     }
   };
 
   const stopRecording = () => {
     setActiveButton('stop');
-    if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
-      mediaRecorderRef.current.stop();
+
+    // 2. 立即給予 UI 回饋，避免等待 App 回傳時看起來像當機
+    setRecordingState('uploading'); 
+    setUploadMessage('Processing audio...');
+
+    try {
+      // ✅ 通知 App 停止錄音，並由 App 回傳 AUDIO_RECORDING_READY
+      window.AppBridge?.postMessage?.(JSON.stringify({ type: 'STOP_RECORDING' }));
+      addLog('📤 已發送 STOP_RECORDING');
+    } catch (error) {
+      console.error('❌ 無法呼叫 App 停止錄音:', error);
+      setRecordingState('error');
+      setUploadMessage(`處理失敗: ${error.message}`);
+      setActiveButton(null);
     }
   };
 
@@ -209,7 +204,7 @@ function AudioPostScreen({ onClose = () => {}, onUploadSuccess = () => {} }) {
 
   const handleConfirm = async () => {
     setActiveButton('confirm');
-    if (!audioBlob) return;
+    if (!audioBlob && !audioURL) return;
 
     setRecordingState('uploading');
     setUploadMessage('上傳音訊中...');
@@ -287,9 +282,6 @@ function AudioPostScreen({ onClose = () => {}, onUploadSuccess = () => {} }) {
     
     // 清理舊資源
     cleanupResources();
-    if (audioURL) {
-      URL.revokeObjectURL(audioURL);
-    }
     
     setAudioBlob(null);
     setAudioURL(null);
@@ -463,6 +455,19 @@ function AudioPostScreen({ onClose = () => {}, onUploadSuccess = () => {} }) {
           <div className="card-buttons">
             {renderButtons()}
           </div>
+          
+          {/* 🔴 除錯視窗：顯示最新的 Logs */}
+          <div style={{
+            position: 'absolute', bottom: 0, left: 0, right: 0,
+            background: 'rgba(0,0,0,0.8)', color: '#0f0', fontSize: '10px',
+            padding: '5px', maxHeight: '150px', overflowY: 'auto', zIndex: 9999
+          }}>
+            <div style={{fontWeight:'bold', borderBottom:'1px solid #333'}}>DEBUG LOGS:</div>
+            {debugLogs.map((log, i) => (
+              <div key={i}>{log}</div>
+            ))}
+          </div>
+
         </div>
       </div>
 
