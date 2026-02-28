@@ -1721,15 +1721,3 @@ export {
   POSTS_API_URL,
   AUTH_API_URL
 };
-
-// ==================== 📊 LOGGING ====================
-
-console.log('🎉 API Service đã load! (✅ FIXED - Activities API)');
-console.log('📦 API Base URL:', API_BASE_URL);
-console.log('');
-console.log('🎪 Activities API: ✅ FIXED');
-console.log('   • getActivities() - Removed tribe & is_published params');
-console.log('   • Only sends: page & limit');
-console.log('   • Filter tribe in frontend if needed');
-console.log('');
-console.log('🔐 Auth, Posts, Friends, YCoin APIs: ✅ Working');
