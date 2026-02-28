@@ -1454,8 +1454,12 @@ getUserAvatar: async (userId) => {
   },
 
 
-  getNotifications: async (limit = 20, offset = 0, unreadOnly = false) => {
+  getNotifications: async (params = {}) => {
     try {
+      const limit = params.limit !== undefined ? params.limit : 20;
+      const offset = params.offset !== undefined ? params.offset : 0;
+      const unreadOnly = params.unreadOnly !== undefined ? params.unreadOnly : (params.unread_only !== undefined ? params.unread_only : false);
+
       const queryParams = new URLSearchParams({
         limit: limit,
         offset: offset,
@@ -1495,6 +1499,7 @@ getUserAvatar: async (userId) => {
     }
   },
 
+  
   markNotificationAsRead: async (notificationId) => {
     try {
       if (!notificationId) {
