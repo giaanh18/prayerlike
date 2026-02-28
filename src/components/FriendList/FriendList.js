@@ -4,8 +4,9 @@ import { useNavigate } from 'react-router-dom';
 import ApiService from '../../services/api';
 import './FriendList.css';
 
-// Import CircleButton
+// Import components
 import CircleButton from '../CircleButton/CircleButton';
+import AvatarImage from '../AvatarImage/AvatarImage';
 
 import Home from '../../assets/icons/Homeicon.png';
 import Search from '../../assets/icons/Searchicon.png';
@@ -38,12 +39,16 @@ const FriendList = ({ user, onLogout }) => {
       // Try loading even without userId (api may have mock data)
       if (viewMode === 'friends') {
         const result = await ApiService.getFriends(userId);
+        console.log('👥 Friends API result:', result);
         if (result.success) {
+          console.log('📥 Friends data:', result.friends);
           setFriends(result.friends || []);
         }
       } else {
         const result = await ApiService.getFamily(userId);
+        console.log('👨‍👩‍👧‍👦 Family API result:', result);
         if (result.success) {
+          console.log('📥 Family data:', result.family);
           setFamily(result.family || []);
         }
       }
@@ -115,14 +120,15 @@ const FriendList = ({ user, onLogout }) => {
               <div 
                 key={person.id} 
                 className="fl-card"
-                // ❌ ĐÃ XÓA: onClick handler
-                // ✅ THÊM: style để không có cursor pointer
                 style={{ cursor: 'default' }}
               >
                 <div className="fl-avatar">
-                  <img 
-                    src={`https://ui-avatars.com/api/?name=${encodeURIComponent(person.name)}&background=random&size=64`}
-                    alt={person.name}
+                  <AvatarImage
+                    userId={person.id || person.username}
+                    userName={person.name}
+                    src={person.avatar}
+                    size={64}
+                    clickable={false}
                   />
                 </div>
                 <div className="fl-info">
