@@ -2072,6 +2072,7 @@ const MainApp = ({ user, onLogout }) => {
 
   const handleTabChange = (tabName) => {
     setActiveTab(tabName);
+    setViewMode('original');
     console.log(`切換到頁籤: ${tabName}`);
     if (tabName === 'Home') {
       window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -2316,6 +2317,7 @@ const MainApp = ({ user, onLogout }) => {
     }
 
     setSelectedCategory(category);
+    setViewMode('original');
     fetchPosts(category);
   };
 
