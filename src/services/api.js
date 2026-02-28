@@ -1453,6 +1453,82 @@ getUserAvatar: async (userId) => {
     }
   },
 
+
+  getNotifications: async (limit = 20, offset = 0, unreadOnly = false) => {
+    try {
+      const queryParams = new URLSearchParams({
+        limit: limit,
+        offset: offset,
+        unread_only: unreadOnly
+      });
+      
+      const url = `${API_BASE_URL}/api/notifications?${queryParams.toString()}`;
+
+      const { data } = await ApiService.makeRequest(url, {
+        method: 'GET',
+        credentials: 'include',
+        headers: { 'accept': 'application/json' }
+      });
+
+      if (data && data.status === 'success' && data.data) {
+        return {
+          success: true,
+          notifications: data.data.notifications || [],
+          total: data.data.total || 0,
+          unread_count: data.data.unread_count || 0,
+          message: data.message || '取得通知列表成功'
+        };
+      }
+
+      throw new ApiError('無效的回應格式', 500);
+
+    } catch (error) {
+      console.error('取得通知列表失敗:', error);
+      return {
+        success: false,
+        notifications: [],
+        total: 0,
+        unread_count: 0,
+        message: error.message,
+        error: error.message
+      };
+    }
+  },
+
+  markNotificationAsRead: async (notificationId) => {
+    try {
+      if (!notificationId) {
+        throw new ApiError('必須提供通知 ID', 400);
+      }
+
+      const url = `${API_BASE_URL}/api/notifications/${encodeURIComponent(notificationId)}/read`;
+
+      const { data } = await ApiService.makeRequest(url, {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'accept': 'application/json' }
+      });
+
+      if (data && data.status === 'success' && data.data) {
+        return {
+          success: true,
+          notification: data.data,
+          message: data.message || '標示為已讀成功'
+        };
+      }
+
+      throw new ApiError('無效的回應格式', 500);
+
+    } catch (error) {
+      console.error('標示通知為已讀失敗:', error);
+      return {
+        success: false,
+        message: error.message,
+        error: error.message
+      };
+    }
+  },
+
   // ==================== 💰 YCOIN API ====================
 
   getUserBalance: async (userId) => {
