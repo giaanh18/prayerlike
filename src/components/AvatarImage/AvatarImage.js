@@ -2,7 +2,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import ApiService from '../../services/api';
-import defaultAvatar from '../../assets/icons/Profileicon.png';
 import './AvatarImage.css';
 
 const AvatarImage = ({ 
@@ -18,9 +17,7 @@ const AvatarImage = ({
   className = ''
 }) => {
   const navigate = useNavigate();
-  const [avatarUrl, setAvatarUrl] = useState(src || defaultAvatar);
-  const [loading, setLoading] = useState(!src && !!userId);
-  const [error, setError] = useState(false);
+  const [avatarUrl, setAvatarUrl] = useState(null);
   const [uploading, setUploading] = useState(false);
 
   // ✅ THÊM: Lấy user hiện tại từ localStorage
@@ -29,7 +26,7 @@ const AvatarImage = ({
       const userStr = localStorage.getItem('user');
       if (userStr) {
         const user = JSON.parse(userStr);
-        return user.id || user.user_id || user.userId; // Tùy cấu trúc của bạn
+        return user.id || user.user_id || user.userId;
       }
     } catch (error) {
       console.error('Error getting current user:', error);
@@ -43,60 +40,28 @@ const AvatarImage = ({
     return '?';
   };
 
+  // 🎯 简化逻辑：只处理 URL，不做额外的 fetch
   useEffect(() => {
-    console.log('🖼️ AvatarImage useEffect:', { userId, userName, src, hasProfileData: !!profileData });
+    console.log('🖼️ AvatarImage mount:', { 
+      userId, 
+      userName, 
+      src,
+      srcType: typeof src
+    });
     
+    // 如果有 src，处理成绝对 URL
     if (src) {
       const processedUrl = ApiService.processAvatarUrl(src);
-      console.log('✅ Using src prop:', src, '→', processedUrl);
+      console.log('✅ Processed avatar URL:', {
+        original: src,
+        processed: processedUrl
+      });
       setAvatarUrl(processedUrl);
-      setLoading(false);
-      return;
+    } else {
+      console.log('⚠️ No src provided for avatar');
+      setAvatarUrl(null);
     }
-
-    if (!userId) {
-      setLoading(false);
-      return;
-    }
-
-    let isMounted = true;
-    const fetchAvatar = async () => {
-      try {
-        setLoading(true);
-        console.log('🔄 Fetching avatar for userId:', userId);
-        
-        if (profileData && profileData.avatar_url) {
-          const processedUrl = ApiService.processAvatarUrl(profileData.avatar_url);
-          console.log('✅ Using profileData.avatar_url:', profileData.avatar_url, '→', processedUrl);
-          if (isMounted) {
-            setAvatarUrl(processedUrl);
-            setLoading(false);
-          }
-          return;
-        }
-
-        const avatarUrl = await ApiService.getUserAvatar(userId);
-        console.log('📥 getUserAvatar result:', avatarUrl);
-        
-        if (isMounted) {
-          if (avatarUrl) {
-            console.log('✅ Setting avatar URL:', avatarUrl);
-            setAvatarUrl(avatarUrl);
-          } else {
-            console.log('⚠️ No avatar URL, using fallback');
-            setAvatarUrl(null);
-          }
-        }
-      } catch (err) {
-        console.error('❌ Error loading avatar:', err);
-      } finally {
-        if (isMounted) setLoading(false);
-      }
-    };
-
-    fetchAvatar();
-    return () => { isMounted = false; };
-  }, [userId, src, profileData]);
+  }, [src, userId, userName]);
 
   const handleUpload = async (e) => {
     const file = e.target.files?.[0];
@@ -142,10 +107,10 @@ const AvatarImage = ({
     if (uploading) return;
     if (e.target.closest('.avatar-upload-overlay')) return;
     
-    // 🔒 THÊM: Chỉ cho phép click vào avatar của chính mình
+    // 🔒 只允许点击自己的头像
     const currentUserId = getCurrentUserId();
     if (userId && currentUserId && userId !== currentUserId) {
-      return; // ❌ Chặn click vào avatar người khác
+      return;
     }
     
     if (onClick) {
@@ -158,22 +123,13 @@ const AvatarImage = ({
     }
   };
 
-  if (loading) {
-    return (
-      <div className={`avatar-image-container loading ${className}`} style={{ width: size, height: size }}>
-        <div className="avatar-spinner"></div>
-      </div>
-    );
-  }
-
-  // ✅ THÊM: Kiểm tra xem có phải avatar của mình không
+  // ✅ 检查是否为自己的头像
   const currentUserId = getCurrentUserId();
   const isOwnAvatar = userId === currentUserId;
 
   return (
     <div 
       className={`avatar-image-container ${clickable && isOwnAvatar ? 'avatar-clickable' : ''} ${className}`}
-      // ☝️ Chỉ thêm class clickable nếu là avatar của mình
       style={{ width: size, height: size }}
       onClick={handleAvatarClick}
       title={userName || userId}
@@ -182,11 +138,16 @@ const AvatarImage = ({
         <img
           src={avatarUrl}
           alt={userName || userId || 'User avatar'}
-          className={`avatar-image ${error ? 'error' : ''}`}
+          className="avatar-image"
           style={{ width: size, height: size, objectFit: 'cover' }}
-          onError={() => {
+          onError={(e) => {
+            console.error('❌ Avatar image load failed:', {
+              userId,
+              userName,
+              attemptedUrl: avatarUrl
+            });
+            // 简单地隐藏图片，显示首字母
             setAvatarUrl(null);
-            setError(true);
           }}
           loading="lazy"
         />

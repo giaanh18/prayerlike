@@ -444,7 +444,8 @@ const WitnessWall = ({
         time: c.datetime || '剛剛',
         likes: c.amen_count || 0,
         isReply: true,
-        userid: c.userid
+        userid: c.userid,
+        avatar_url: c.avatar_url
       }));
 
       const newCommentStates = {};
@@ -544,7 +545,8 @@ const WitnessWall = ({
           time: '剛剛',
           likes: 0,
           isReply: true,
-          userid: currentUserId
+          userid: currentUserId,
+          avatar_url: result.comment?.avatar_url  // ✅ 添加 avatar_url
         };
 
         setCommentStates(prev => ({
@@ -647,14 +649,15 @@ const WitnessWall = ({
                 <div className="witness-original-post-section">
                   <div className="post-header">
                     <div className="post-avatar">
-  <AvatarImage 
-    userId={originalPost.userid || originalPost.author}
-    userName={originalPost.userid || originalPost.author}
-    src={ApiService.processAvatarUrl(originalPost.avatar_url)}
-    size={48}
-    clickable={true}
-  />
-</div>
+                      {/* 🔧 不要預先處理 avatar_url，讓 AvatarImage 自己處理 */}
+                      <AvatarImage
+                        userId={originalPost.userid || originalPost.author}
+                        userName={originalPost.userid || originalPost.author}
+                        src={originalPost.avatar_url}
+                        size={48}
+                        clickable={true}
+                      />
+                    </div>
 
                     <div className="post-info">
                       <div className="post-author">{originalPost.userid || originalPost.author}</div>
@@ -786,14 +789,15 @@ const WitnessWall = ({
                                 <div key={comment.id} className="comment comment-reply">
                                   <div className="comment-header">
                                     <div className="comment-avatar">
-  <AvatarImage 
-    userId={comment.userid || comment.author}
-    userName={comment.author}
-    src={ApiService.processAvatarUrl(comment.avatar_url)}
-    size={32}
-    clickable={true}
-  />
-</div>
+                                      {/* 🔧 不要預先處理，讓 AvatarImage 自己處理 */}
+                                      <AvatarImage
+                                        userId={comment.userid || comment.author}
+                                        userName={comment.author}
+                                        src={comment.avatar_url}
+                                        size={32}
+                                        clickable={true}
+                                      />
+                                    </div>
 
                                     <div className="comment-info">
                                       <div className="comment-author">{comment.author}</div>
@@ -832,14 +836,15 @@ const WitnessWall = ({
               <div className="witness-section">
                 <div className="witness-wall-header">
                   <div className="witness-wall-avatar">
-  <AvatarImage 
-    userId={witness.userid}
-    userName={witness.userid}
-    src={ApiService.processAvatarUrl(witness.avatar_url)}
-    size={48}
-    clickable={true}
-  />
-</div>
+                    {/* 🔧 不要預先處理，讓 AvatarImage 自己處理 */}
+                    <AvatarImage
+                      userId={witness.userid}
+                      userName={witness.userid}
+                      src={witness.avatar_url}
+                      size={48}
+                      clickable={true}
+                    />
+                  </div>
 
                   <div className="witness-wall-info">
                     <div className="witness-wall-author">{witness.userid}</div>
@@ -1082,14 +1087,15 @@ const Comment = ({ comment, onReply, onEdit, onDelete, onLike, currentUserId, po
     <div className={`comment ${comment.isReply ? 'comment-reply' : ''}`}>
       <div className="comment-header">
         <div className="comment-avatar">
-  <AvatarImage 
-    userId={comment.userid || comment.author}
-    userName={comment.author}
-    src={ApiService.processAvatarUrl(comment.avatar_url)}
-    size={32}
-    clickable={true}
-  />
-</div>
+          {/* 🔧 不要預先處理，讓 AvatarImage 自己處理 */}
+          <AvatarImage
+            userId={comment.userid || comment.author}
+            userName={comment.author}
+            src={comment.avatar_url}
+            size={32}
+            clickable={true}
+          />
+        </div>
 
         <div className="comment-info">
           <div className="comment-author">{comment.author}</div>
@@ -1394,7 +1400,8 @@ const Post = ({ post, allPosts, onLike, onComment, onWitnessCreated, currentUser
         time: c.datetime || '剛剛',
         likes: c.amen_count || 0,
         isReply: true,
-        userid: c.userid
+        userid: c.userid,
+        avatar_url: c.avatar_url  // ✅ 添加 avatar_url
       }));
 
       const newCommentStates = {};
@@ -1683,14 +1690,14 @@ const Post = ({ post, allPosts, onLike, onComment, onWitnessCreated, currentUser
     <div className="post-card">
       <div className="post-header">
         <div className="post-avatar">
-  <AvatarImage 
-    userId={post.userid || post.author}
-    userName={post.author}
-    src={post.avatar_url}
-    size={48}
-    clickable={true}
-  />
-</div>
+          <AvatarImage
+            userId={post.userid || post.author}
+            userName={post.author}
+            src={post.avatar_url}
+            size={48}
+            clickable={true}
+          />
+        </div>
 
         <div className="post-info">
           <div className="post-author">{post.author}</div>
@@ -1847,10 +1854,6 @@ const Post = ({ post, allPosts, onLike, onComment, onWitnessCreated, currentUser
                   setCommentText(prev => prev + (prev ? ' ' : '') + transcript);
                 }}
               />
-            </div>
-
-            <div className="form-info">
-              <span className="char-count">{commentText.length}/500</span>
             </div>
             <div className="form-actions">
               <button
@@ -2078,20 +2081,20 @@ const MainApp = ({ user, onLogout }) => {
   };
 
   const handleNotificationClick = useCallback(() => {
-      if (navigatingRef.current) {
-        console.log('⚠️ Navigation already in progress, ignoring...');
-        return;
-      }
-  
-      console.log('🔔 Navigate to Notifications');
-      navigatingRef.current = true;
-      
-      setTimeout(() => {
-        navigatingRef.current = false;
-      }, 1000);
-      
-      navigate('/notifications');
-    }, [navigate]);
+    if (navigatingRef.current) {
+      console.log('⚠️ Navigation already in progress, ignoring...');
+      return;
+    }
+
+    console.log('🔔 Navigate to Notifications');
+    navigatingRef.current = true;
+
+    setTimeout(() => {
+      navigatingRef.current = false;
+    }, 1000);
+
+    navigate('/notifications');
+  }, [navigate]);
 
   const handleCoinClick = () => {
     console.log('💰 Coin clicked from context - navigating to YB History');
@@ -2601,14 +2604,14 @@ const MainApp = ({ user, onLogout }) => {
                         <div key={activity.id} className="activity-card">
                           <div className="activity-header">
                             <div className="activity-avatar">
-  <AvatarImage 
-    userId={activity.author}
-    userName={activity.author}
-    src={ApiService.processAvatarUrl(activity.avatar_url)}
-    size={48}
-    clickable={true}
-  />
-</div>
+                              <AvatarImage
+                                userId={activity.author}
+                                userName={activity.author}
+                                src={ApiService.processAvatarUrl(activity.avatar_url)}
+                                size={48}
+                                clickable={true}
+                              />
+                            </div>
 
                             <div className="activity-info">
                               <div className="activity-author">{activity.author}</div>

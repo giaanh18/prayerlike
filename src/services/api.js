@@ -69,7 +69,9 @@ const buildAbsoluteUrl = (url) => {
   }
 
   const cleanPath = stringUrl.startsWith('/') ? stringUrl.slice(1) : stringUrl;
-  return `${API_BASE_URL}/${cleanPath}`;
+  const result = `${API_BASE_URL}/${cleanPath}`;
+  console.log('🔗 Avatar URL:', stringUrl, '→', result);
+  return result;
 };
 
 // ==================== 🚀 MAIN API SERVICE ====================
