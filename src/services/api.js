@@ -1,6 +1,5 @@
 const API_BASE_URL = 'https://pray-api.yalinelena.church';
 
-// 貼文與內容相關 API 路徑
 const POSTS_API_URL = `${API_BASE_URL}/api`;
 const AUTH_API_URL = `${API_BASE_URL}/auth`;
 
@@ -54,11 +53,30 @@ const StorageService = {
 
 const cache = new Map();
 
+const buildAbsoluteUrl = (url) => {
+  if (!url || (typeof url === 'string' && !url.trim())) {
+    return null;
+  }
+
+  const stringUrl = typeof url === 'string' ? url.trim() : `${url}`.trim();
+
+  if (!stringUrl) {
+    return null;
+  }
+
+  if (stringUrl.startsWith('http://') || stringUrl.startsWith('https://') || stringUrl.startsWith('data:')) {
+    return stringUrl;
+  }
+
+  const cleanPath = stringUrl.startsWith('/') ? stringUrl.slice(1) : stringUrl;
+  return `${API_BASE_URL}/${cleanPath}`;
+};
+
 // ==================== 🚀 MAIN API SERVICE ====================
 
 const ApiService = {
   // ==================== 🔧 UTILITY METHODS ====================
-
+  
   delay: (ms) => new Promise(resolve => setTimeout(resolve, ms)),
 
   isRetryableError: (error) => {
@@ -84,64 +102,6 @@ const ApiService = {
       return datetime;
     }
   },
-  
-  processAvatarUrl: (avatarUrl) => {
-    if (!avatarUrl) return null;
-
-    // Nếu đã là URL đầy đủ (http/https), trả về nguyên bản
-    if (avatarUrl.startsWith('http://') || avatarUrl.startsWith('https://')) {
-      return avatarUrl;
-    }
-
-    // Nếu là đường dẫn tương đối (bắt đầu bằng /), ghép với API_BASE_URL
-    if (avatarUrl.startsWith('/')) {
-      return `${API_BASE_URL}${avatarUrl}`;
-    }
-
-    // Fallback: thêm / vào đầu
-    return `${API_BASE_URL}/${avatarUrl}`;
-  },
-    // ✅ THÊM FUNCTION NÀY
-getUserAvatar: async (userId) => {
-  try {
-    if (!userId) {
-      console.warn('⚠️ getUserAvatar: No userId provided');
-      return null;
-    }
-
-    console.log(`👤 Fetching avatar for user: ${userId}`);
-
-    // ✅ GỌI API LẤY THÔNG TIN USER
-    const url = `${API_BASE_URL}/api/users/${encodeURIComponent(userId)}`;
-
-    const { data } = await ApiService.makeRequest(url, {
-      method: 'GET',
-      credentials: 'include',
-      headers: { 'accept': 'application/json' },
-      timeout: 10000
-    });
-
-    // ✅ PARSE AVATAR URL TỪ RESPONSE
-    if (data && data.status === 'success' && data.data) {
-      const avatarUrl = data.data.avatar_url || data.data.avatar || null;
-      
-      if (avatarUrl) {
-        const processedUrl = ApiService.processAvatarUrl(avatarUrl);
-        console.log(`✅ Avatar found for ${userId}:`, processedUrl);
-        return processedUrl;
-      }
-    }
-
-    console.warn(`⚠️ No avatar found for user: ${userId}`);
-    return null;
-
-  } catch (error) {
-    console.error(`❌ Error fetching avatar for ${userId}:`, error);
-    
-    // ✅ KHÔNG THROW LỖI - TRẢ VỀ NULL ĐỂ HIỂN THỊ FALLBACK
-    return null;
-  }
-},
 
   makeRequest: async (url, options = {}, retryCount = 0) => {
     const maxRetries = options.maxRetries || 3;
@@ -218,6 +178,11 @@ getUserAvatar: async (userId) => {
     }
   },
 
+  
+  processAvatarUrl: (url) => buildAbsoluteUrl(url),
+
+  processMediaUrl: (url) => buildAbsoluteUrl(url),
+
   // ==================== 🔐 AUTH API ====================
 
   loginWithEmail: async (email, successUrl = null) => {
@@ -259,7 +224,7 @@ getUserAvatar: async (userId) => {
       let errorMessage = 'Không thể gửi email đăng nhập';
       if (error.statusCode === 400) errorMessage = error.message || 'Dữ liệu không hợp lệ';
       else if (error.statusCode === 404) errorMessage = 'Không tìm thấy người dùng';
-
+      
       return {
         success: false,
         message: errorMessage,
@@ -308,8 +273,13 @@ getUserAvatar: async (userId) => {
 
       console.log('📥 Raw session data:', data);
 
-      // ✅ NEW STRUCTURE
       if (data && data.authenticated && data.account) {
+
+        const rawAvatarUrl = data.account.avatar_url || 
+                             data.profile?.avatar_url || 
+                             data.profile?.picture;
+        const processedAvatarUrl = ApiService.processAvatarUrl(rawAvatarUrl);
+
         const user = {
           id: data.account.user_id,
           userId: data.account.user_id,
@@ -320,20 +290,20 @@ getUserAvatar: async (userId) => {
           profile: data.profile,
           created_at: data.account.created_at,
           updated_at: data.account.updated_at,
-          accountId: data.account.id
+          accountId: data.account.id,
+          avatar_url: processedAvatarUrl,
         };
 
         console.log('✅ Session parsed (NEW structure):', user);
 
-        return {
-          success: true,
-          session: data,
+        return { 
+          success: true, 
+          session: data, 
           user: user,
-          message: 'Lấy session thành công (new format)'
+          message: 'Lấy session thành công (new format)' 
         };
       }
 
-      // ✅ FALLBACK: Old structure
       if (data && data.user) {
         console.warn('⚠️ Old session structure detected, converting...');
         const user = {
@@ -345,11 +315,11 @@ getUserAvatar: async (userId) => {
           ...data.user
         };
 
-        return {
-          success: true,
-          session: data,
-          user: user,
-          message: 'Lấy session thành công (old format)'
+        return { 
+          success: true, 
+          session: data, 
+          user: user, 
+          message: 'Lấy session thành công (old format)' 
         };
       }
 
@@ -357,22 +327,22 @@ getUserAvatar: async (userId) => {
 
     } catch (error) {
       console.error('❌ Get session error:', error);
-
+      
       if (error.statusCode === 401) {
-        return {
-          success: false,
-          session: null,
-          user: null,
-          message: 'Chưa đăng nhập',
-          requireLogin: true
+        return { 
+          success: false, 
+          session: null, 
+          user: null, 
+          message: 'Chưa đăng nhập', 
+          requireLogin: true 
         };
       }
-      return {
-        success: false,
-        session: null,
-        user: null,
-        message: error.message,
-        error: error.message
+      return { 
+        success: false, 
+        session: null, 
+        user: null, 
+        message: error.message, 
+        error: error.message 
       };
     }
   },
@@ -388,6 +358,7 @@ getUserAvatar: async (userId) => {
       StorageService.removeItem('userData');
       StorageService.removeItem('isAuthenticated');
       StorageService.removeItem('pendingUser');
+      cache.clear();
       return { success: true, message: 'Đăng xuất thành công' };
     } catch (error) {
       return { success: true, message: 'Đã xóa dữ liệu local' };
@@ -395,8 +366,8 @@ getUserAvatar: async (userId) => {
   },
 
   // ==================== 📝 POSTS & INTERACTION API ====================
-
-  getPosts: async (page = 1, limit = 10, forceRefresh = false, filters = {}) => {
+  
+  getPosts: async (page = 1, limit = 100, forceRefresh = false, filters = {}) => {
     const cacheKey = `posts_${page}_${limit}_${JSON.stringify(filters)}`;
 
     if (!forceRefresh && cache.has(cacheKey)) {
@@ -406,7 +377,7 @@ getUserAvatar: async (userId) => {
 
     try {
       const currentUserId = ApiService.getCurrentUserId();
-
+      
       const params = new URLSearchParams({
         page: page,
         limit: limit,
@@ -424,9 +395,25 @@ getUserAvatar: async (userId) => {
       });
 
       if (data && data.status === 'success' && data.data) {
+        const rawPosts = data.data.posts || [];
+
+        const processedPosts = rawPosts.map(post => ({
+          ...post,
+          avatar_url: ApiService.processAvatarUrl 
+            ? ApiService.processAvatarUrl(post.avatar_url) 
+            : (post.avatar_url?.startsWith('http') ? post.avatar_url : (post.avatar_url ? `${API_BASE_URL}/${post.avatar_url}` : null)),
+          
+          original_post: post.original_post ? {
+            ...post.original_post,
+            avatar_url: ApiService.processAvatarUrl 
+              ? ApiService.processAvatarUrl(post.original_post.avatar_url)
+              : (post.original_post.avatar_url?.startsWith('http') ? post.original_post.avatar_url : (post.original_post.avatar_url ? `${API_BASE_URL}/${post.original_post.avatar_url}` : null))
+          } : null
+        }));
+
         const result = {
           success: true,
-          posts: data.data.posts || [],
+          posts: processedPosts,
           pagination: data.data.pageinfo || {},
           filters: data.data.filter || {},
           message: data.message || 'Lấy posts thành công'
@@ -436,7 +423,7 @@ getUserAvatar: async (userId) => {
         setTimeout(() => cache.delete(cacheKey), 60000);
         return result;
       } else {
-        throw new ApiError(data?.message || 'Format response không hợp lệ', 500);
+         throw new ApiError(data?.message || 'Format response không hợp lệ', 500);
       }
 
     } catch (error) {
@@ -448,7 +435,7 @@ getUserAvatar: async (userId) => {
   createPost: async (userId, postDataOrContent, privacy = 'Personal & Family') => {
     try {
       let postData;
-
+      
       if (typeof postDataOrContent === 'string') {
         postData = {
           userid: userId,
@@ -495,7 +482,7 @@ getUserAvatar: async (userId) => {
         throw new ApiError('Thiếu thông tin bắt buộc', 400);
       }
 
-      const targetId = docid || sn;
+      const targetId = docid || sn; 
 
       console.log(`💬 Thêm comment cho post ${targetId}`);
 
@@ -505,7 +492,7 @@ getUserAvatar: async (userId) => {
         body: JSON.stringify({
           userid,
           content,
-          docid: targetId
+          docid: targetId 
         })
       });
 
@@ -540,7 +527,7 @@ getUserAvatar: async (userId) => {
 
       return {
         success: true,
-        data: data.data,
+        data: data.data, 
         message: data.message || 'Amen 成功'
       };
 
@@ -573,55 +560,234 @@ getUserAvatar: async (userId) => {
 
     } catch (error) {
       console.error('❌ Comment Amen thất bại:', error);
-      return {
-        success: false,
-        message: error.message,
-        error: error.message
+      return { 
+        success: false, 
+        message: error.message, 
+        error: error.message 
       };
     }
   },
 
-  createWitness: async (userId, content, parentDocid) => {
-    try {
-      console.log(`✨ Create Witness for ${parentDocid}`);
+getComments: async (postDocid, page = 1, limit = 100) => {
+  try {
+    if (!postDocid) {
+      throw new ApiError('Post docid không được để trống', 400);
+    }
 
-      const { data } = await ApiService.makeRequest(`${POSTS_API_URL}/witness`, {
+    console.log(`💬 Lấy comments cho post ${postDocid} - Page ${page}`);
+
+    // ✅ SỬA: Dùng lại /api/page với filter parent_docid
+    const params = new URLSearchParams({
+      page: page.toString(),
+      limit: limit.toString(),
+      parent_docid: postDocid,
+      viewer_userid: ApiService.getCurrentUserId() || ''
+    });
+
+    const url = `${POSTS_API_URL}/page?${params.toString()}`;
+    
+    console.log('📡 Fetching comments from:', url);
+
+    const { data } = await ApiService.makeRequest(url, {
+      method: 'GET',
+      credentials: 'include',
+      maxRetries: 2
+    });
+
+    console.log('📥 Raw API response:', data);
+
+    if (data && data.status === 'success' && data.data) {
+      const rawPosts = data.data.posts || [];
+      
+      console.log(`📦 Total posts returned: ${rawPosts.length}`);
+      
+      // ✅ Filter: Chỉ lấy posts có parent_docid = postDocid VÀ KHÔNG PHẢI witness
+      const comments = rawPosts.filter(p => {
+        const isComment = p.parent_docid === postDocid;
+        const isNotWitness = p.event !== 'witness';
+        
+        console.log(`  Post ${p.docid}: parent=${p.parent_docid}, event=${p.event}, isComment=${isComment}, isNotWitness=${isNotWitness}`);
+        
+        return isComment && isNotWitness;
+      });
+
+      console.log(`✅ Filtered ${comments.length} comments for post ${postDocid}`);
+
+      return {
+        success: true,
+        comments: comments,
+        pagination: data.data.pageinfo || {},
+        message: `Lấy ${comments.length} comments thành công`
+      };
+    }
+
+    throw new ApiError('Invalid response format', 500);
+
+  } catch (error) {
+    console.error('❌ Lấy comments thất bại:', error);
+    return { 
+      success: false, 
+      comments: [], 
+      pagination: {},
+      message: error.message,
+      error: error.message
+    };
+  }
+},
+
+  // ==================== ✨ WITNESS API ====================
+
+  createWitness: async (userId, content, parentDocid, imageFile = null) => {
+    try {
+      console.log(`✨ Create Witness for ${parentDocid}`, {
+        userId,
+        content: content.substring(0, 50) + '...',
+        hasImage: !!imageFile
+      });
+
+      const formData = new FormData();
+      formData.append('userid', userId);
+      formData.append('content', content);
+      formData.append('parent_docid', parentDocid);
+
+      if (imageFile && imageFile instanceof File) {
+        console.log('📸 Adding image:', imageFile.name, 
+                    `(${(imageFile.size / 1024).toFixed(2)} KB)`);
+        formData.append('file', imageFile);
+      }
+
+      console.log('📤 FormData contents:');
+      for (let [key, value] of formData.entries()) {
+        if (value instanceof File) {
+          console.log(`  ${key}: [File] ${value.name} (${(value.size / 1024).toFixed(2)} KB)`);
+        } else {
+          console.log(`  ${key}: ${value}`);
+        }
+      }
+
+      const response = await fetch(`${POSTS_API_URL}/witness`, {
         method: 'POST',
         credentials: 'include',
-        body: JSON.stringify({
-          userid: userId,
-          content: content,
-          parent_docid: parentDocid
-        })
+        body: formData
       });
+
+      console.log('📥 Response status:', response.status);
+
+      let data;
+      const contentType = response.headers.get('content-type');
+      
+      if (contentType && contentType.includes('application/json')) {
+        data = await response.json();
+        console.log('📥 Response data:', data);
+      } else {
+        const text = await response.text();
+        console.error('❌ Response không phải JSON:', text.substring(0, 200));
+        
+        return {
+          success: false,
+          message: 'Backend trả về không phải JSON',
+          error: text.substring(0, 200)
+        };
+      }
+
+      if (!response.ok) {
+        console.error('❌ Backend trả về lỗi:', data);
+        
+        let errorMessage = 'Tạo witness thất bại';
+        
+        if (data.detail) {
+          if (typeof data.detail === 'string') {
+            errorMessage = data.detail;
+          } else if (Array.isArray(data.detail)) {
+            errorMessage = data.detail.map(err => 
+              `[${err.loc?.join(' > ') || 'unknown'}] ${err.msg}`
+            ).join(', ');
+          }
+        } else if (data.message) {
+          errorMessage = data.message;
+        }
+        
+        return {
+          success: false,
+          message: errorMessage,
+          error: errorMessage
+        };
+      }
 
       cache.clear();
 
       return {
         success: true,
-        witness: data.data?.witness,
+        witness: data.data?.witness || data.data || data,
         message: data.message || '見證新增成功'
       };
+
     } catch (error) {
       console.error('❌ Create Witness failed:', error);
-      return { success: false, message: error.message, error: error.message };
+      
+      let errorMessage = 'Không thể kết nối đến server';
+      
+      if (error instanceof TypeError && error.message.includes('Failed to fetch')) {
+        errorMessage = 'Lỗi mạng - Không thể kết nối đến server';
+      } else if (error.name === 'AbortError') {
+        errorMessage = 'Request timeout';
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      
+      return { 
+        success: false, 
+        message: errorMessage, 
+        error: error.message 
+      };
     }
   },
 
-  getWitnessList: async (page = 1, limit = 10) => {
+  getWitnessList: async (page = 1, limit = 100) => {
     try {
       const params = new URLSearchParams({ page, limit });
       const url = `${POSTS_API_URL}/witness-list?${params.toString()}`;
-
-      const { data } = await ApiService.makeRequest(url, {
+      
+      const { data } = await ApiService.makeRequest(url, { 
         method: 'GET',
         credentials: 'include'
       });
 
       if (data && data.status === 'success' && data.data) {
+        const rawWitnesses = data.data.witnesses || [];
+        
+        const processedWitnesses = rawWitnesses.map(witness => {
+          const processedImage = ApiService.processMediaUrl
+            ? ApiService.processMediaUrl(witness.image_url || witness.image)
+            : (witness.image_url || witness.image);
+
+          let processedOriginalPost = null;
+          if (witness.original_post) {
+            const originalImageSource = witness.original_post.image_url || witness.original_post.image;
+            const processedOriginalImage = ApiService.processMediaUrl
+              ? ApiService.processMediaUrl(originalImageSource)
+              : originalImageSource;
+
+            processedOriginalPost = {
+              ...witness.original_post,
+              avatar_url: ApiService.processAvatarUrl(witness.original_post.avatar_url),
+              image_url: processedOriginalImage,
+              image: processedOriginalImage
+            };
+          }
+
+          return {
+            ...witness,
+            avatar_url: ApiService.processAvatarUrl(witness.avatar_url),
+            image_url: processedImage,
+            image: processedImage,
+            original_post: processedOriginalPost
+          };
+        });
+
         return {
           success: true,
-          witnesses: data.data.witnesses || [],
+          witnesses: processedWitnesses,
           pagination: data.data.pageinfo || {},
           message: data.message
         };
@@ -633,48 +799,21 @@ getUserAvatar: async (userId) => {
     }
   },
 
-  getComments: async (postDocid) => {
-    try {
-      console.log(`💬 獲取評論 for ${postDocid}`);
-      const result = await ApiService.getPosts(1, 50, false, {
-        event: 'comment'
-      });
-
-      if (result.success) {
-        const filteredComments = result.posts.filter(c => c.parent_docid === postDocid);
-        return {
-          success: true,
-          comments: filteredComments,
-          message: 'Lấy comments thành công'
-        };
-      }
-      return { success: false, comments: [] };
-
-    } catch (error) {
-      console.error('❌ Lấy comments thất bại:', error);
-      return { success: false, comments: [], message: error.message };
-    }
-  },
-
-  // ==================== 🎪 ACTIVITIES API (✅ FIXED - NO TRIBE PARAM) ====================
+  // ==================== 🎪 ACTIVITIES API ====================
 
   getActivities: async (params = {}) => {
     try {
       const {
         page = 1,
         limit = 10
-        // ❌ XÓA - Backend không hỗ trợ:
-        // tribe = null,
-        // is_published = null
       } = params;
 
-      // ✅ CHỈ GỬI page và limit
       const queryParams = new URLSearchParams();
       queryParams.append('page', page);
       queryParams.append('limit', limit);
 
       const url = `${API_BASE_URL}/api/activities?${queryParams.toString()}`;
-
+      
       console.log('🎪 Requesting activities:', url);
 
       const { data, response } = await ApiService.makeRequest(url, {
@@ -693,7 +832,6 @@ getUserAvatar: async (userId) => {
         );
       }
 
-      // ✅ Parse response - Support multiple formats
       if (data && data.status === 'success' && data.data) {
         return {
           success: true,
@@ -704,7 +842,6 @@ getUserAvatar: async (userId) => {
         };
       }
 
-      // ✅ Fallback: Direct array
       if (Array.isArray(data)) {
         return {
           success: true,
@@ -715,7 +852,6 @@ getUserAvatar: async (userId) => {
         };
       }
 
-      // ✅ Fallback: Data at root
       if (data && data.activities) {
         return {
           success: true,
@@ -730,9 +866,9 @@ getUserAvatar: async (userId) => {
 
     } catch (error) {
       console.error('❌ Lấy activities thất bại:', error);
-
+      
       let errorMessage = error.message;
-
+      
       if (error.statusCode === 403) {
         errorMessage = '⛔ Không có quyền truy cập. Vui lòng đăng nhập lại.';
       } else if (error.statusCode === 401) {
@@ -740,10 +876,10 @@ getUserAvatar: async (userId) => {
       } else if (error.statusCode === 0) {
         errorMessage = '🌐 Không thể kết nối đến server. Vui lòng kiểm tra mạng.';
       }
-
-      return {
-        success: false,
-        activities: [],
+      
+      return { 
+        success: false, 
+        activities: [], 
         pageinfo: {},
         total: 0,
         message: errorMessage,
@@ -781,11 +917,11 @@ getUserAvatar: async (userId) => {
 
     } catch (error) {
       console.error('❌ Lấy activity thất bại:', error);
-      return {
-        success: false,
+      return { 
+        success: false, 
         activity: null,
-        message: error.message,
-        error: error.message
+        message: error.message, 
+        error: error.message 
       };
     }
   },
@@ -811,18 +947,18 @@ getUserAvatar: async (userId) => {
       formData.append('event_date', activityData.event_date);
       formData.append('event_time', activityData.event_time || '00:00-23:59');
       formData.append('description', activityData.description || '');
-
+      
       if (activityData.coverImageFile && activityData.coverImageFile instanceof File) {
-        console.log('📸 Adding cover image:', activityData.coverImageFile.name,
-          `(${(activityData.coverImageFile.size / 1024).toFixed(2)} KB)`);
+        console.log('📸 Adding cover image:', activityData.coverImageFile.name, 
+                    `(${(activityData.coverImageFile.size / 1024).toFixed(2)} KB)`);
         formData.append('files', activityData.coverImageFile);
       }
 
       if (activityData.imageFiles && Array.isArray(activityData.imageFiles)) {
         activityData.imageFiles.forEach((file, index) => {
           if (file instanceof File) {
-            console.log(`🖼️ Adding image ${index + 1}:`, file.name,
-              `(${(file.size / 1024).toFixed(2)} KB)`);
+            console.log(`🖼️ Adding image ${index + 1}:`, file.name, 
+                        `(${(file.size / 1024).toFixed(2)} KB)`);
             formData.append('files', file);
           }
         });
@@ -855,14 +991,14 @@ getUserAvatar: async (userId) => {
 
       let data;
       const contentType = response.headers.get('content-type');
-
+      
       if (contentType && contentType.includes('application/json')) {
         data = await response.json();
         console.log('📥 Response data:', data);
       } else {
         const text = await response.text();
         console.error('❌ Response không phải JSON:', text.substring(0, 200));
-
+        
         return {
           success: false,
           message: 'Backend trả về không phải JSON',
@@ -873,21 +1009,21 @@ getUserAvatar: async (userId) => {
 
       if (!response.ok) {
         console.error('❌ Backend trả về lỗi:', data);
-
+        
         let errorMessage = 'Tạo activity thất bại';
-
+        
         if (data.detail) {
           if (typeof data.detail === 'string') {
             errorMessage = data.detail;
           } else if (Array.isArray(data.detail)) {
-            errorMessage = data.detail.map(err =>
+            errorMessage = data.detail.map(err => 
               `[${err.loc?.join(' > ') || 'unknown'}] ${err.msg}`
             ).join(', ');
           }
         } else if (data.message) {
           errorMessage = data.message;
         }
-
+        
         return {
           success: false,
           message: errorMessage,
@@ -907,9 +1043,9 @@ getUserAvatar: async (userId) => {
 
     } catch (error) {
       console.error('❌ Tạo activity thất bại:', error);
-
+      
       let errorMessage = 'Không thể kết nối đến server';
-
+      
       if (error instanceof TypeError && error.message.includes('Failed to fetch')) {
         errorMessage = 'Lỗi mạng - Không thể kết nối đến server';
       } else if (error.name === 'AbortError') {
@@ -917,9 +1053,9 @@ getUserAvatar: async (userId) => {
       } else if (error.message) {
         errorMessage = error.message;
       }
-
-      return {
-        success: false,
+      
+      return { 
+        success: false, 
         message: errorMessage,
         error: errorMessage,
         statusCode: error.statusCode || 0
@@ -986,9 +1122,9 @@ getUserAvatar: async (userId) => {
 
     } catch (error) {
       console.error('❌ Cập nhật activity thất bại:', error);
-      return {
-        success: false,
-        message: error.message,
+      return { 
+        success: false, 
+        message: error.message, 
         error: error.message,
         statusCode: error.statusCode
       };
@@ -1026,9 +1162,9 @@ getUserAvatar: async (userId) => {
 
     } catch (error) {
       console.error(`❌ ${isPublish ? 'Publish' : 'Unpublish'} thất bại:`, error);
-      return {
-        success: false,
-        message: error.message,
+      return { 
+        success: false, 
+        message: error.message, 
         error: error.message,
         statusCode: error.statusCode
       };
@@ -1077,9 +1213,9 @@ getUserAvatar: async (userId) => {
 
     } catch (error) {
       console.error('❌ Gửi lời mời thất bại:', error);
-      return {
-        success: false,
-        message: error.message,
+      return { 
+        success: false, 
+        message: error.message, 
         error: error.message,
         statusCode: error.statusCode
       };
@@ -1109,10 +1245,10 @@ getUserAvatar: async (userId) => {
 
     } catch (error) {
       console.error('❌ Lấy danh sách thất bại:', error);
-      return {
-        success: false,
-        incoming: [],
-        outgoing: [],
+      return { 
+        success: false, 
+        incoming: [], 
+        outgoing: [], 
         message: error.message,
         error: error.message
       };
@@ -1140,8 +1276,8 @@ getUserAvatar: async (userId) => {
           'Content-Type': 'application/json',
           'accept': 'application/json'
         },
-        body: JSON.stringify({
-          accept: accept
+        body: JSON.stringify({ 
+          accept: accept 
         })
       });
 
@@ -1164,9 +1300,9 @@ getUserAvatar: async (userId) => {
 
     } catch (error) {
       console.error('❌ Phản hồi lời mời thất bại:', error);
-      return {
-        success: false,
-        message: error.message,
+      return { 
+        success: false, 
+        message: error.message, 
         error: error.message,
         statusCode: error.statusCode
       };
@@ -1181,7 +1317,6 @@ getUserAvatar: async (userId) => {
 
       console.log(`🔍 Tìm kiếm người dùng: "${query}"`);
 
-      // ✅ GỌI API SEARCH USERS
       const url = `${API_BASE_URL}/api/users/search?user_id=${encodeURIComponent(query.trim())}`;
 
       const { data } = await ApiService.makeRequest(url, {
@@ -1195,12 +1330,10 @@ getUserAvatar: async (userId) => {
 
       console.log('📥 Search API response:', data);
 
-      // ✅ PARSE RESPONSE - BACKEND TRẢ VỀ data.data.results ARRAY
       if (data && data.status === 'success' && data.data && data.data.results) {
-
+        
         console.log('📊 Results array:', data.data.results);
-
-        // ✅ KIỂM TRA CÓ KẾT QUẢ KHÔNG
+        
         if (data.data.results.length === 0) {
           return {
             success: false,
@@ -1209,27 +1342,24 @@ getUserAvatar: async (userId) => {
           };
         }
 
-        // ✅ CHUYỂN ĐỔI TẤT CẢ RESULTS THÀNH USER OBJECTS
         const users = data.data.results.map(result => {
-          // ✅ FALLBACK: name → user_id → email prefix → 'Unknown User'
-          const userName = result.name
-            || result.user_id
+          const userName = result.name 
+            || result.user_id 
             || (result.email ? result.email.split('@')[0] : null)
             || 'Unknown User';
-
+          
           return {
             id: result.user_id,
             name: userName,
             username: result.user_id,
             email: result.email,
             tribe: result.tribe,
-            avatar: null
+            avatar: result.avatar_url || null
           };
         });
 
         console.log('✅ Parsed users:', users);
-
-        // ✅ LOG CHI TIẾT TỪNG USER
+        
         users.forEach((user, index) => {
           console.log(`👤 User ${index + 1}:`, {
             id: user.id,
@@ -1247,19 +1377,17 @@ getUserAvatar: async (userId) => {
         };
       }
 
-      // ✅ Không tìm thấy
-      return {
-        success: false,
-        users: [],
-        message: data?.message || 'Không tìm thấy người dùng'
+      return { 
+        success: false, 
+        users: [], 
+        message: data?.message || 'Không tìm thấy người dùng' 
       };
 
     } catch (error) {
       console.error('❌ Tìm kiếm thất bại:', error);
-
-      // ✅ XỬ LÝ CÁC LOẠI LỖI
+      
       let errorMessage = 'Không thể tìm kiếm';
-
+      
       if (error.statusCode === 404) {
         errorMessage = 'Không tìm thấy người dùng với ID này';
       } else if (error.statusCode === 422) {
@@ -1271,10 +1399,10 @@ getUserAvatar: async (userId) => {
       } else if (error.message) {
         errorMessage = error.message;
       }
-
-      return {
-        success: false,
-        users: [],
+      
+      return { 
+        success: false, 
+        users: [], 
         message: errorMessage,
         error: error.message,
         statusCode: error.statusCode
@@ -1282,12 +1410,10 @@ getUserAvatar: async (userId) => {
     }
   },
 
-
-
   getFriends: async (userId = null) => {
     try {
       const currentUserId = userId || ApiService.getCurrentUserId();
-
+      
       console.log(`👥 Lấy danh sách bạn bè cho user: ${currentUserId}`);
 
       const url = `${API_BASE_URL}/api/friends${currentUserId ? `?user_id=${encodeURIComponent(currentUserId)}` : ''}`;
@@ -1302,7 +1428,7 @@ getUserAvatar: async (userId) => {
       });
 
       let friends = [];
-
+      
       if (data && data.status === 'success') {
         if (Array.isArray(data.data)) {
           friends = data.data;
@@ -1315,7 +1441,7 @@ getUserAvatar: async (userId) => {
         id: friend.user_id || friend.id || friend.friend_user_id,
         name: friend.name || friend.username || friend.user_id || 'Unknown',
         username: friend.username || friend.user_id,
-        avatar: friend.avatar || null,
+        avatar: friend.avatar_url || friend.avatar || null,
         relationship: friend.relationship || 'Friend',
         created_at: friend.created_at || friend.friendship_date
       }));
@@ -1329,13 +1455,13 @@ getUserAvatar: async (userId) => {
 
     } catch (error) {
       console.error('❌ Lấy danh sách bạn bè thất bại:', error);
-
+      
       if (error.statusCode === 404 || error.statusCode === 0) {
         console.warn('⚠️ API /api/friends chưa có, thử lấy từ accepted invitations...');
-
+        
         try {
           const invitationsResult = await ApiService.getFriendInvitations();
-
+          
           if (invitationsResult.success) {
             const acceptedIncoming = (invitationsResult.incoming || [])
               .filter(inv => inv.status === 'accepted')
@@ -1376,9 +1502,9 @@ getUserAvatar: async (userId) => {
           console.error('❌ Lấy từ invitations cũng thất bại:', invError);
         }
       }
-
-      return {
-        success: false,
+      
+      return { 
+        success: false, 
         friends: [],
         count: 0,
         message: error.message,
@@ -1390,7 +1516,7 @@ getUserAvatar: async (userId) => {
   getFamily: async (userId = null) => {
     try {
       const currentUserId = userId || ApiService.getCurrentUserId();
-
+      
       console.log(`👨‍👩‍👧‍👦 Lấy danh sách gia đình cho user: ${currentUserId}`);
 
       const url = `${API_BASE_URL}/api/family${currentUserId ? `?user_id=${encodeURIComponent(currentUserId)}` : ''}`;
@@ -1405,7 +1531,7 @@ getUserAvatar: async (userId) => {
       });
 
       let family = [];
-
+      
       if (data && data.status === 'success') {
         if (Array.isArray(data.data)) {
           family = data.data;
@@ -1418,7 +1544,7 @@ getUserAvatar: async (userId) => {
         id: member.user_id || member.id || member.family_member_id,
         name: member.name || member.username || member.user_id || 'Unknown',
         username: member.username || member.user_id,
-        avatar: member.avatar || null,
+        avatar: member.avatar_url || member.avatar || null,
         relationship: member.relationship || 'Family',
         created_at: member.created_at || member.added_date
       }));
@@ -1432,7 +1558,7 @@ getUserAvatar: async (userId) => {
 
     } catch (error) {
       console.error('❌ Lấy danh sách gia đình thất bại:', error);
-
+      
       if (error.statusCode === 404 || error.statusCode === 0) {
         console.warn('⚠️ API /api/family chưa có, trả về danh sách trống');
         return {
@@ -1442,92 +1568,11 @@ getUserAvatar: async (userId) => {
           message: 'API chưa có, danh sách trống'
         };
       }
-
-      return {
-        success: false,
+      
+      return { 
+        success: false, 
         family: [],
         count: 0,
-        message: error.message,
-        error: error.message
-      };
-    }
-  },
-
-
-  getNotifications: async (params = {}) => {
-    try {
-      const limit = params.limit !== undefined ? params.limit : 20;
-      const offset = params.offset !== undefined ? params.offset : 0;
-      const unreadOnly = params.unreadOnly !== undefined ? params.unreadOnly : (params.unread_only !== undefined ? params.unread_only : false);
-
-      const queryParams = new URLSearchParams({
-        limit: limit,
-        offset: offset,
-        unread_only: unreadOnly
-      });
-      
-      const url = `${API_BASE_URL}/api/notifications?${queryParams.toString()}`;
-
-      const { data } = await ApiService.makeRequest(url, {
-        method: 'GET',
-        credentials: 'include',
-        headers: { 'accept': 'application/json' }
-      });
-
-      if (data && data.status === 'success' && data.data) {
-        return {
-          success: true,
-          notifications: data.data.notifications || [],
-          total: data.data.total || 0,
-          unread_count: data.data.unread_count || 0,
-          message: data.message || '取得通知列表成功'
-        };
-      }
-
-      throw new ApiError('無效的回應格式', 500);
-
-    } catch (error) {
-      console.error('取得通知列表失敗:', error);
-      return {
-        success: false,
-        notifications: [],
-        total: 0,
-        unread_count: 0,
-        message: error.message,
-        error: error.message
-      };
-    }
-  },
-
-  
-  markNotificationAsRead: async (notificationId) => {
-    try {
-      if (!notificationId) {
-        throw new ApiError('必須提供通知 ID', 400);
-      }
-
-      const url = `${API_BASE_URL}/api/notifications/${encodeURIComponent(notificationId)}/read`;
-
-      const { data } = await ApiService.makeRequest(url, {
-        method: 'POST',
-        credentials: 'include',
-        headers: { 'accept': 'application/json' }
-      });
-
-      if (data && data.status === 'success' && data.data) {
-        return {
-          success: true,
-          notification: data.data,
-          message: data.message || '標示為已讀成功'
-        };
-      }
-
-      throw new ApiError('無效的回應格式', 500);
-
-    } catch (error) {
-      console.error('標示通知為已讀失敗:', error);
-      return {
-        success: false,
         message: error.message,
         error: error.message
       };
@@ -1562,11 +1607,11 @@ getUserAvatar: async (userId) => {
 
     } catch (error) {
       console.error('❌ Lấy số dư thất bại:', error);
-      return {
-        success: false,
+      return { 
+        success: false, 
         balance: 0,
-        message: error.message,
-        error: error.message
+        message: error.message, 
+        error: error.message 
       };
     }
   },
@@ -1606,12 +1651,12 @@ getUserAvatar: async (userId) => {
 
     } catch (error) {
       console.error('❌ Lấy lịch sử thất bại:', error);
-      return {
-        success: false,
+      return { 
+        success: false, 
         transactions: [],
         pageinfo: {},
-        message: error.message,
-        error: error.message
+        message: error.message, 
+        error: error.message 
       };
     }
   },
@@ -1651,27 +1696,27 @@ getUserAvatar: async (userId) => {
       console.log('📝 TEST 1: Tạo post...');
       const postResult = await ApiService.createPost(userId, 'Test post for YCoin');
       const postId = postResult.post?.docid;
-
+      
       await ApiService.delay(1000);
-
+      
       const balanceAfterPost = await ApiService.getUserBalance(userId);
       console.log(`   → Balance sau khi post: ${balanceAfterPost.balance}Y`);
       console.log(`   → Tăng: ${balanceAfterPost.balance - initialBalance.balance}Y (Expected: +1Y)\n`);
 
       console.log('🙏 TEST 2: Amen lần 1...');
       await ApiService.likePost(postId, userId);
-
+      
       await ApiService.delay(1000);
-
+      
       const balanceAfterAmen1 = await ApiService.getUserBalance(userId);
       console.log(`   → Balance sau Amen 1: ${balanceAfterAmen1.balance}Y`);
       console.log(`   → Tăng: ${balanceAfterAmen1.balance - balanceAfterPost.balance}Y (Expected: +0.2Y)\n`);
 
       console.log('🙏 TEST 3: Amen lần 2 (test limit)...');
       await ApiService.likePost(postId, userId);
-
+      
       await ApiService.delay(1000);
-
+      
       const balanceAfterAmen2 = await ApiService.getUserBalance(userId);
       console.log(`   → Balance sau Amen 2: ${balanceAfterAmen2.balance}Y`);
       console.log(`   → Thay đổi: ${balanceAfterAmen2.balance - balanceAfterAmen1.balance}Y`);
@@ -1683,9 +1728,9 @@ getUserAvatar: async (userId) => {
         content: 'Test comment 1',
         docid: postId
       });
-
+      
       await ApiService.delay(1000);
-
+      
       const balanceAfterComment1 = await ApiService.getUserBalance(userId);
       console.log(`   → Balance sau Comment 1: ${balanceAfterComment1.balance}Y`);
       console.log(`   → Tăng: ${balanceAfterComment1.balance - balanceAfterAmen2.balance}Y (Expected: +1Y)\n`);
@@ -1696,9 +1741,9 @@ getUserAvatar: async (userId) => {
         content: 'Test comment 2',
         docid: postId
       });
-
+      
       await ApiService.delay(1000);
-
+      
       const balanceAfterComment2 = await ApiService.getUserBalance(userId);
       console.log(`   → Balance sau Comment 2: ${balanceAfterComment2.balance}Y`);
       console.log(`   → Tăng: ${balanceAfterComment2.balance - balanceAfterComment1.balance}Y`);
@@ -1713,7 +1758,7 @@ getUserAvatar: async (userId) => {
       });
 
       console.log('\n✅ TEST HOÀN TẤT!');
-
+      
       return {
         success: true,
         results: {
@@ -1729,6 +1774,860 @@ getUserAvatar: async (userId) => {
     } catch (error) {
       console.error('❌ TEST FAILED:', error);
       return { success: false, error: error.message };
+    }
+  },
+
+  // ==================== 👤 USER PROFILE & AVATAR API ====================
+
+  getUserProfile: async (userId) => {
+    try {
+      if (!userId) {
+        userId = ApiService.getCurrentUserId();
+      }
+
+      if (!userId) {
+        throw new ApiError('User ID 不可為空', 400);
+      }
+
+      console.log(`👤 獲取 Profile: ${userId}`);
+
+      const url = `${AUTH_API_URL}/profile?user_id=${encodeURIComponent(userId)}`;
+
+      const { data } = await ApiService.makeRequest(url, {
+        method: 'GET',
+        credentials: 'include',
+        headers: { 'accept': 'application/json' },
+        timeout: 10000
+      });
+
+      let profileData = null;
+      if (data && data.profile) {
+        profileData = data.profile;
+      } else if (data && (data.user_id || data.id)) {
+        profileData = data;
+      }
+
+      if (profileData) {
+        const processedAvatar = ApiService.processAvatarUrl(profileData.avatar_url);
+
+        return {
+          success: true,
+          profile: {
+            id: profileData.id,
+            user_id: profileData.user_id || profileData.id,
+            name: profileData.name,
+            email: profileData.email,
+            avatar_url: processedAvatar,
+            has_custom_avatar: !!processedAvatar,
+            tribe: profileData.tribe,
+            coins: profileData.coins || 0,
+            created_at: profileData.created_at,
+            updated_at: profileData.updated_at
+          },
+          message: '獲取 Profile 成功'
+        };
+      }
+
+      throw new ApiError('資料格式不符', 500, data);
+
+    } catch (error) {
+      console.error('❌ 獲取 Profile 失敗:', error);
+      
+      if (error.statusCode === 422 || error.statusCode === 400) {
+        console.warn('⚠️ API 不支援 user_id 參數');
+        return {
+          success: false,
+          profile: null,
+          message: 'API 不支援獲取該使用者的 Profile',
+          error: error.message
+        };
+      }
+      
+      return { 
+        success: false, 
+        profile: null,
+        message: error.message, 
+        error: error.message 
+      };
+    }
+  },
+
+  getAvatarUrl: (userId, profileData = null) => {
+    if (!userId) return null;
+    
+    if (profileData && profileData.avatar_url) {
+      const avatarUrl = profileData.avatar_url;
+      
+      if (avatarUrl.startsWith('uploads/')) {
+        return `${API_BASE_URL}/${avatarUrl}?t=${Date.now()}`;
+      }
+      
+      if (avatarUrl.startsWith('http')) {
+        return avatarUrl;
+      }
+      
+      return `${API_BASE_URL}/${avatarUrl}?t=${Date.now()}`;
+    }
+    
+    return null;
+  },
+
+  getUserAvatar: async (userId) => {
+    try {
+      const currentUserId = ApiService.getCurrentUserId();
+
+      if (userId === currentUserId) {
+        const sessionResult = await ApiService.getAuthSession();
+        if (sessionResult.success && sessionResult.user) {
+          const avatarUrl = sessionResult.user.avatar_url || sessionResult.user.profile?.picture;
+          return {
+            success: true,
+            avatar_url: ApiService.processAvatarUrl(avatarUrl),
+            user_id: userId
+          };
+        }
+      }
+
+      return {
+        success: false,
+        avatar_url: null,
+        user_id: userId,
+        message: '無法直接查詢其他使用者的頭像'
+      };
+
+    } catch (error) {
+      console.error('❌ Get user avatar failed:', error);
+      return { success: false, avatar_url: null };
+    }
+  },
+
+  uploadAvatar: async (userId, imageFile) => {
+    try {
+      if (!userId) {
+        throw new ApiError('User ID không được để trống', 400);
+      }
+
+      if (!imageFile || !(imageFile instanceof File)) {
+        throw new ApiError('File ảnh không hợp lệ', 400);
+      }
+
+      if (!imageFile.type.startsWith('image/')) {
+        throw new ApiError('Chỉ chấp nhận file ảnh (JPG, PNG, WEBP)', 400);
+      }
+
+      if (imageFile.size > 5 * 1024 * 1024) {
+        throw new ApiError('Kích thước file phải nhỏ hơn 5MB', 400);
+      }
+
+      console.log('📸 Upload avatar:', imageFile.name, 
+                  `(${(imageFile.size / 1024).toFixed(2)} KB)`);
+
+      const formData = new FormData();
+      formData.append('file', imageFile);
+      formData.append('avatar_url', '');
+
+      console.log('📤 FormData contents:');
+      for (let [key, value] of formData.entries()) {
+        if (value instanceof File) {
+          console.log(`  ${key}: [File] ${value.name} (${(value.size / 1024).toFixed(2)} KB)`);
+        } else {
+          console.log(`  ${key}: "${value}"`);
+        }
+      }
+
+      const response = await fetch(
+        `${AUTH_API_URL}/profile/avatar`,
+        {
+          method: 'POST',
+          credentials: 'include',
+          body: formData
+        }
+      );
+
+      console.log('📥 Response status:', response.status);
+
+      let data;
+      const contentType = response.headers.get('content-type');
+      
+      if (contentType && contentType.includes('application/json')) {
+        data = await response.json();
+        console.log('📥 Response data:', data);
+      } else {
+        const text = await response.text();
+        console.log('📥 Response text:', text);
+        
+        if (response.ok && text) {
+          const avatarUrl = text.replace(/"/g, '');
+          return {
+            success: true,
+            avatar_url: avatarUrl,
+            message: 'Upload avatar thành công'
+          };
+        }
+        
+        throw new ApiError('Backend trả về không phải JSON', response.status);
+      }
+
+      if (!response.ok) {
+        let errorMessage = 'Upload avatar thất bại';
+        
+        if (data.detail) {
+          if (typeof data.detail === 'string') {
+            errorMessage = data.detail;
+          } else if (Array.isArray(data.detail)) {
+            errorMessage = data.detail.map(err => 
+              `[${err.loc?.join(' > ') || 'unknown'}] ${err.msg}`
+            ).join(', ');
+          }
+        } else if (data.message) {
+          errorMessage = data.message;
+        }
+        
+        throw new ApiError(errorMessage, response.status, data);
+      }
+
+      cache.clear();
+
+      let avatarUrl = null;
+      
+      if (typeof data === 'string') {
+        avatarUrl = data;
+      } else if (data.ok && data.profile) {
+        avatarUrl = data.profile.avatar_url;
+      } else if (data.avatar_url) {
+        avatarUrl = data.avatar_url;
+      } else if (data.data?.avatar_url) {
+        avatarUrl = data.data.avatar_url;
+      }
+
+      return {
+        success: true,
+        avatar_url: avatarUrl,
+        profile: data.profile || null,
+        message: 'Upload avatar thành công'
+      };
+
+    } catch (error) {
+      console.error('❌ Upload avatar thất bại:', error);
+      return { 
+        success: false, 
+        message: error.message, 
+        error: error.message,
+        statusCode: error.statusCode
+      };
+    }
+  },
+
+  deleteAvatar: async (userId) => {
+    try {
+      if (!userId) {
+        throw new ApiError('User ID không được để trống', 400);
+      }
+
+      console.log('🗑️ Xóa avatar user:', userId);
+
+      const { data } = await ApiService.makeRequest(
+        `${AUTH_API_URL}/profile/avatar`,
+        {
+          method: 'DELETE',
+          credentials: 'include',
+          headers: { 'accept': 'application/json' }
+        }
+      );
+
+      cache.clear();
+
+      return {
+        success: true,
+        message: data.message || 'Xóa avatar thành công'
+      };
+
+    } catch (error) {
+      console.error('❌ Xóa avatar thất bại:', error);
+      return { 
+        success: false, 
+        message: error.message, 
+        error: error.message 
+      };
+    }
+  },
+
+  // ==================== 🤖 AI API ====================
+
+  sendAIMessage: async (messages, sessionUuid = null) => {
+    try {
+      if (!messages || !Array.isArray(messages) || messages.length === 0) {
+        throw new ApiError('Messages array không được để trống', 400);
+      }
+
+      console.log('🤖 Gửi tin nhắn đến AI:', { 
+        messageCount: messages.length, 
+        sessionUuid 
+      });
+
+      const payload = {
+        messages: messages,
+        ...(sessionUuid && { session_uuid: sessionUuid })
+      };
+
+      const { data } = await ApiService.makeRequest(
+        `${API_BASE_URL}/api/ai/chat`,
+        {
+          method: 'POST',
+          credentials: 'include',
+          headers: {
+            'Content-Type': 'application/json',
+            'accept': 'application/json'
+          },
+          body: JSON.stringify(payload),
+          timeout: 30000
+        }
+      );
+
+      if (data && data.status === 'success' && data.data) {
+        return {
+          success: true,
+          message: data.data.message,
+          sessionUuid: data.data.session_uuid,
+          provider: data.data.provider,
+          model: data.data.model,
+          finishReason: data.data.finish_reason,
+          usage: data.data.usage,
+          title: data.data.title,
+          expired: data.data.expired
+        };
+      }
+
+      throw new ApiError('Invalid AI response format', 500);
+
+    } catch (error) {
+      console.error('❌ AI message error:', error);
+      return {
+        success: false,
+        message: error.message,
+        error: error.message,
+        statusCode: error.statusCode
+      };
+    }
+  },
+
+  getAISessions: async () => {
+    try {
+      console.log('📋 Lấy danh sách AI sessions...');
+
+      const { data } = await ApiService.makeRequest(
+        `${API_BASE_URL}/api/ai/sessions`,
+        {
+          method: 'GET',
+          credentials: 'include',
+          headers: { 'accept': 'application/json' }
+        }
+      );
+
+      if (data && data.status === 'success' && data.data) {
+        return {
+          success: true,
+          sessions: data.data,
+          message: data.message || 'Lấy sessions thành công'
+        };
+      }
+
+      throw new ApiError('Invalid response format', 500);
+
+    } catch (error) {
+      console.error('❌ Get AI sessions error:', error);
+      return {
+        success: false,
+        sessions: [],
+        message: error.message,
+        error: error.message
+      };
+    }
+  },
+
+  getAISession: async (sessionUuid) => {
+    try {
+      if (!sessionUuid) {
+        throw new ApiError('Session UUID không được để trống', 400);
+      }
+
+      console.log(`📖 Lấy chi tiết session: ${sessionUuid}`);
+
+      const { data } = await ApiService.makeRequest(
+        `${API_BASE_URL}/api/ai/sessions/${encodeURIComponent(sessionUuid)}`,
+        {
+          method: 'GET',
+          credentials: 'include',
+          headers: { 'accept': 'application/json' }
+        }
+      );
+
+      if (data && data.status === 'success' && data.data) {
+        return {
+          success: true,
+          session: data.data.session,
+          messages: data.data.messages,
+          message: data.message || 'Lấy session thành công'
+        };
+      }
+
+      throw new ApiError('Invalid response format', 500);
+
+    } catch (error) {
+      console.error('❌ Get AI session error:', error);
+      return {
+        success: false,
+        session: null,
+        messages: [],
+        message: error.message,
+        error: error.message
+      };
+    }
+  },
+
+  endAISession: async (sessionUuid) => {
+    try {
+      if (!sessionUuid) {
+        throw new ApiError('Session UUID không được để trống', 400);
+      }
+
+      console.log(`🔚 Kết thúc session: ${sessionUuid}`);
+
+      const { data } = await ApiService.makeRequest(
+        `${API_BASE_URL}/api/ai/sessions/${encodeURIComponent(sessionUuid)}/end`,
+        {
+          method: 'POST',
+          credentials: 'include',
+          headers: {
+            'Content-Type': 'application/json',
+            'accept': 'application/json'
+          }
+        }
+      );
+
+      if (data && data.status === 'success') {
+        return {
+          success: true,
+          session: data.data,
+          message: data.message || 'Kết thúc session thành công'
+        };
+      }
+
+      throw new ApiError('Invalid response format', 500);
+
+    } catch (error) {
+      console.error('❌ End AI session error:', error);
+      return {
+        success: false,
+        message: error.message,
+        error: error.message
+      };
+    }
+  },
+
+  getAIUsage: async () => {
+    try {
+      console.log('📊 Lấy thông tin AI usage...');
+
+      const { data } = await ApiService.makeRequest(
+        `${API_BASE_URL}/api/ai/usage`,
+        {
+          method: 'GET',
+          credentials: 'include',
+          headers: { 'accept': 'application/json' }
+        }
+      );
+
+      if (data && data.status === 'success' && data.data) {
+        return {
+          success: true,
+          used: data.data.used,
+          limit: data.data.limit,
+          windowHours: data.data.window_hours,
+          resetsAt: data.data.resets_at,
+          message: data.message || 'Lấy usage thành công'
+        };
+      }
+
+      throw new ApiError('Invalid response format', 500);
+
+    } catch (error) {
+      console.error('❌ Get AI usage error:', error);
+      return {
+        success: false,
+        used: 0,
+        limit: 0,
+        message: error.message,
+        error: error.message
+      };
+    }
+  },
+
+  // ==================== 🌐 GOOGLE TRANSLATION API ====================
+
+  translate: async (text, targetLang, sourceLang = null) => {
+    try {
+      if (!text || (Array.isArray(text) && text.length === 0)) {
+        throw new ApiError('Text không được để trống', 400);
+      }
+
+      if (!targetLang) {
+        throw new ApiError('Target language không được để trống', 400);
+      }
+
+      console.log(`🌐 Dịch sang ${targetLang}:`, 
+        Array.isArray(text) ? `${text.length} đoạn` : text.substring(0, 50) + '...'
+      );
+
+      const GOOGLE_TRANSLATE_API_KEY = 'AIzaSyDwa1Yuu7ihKTeXU4eFrsqkbxR2a6Vf7Jw';
+      const TRANSLATE_URL = 'https://translation.googleapis.com/language/translate/v2';
+
+      const params = new URLSearchParams({
+        key: GOOGLE_TRANSLATE_API_KEY,
+        target: targetLang,
+        format: 'text'
+      });
+
+      if (sourceLang) {
+        params.append('source', sourceLang);
+      }
+
+      const textArray = Array.isArray(text) ? text : [text];
+      textArray.forEach(t => params.append('q', t));
+
+      const url = `${TRANSLATE_URL}?${params.toString()}`;
+
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded'
+        }
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new ApiError(
+          errorData.error?.message || 'Translation failed',
+          response.status,
+          errorData
+        );
+      }
+
+      const data = await response.json();
+
+      if (data && data.data && data.data.translations) {
+        const translations = data.data.translations.map(t => ({
+          translatedText: t.translatedText,
+          detectedSourceLanguage: t.detectedSourceLanguage || sourceLang
+        }));
+
+        return {
+          success: true,
+          translations: translations,
+          translatedText: Array.isArray(text) 
+            ? translations.map(t => t.translatedText)
+            : translations[0].translatedText,
+          detectedSourceLanguage: translations[0].detectedSourceLanguage,
+          message: 'Dịch thành công'
+        };
+      }
+
+      throw new ApiError('Invalid translation response', 500);
+
+    } catch (error) {
+      console.error('❌ Translation failed:', error);
+      return {
+        success: false,
+        translatedText: Array.isArray(text) ? text : text,
+        message: error.message,
+        error: error.message,
+        statusCode: error.statusCode
+      };
+    }
+  },
+
+  detectLanguage: async (text) => {
+    try {
+      if (!text || (Array.isArray(text) && text.length === 0)) {
+        throw new ApiError('Text không được để trống', 400);
+      }
+
+      console.log('🔍 Phát hiện ngôn ngữ:', 
+        Array.isArray(text) ? `${text.length} đoạn` : text.substring(0, 50) + '...'
+      );
+
+      const GOOGLE_TRANSLATE_API_KEY = 'AIzaSyDwa1Yuu7ihKTeXU4eFrsqkbxR2a6Vf7Jw';
+      const DETECT_URL = 'https://translation.googleapis.com/language/translate/v2/detect';
+
+      const params = new URLSearchParams({
+        key: GOOGLE_TRANSLATE_API_KEY
+      });
+
+      const textArray = Array.isArray(text) ? text : [text];
+      textArray.forEach(t => params.append('q', t));
+
+      const url = `${DETECT_URL}?${params.toString()}`;
+
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded'
+        }
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new ApiError(
+          errorData.error?.message || 'Language detection failed',
+          response.status,
+          errorData
+        );
+      }
+
+      const data = await response.json();
+
+      if (data && data.data && data.data.detections) {
+        const detections = data.data.detections.map(detection => ({
+          language: detection[0].language,
+          confidence: detection[0].confidence,
+          isReliable: detection[0].isReliable
+        }));
+
+        return {
+          success: true,
+          detections: detections,
+          language: Array.isArray(text) 
+            ? detections.map(d => d.language)
+            : detections[0].language,
+          confidence: Array.isArray(text)
+            ? detections.map(d => d.confidence)
+            : detections[0].confidence,
+          message: 'Phát hiện ngôn ngữ thành công'
+        };
+      }
+
+      throw new ApiError('Invalid detection response', 500);
+
+    } catch (error) {
+      console.error('❌ Language detection failed:', error);
+      return {
+        success: false,
+        language: null,
+        message: error.message,
+        error: error.message,
+        statusCode: error.statusCode
+      };
+    }
+  },
+
+  getSupportedLanguages: async (targetLang = 'en') => {
+    try {
+      console.log(`🌍 Lấy danh sách ngôn ngữ hỗ trợ (target: ${targetLang})`);
+
+      const GOOGLE_TRANSLATE_API_KEY = 'AIzaSyDwa1Yuu7ihKTeXU4eFrsqkbxR2a6Vf7Jw';
+      const LANGUAGES_URL = 'https://translation.googleapis.com/language/translate/v2/languages';
+
+      const params = new URLSearchParams({
+        key: GOOGLE_TRANSLATE_API_KEY,
+        target: targetLang
+      });
+
+      const url = `${LANGUAGES_URL}?${params.toString()}`;
+
+      const response = await fetch(url, {
+        method: 'GET'
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new ApiError(
+          errorData.error?.message || 'Failed to get languages',
+          response.status,
+          errorData
+        );
+      }
+
+      const data = await response.json();
+
+      if (data && data.data && data.data.languages) {
+        return {
+          success: true,
+          languages: data.data.languages,
+          count: data.data.languages.length,
+          message: `Lấy ${data.data.languages.length} ngôn ngữ thành công`
+        };
+      }
+
+      throw new ApiError('Invalid languages response', 500);
+
+    } catch (error) {
+      console.error('❌ Get languages failed:', error);
+      return {
+        success: false,
+        languages: [],
+        count: 0,
+        message: error.message,
+        error: error.message,
+        statusCode: error.statusCode
+      };
+    }
+  },
+
+  translatePost: async (post, targetLang) => {
+    try {
+      if (!post || !post.content) {
+        throw new ApiError('Post content không được để trống', 400);
+      }
+
+      console.log(`🌐 Dịch post ${post.docid || post.sn} sang ${targetLang}`);
+
+      const result = await ApiService.translate(post.content, targetLang);
+
+      if (result.success) {
+        return {
+          success: true,
+          originalPost: post,
+          translatedContent: result.translatedText,
+          detectedLanguage: result.detectedSourceLanguage,
+          targetLanguage: targetLang,
+          message: 'Dịch post thành công'
+        };
+      }
+
+      throw new ApiError(result.message || 'Translation failed', 500);
+
+    } catch (error) {
+      console.error('❌ Translate post failed:', error);
+      return {
+        success: false,
+        originalPost: post,
+        translatedContent: post.content,
+        message: error.message,
+        error: error.message
+      };
+    }
+  },
+
+  translateComment: async (comment, targetLang) => {
+    try {
+      if (!comment || !comment.content) {
+        throw new ApiError('Comment content không được để trống', 400);
+      }
+
+      console.log(`🌐 Dịch comment ${comment.docid || comment.sn} sang ${targetLang}`);
+
+      const result = await ApiService.translate(comment.content, targetLang);
+
+      if (result.success) {
+        return {
+          success: true,
+          originalComment: comment,
+          translatedContent: result.translatedText,
+          detectedLanguage: result.detectedSourceLanguage,
+          targetLanguage: targetLang,
+          message: 'Dịch comment thành công'
+        };
+      }
+
+      throw new ApiError(result.message || 'Translation failed', 500);
+
+    } catch (error) {
+      console.error('❌ Translate comment failed:', error);
+      return {
+        success: false,
+        originalComment: comment,
+        translatedContent: comment.content,
+        message: error.message,
+        error: error.message
+      };
+    }
+  },
+
+  // ==================== 🔔 NOTIFICATIONS API ====================
+
+  getNotifications: async (params = {}) => {
+    try {
+      const { limit = 20, offset = 0, unread_only = false } = params;
+      
+      console.log(`🔔 Fetching notifications:`, { limit, offset, unread_only });
+
+      const queryParams = new URLSearchParams({
+        limit: limit.toString(),
+        offset: offset.toString(),
+        unread_only: unread_only.toString()
+      });
+
+      const url = `${API_BASE_URL}/api/notifications?${queryParams.toString()}`;
+
+      const { data } = await ApiService.makeRequest(url, {
+        method: 'GET',
+        credentials: 'include',
+        headers: { 'accept': 'application/json' },
+        timeout: 10000
+      });
+
+      if (data && data.status === 'success' && data.data) {
+        return {
+          success: true,
+          notifications: data.data.notifications || [],
+          total: data.data.total || 0,
+          unread_count: data.data.unread_count || 0,
+          message: data.message || 'Lấy thông báo thành công'
+        };
+      }
+
+      throw new ApiError('Invalid response format', 500);
+
+    } catch (error) {
+      console.error('❌ Get notifications failed:', error);
+      return {
+        success: false,
+        notifications: [],
+        total: 0,
+        unread_count: 0,
+        message: error.message,
+        error: error.message
+      };
+    }
+  },
+
+  markNotificationAsRead: async (notificationId) => {
+    try {
+      if (!notificationId) {
+        throw new ApiError('Notification ID không được để trống', 400);
+      }
+
+      console.log(`✅ Marking notification ${notificationId} as read...`);
+
+      const url = `${API_BASE_URL}/api/notifications/${notificationId}/read`;
+
+      const { data } = await ApiService.makeRequest(url, {
+        method: 'POST',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+          'accept': 'application/json'
+        }
+      });
+
+      if (data && data.status === 'success') {
+        return {
+          success: true,
+          notification: data.data,
+          message: data.message || 'Đánh dấu đã đọc thành công'
+        };
+      }
+
+      throw new ApiError('Invalid response format', 500);
+
+    } catch (error) {
+      console.error('❌ Mark notification as read failed:', error);
+      return {
+        success: false,
+        message: error.message,
+        error: error.message,
+        statusCode: error.statusCode
+      };
     }
   },
 
@@ -1753,7 +2652,7 @@ getUserAvatar: async (userId) => {
       const userStr = StorageService.getItem('userData') || StorageService.getItem('currentUser');
       if (userStr) {
         const user = JSON.parse(userStr);
-
+        
         return {
           id: user.userId || user.user_id || user.id,
           userId: user.userId || user.user_id || user.id,
@@ -1802,3 +2701,21 @@ export {
   POSTS_API_URL,
   AUTH_API_URL
 };
+
+// ==================== 📊 LOGGING ====================
+
+console.log('🎉 API Service đã load! (✅ WITH NOTIFICATIONS API)');
+console.log('📦 API Base URL:', API_BASE_URL);
+console.log('');
+console.log('🔔 Notifications API: ✅ INTEGRATED');
+console.log('   • getNotifications(params) - Lấy danh sách thông báo');
+console.log('   • markNotificationAsRead(notificationId) - Đánh dấu đã đọc');
+console.log('');
+console.log('🌐 Google Translation API: ✅ INTEGRATED');
+console.log('👤 Avatar API: ✅ WORKING');
+console.log('✨ Witness API: ✅ WORKING');
+console.log('🎪 Activities API: ✅ WORKING');
+console.log('🔐 Auth, Posts, Friends, YCoin APIs: ✅ WORKING');
+console.log('🤖 AI API: ✅ WORKING');
+console.log('');
+console.log('🚀 Ready to use!');

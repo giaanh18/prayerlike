@@ -1095,24 +1095,6 @@ const Comment = ({ comment, onReply, onEdit, onDelete, onLike, currentUserId, po
           <div className="comment-author">{comment.author}</div>
           <div className="comment-time">{comment.time}</div>
         </div>
-        {isOwner && (
-          <div className="comment-owner-actions">
-            <button
-              className="comment-action-btn edit"
-              onClick={() => setIsEditing(!isEditing)}
-              title="編輯評論"
-            >
-              ✏️
-            </button>
-            <button
-              className="comment-action-btn delete"
-              onClick={handleDelete}
-              title="刪除評論"
-            >
-              🗑️
-            </button>
-          </div>
-        )}
       </div>
 
       <div className="comment-content">
@@ -1696,8 +1678,6 @@ const Post = ({ post, allPosts, onLike, onComment, onWitnessCreated, currentUser
   };
 
   const handleCommentReply = (commentId, reply) => { console.log(`💬 回覆評論 ${commentId}:`, reply); };
-  const handleCommentEdit = (commentId, newContent) => { console.log(`✏️ 編輯評論 ${commentId}:`, newContent); };
-  const handleCommentDelete = (commentId) => { console.log(`🗑️ 刪除評論 ${commentId}`); };
 
   return (
     <div className="post-card">
@@ -1827,9 +1807,6 @@ const Post = ({ post, allPosts, onLike, onComment, onWitnessCreated, currentUser
               rows="4"
               maxLength="1000"
             />
-            <div className="form-info">
-              <span className="char-count">{witnessText.length}/1000</span>
-            </div>
             <div className="form-actions">
               <button
                 type="submit"
@@ -1909,8 +1886,6 @@ const Post = ({ post, allPosts, onLike, onComment, onWitnessCreated, currentUser
                     key={comment.id}
                     comment={comment}
                     onReply={handleCommentReply}
-                    onEdit={handleCommentEdit}
-                    onDelete={handleCommentDelete}
                     onLike={handleLikeComment}
                     currentUserId={currentUserId}
                     postDocid={post.id}
