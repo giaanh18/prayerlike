@@ -154,20 +154,25 @@ const WitnessWall = ({
     try {
       console.log(`🌐 Translating original post ${postId} in Witness Wall...`);
 
-      // ✅ TODO: Thay bằng API thật
-      await new Promise(resolve => setTimeout(resolve, 800));
-      const mockTranslation = `[Translated] ${content}`;
+      const result = await ApiService.translate(content, 'en');
+      
+      if (result.success) {
+        setTranslationStates(prev => ({
+          ...prev,
+          [postId]: {
+            ...prev[postId],
+            translatedContent: result.translatedText,
+            isTranslating: false
+          }
+        }));
 
-      setTranslationStates(prev => ({
-        ...prev,
-        [postId]: {
-          ...prev[postId],
-          translatedContent: mockTranslation,
-          isTranslating: false
-        }
-      }));
-
-      console.log(`✅ Original post ${postId} translation completed`);
+        console.log(`✅ Original post ${postId} translation completed:`, {
+          from: result.detectedSourceLanguage,
+          text: result.translatedText.substring(0, 50) + '...'
+        });
+      } else {
+        throw new Error(result.message || 'Translation failed');
+      }
 
     } catch (error) {
       console.error(`❌ Original post ${postId} translation error:`, error);
@@ -175,7 +180,7 @@ const WitnessWall = ({
         ...prev,
         [postId]: {
           ...prev[postId],
-          translationError: '翻譯失敗',
+          translationError: 'Translation failed, please try again later',
           isTranslating: false
         }
       }));
@@ -679,6 +684,9 @@ const WitnessWall = ({
 
                   {/* ✅ THÊM: Nút dịch với state riêng */}
                   <div className="post-content">
+                    {originalPost.title && <h3>{originalPost.title}</h3>}
+                    <p>{originalPost.content}</p>
+
                     <button
                       className={`post-translate-button ${translationState.isTranslating ? 'translating' : ''} ${translationState.translatedContent ? 'active' : ''}`}
                       onClick={() => handleTranslateOriginalPost(originalPost.docid, originalPost.content)}
@@ -687,9 +695,6 @@ const WitnessWall = ({
                     >
                       <TranslateIcon size={18} />
                     </button>
-
-                    {originalPost.title && <h3>{originalPost.title}</h3>}
-                    <p>{originalPost.content}</p>
 
                     {/* ✅ THÊM: Hiển thị translated content */}
                     {translationState.translatedContent && (
@@ -975,16 +980,22 @@ const Comment = ({ comment, onReply, onEdit, onDelete, onLike, currentUserId, po
 
     try {
       console.log(`🌐 Translating comment ${comment.id} content...`);
-
-      await new Promise(resolve => setTimeout(resolve, 800));
-      const mockTranslation = `[Translated] ${comment.content}`;
-      setTranslatedContent(mockTranslation);
-
-      console.log(`✅ Comment ${comment.id} translation completed`);
+      
+      const result = await ApiService.translate(comment.content, 'en');
+      
+      if (result.success) {
+        setTranslatedContent(result.translatedText);
+        console.log(`✅ Comment ${comment.id} translation completed:`, {
+          from: result.detectedSourceLanguage,
+          text: result.translatedText.substring(0, 50) + '...'
+        });
+      } else {
+        throw new Error(result.message || 'Translation failed');
+      }
 
     } catch (error) {
       console.error(`❌ Comment ${comment.id} translation error:`, error);
-      setTranslationError('翻譯失敗');
+      setTranslationError('Translation failed, please try again later');
     } finally {
       setIsTranslating(false);
     }
@@ -1104,15 +1115,6 @@ const Comment = ({ comment, onReply, onEdit, onDelete, onLike, currentUserId, po
       </div>
 
       <div className="comment-content">
-        <button
-          className={`comment-translate-button ${isTranslating ? 'translating' : ''} ${translatedContent ? 'active' : ''}`}
-          onClick={handleTranslate}
-          disabled={isTranslating}
-          title={translatedContent ? '隱藏翻譯' : '翻譯此評論'}
-        >
-          <TranslateIcon size={14} />
-        </button>
-
         {isEditing ? (
           <form onSubmit={handleEditSubmit} className="comment-edit-form">
             <textarea
@@ -1145,6 +1147,15 @@ const Comment = ({ comment, onReply, onEdit, onDelete, onLike, currentUserId, po
         ) : (
           <>
             <p>{comment.content}</p>
+
+            <button
+              className={`comment-translate-button ${isTranslating ? 'translating' : ''} ${translatedContent ? 'active' : ''}`}
+              onClick={handleTranslate}
+              disabled={isTranslating}
+              title={translatedContent ? '隱藏翻譯' : '翻譯此評論'}
+            >
+              <TranslateIcon size={14} />
+            </button>
 
             {translatedContent && (
               <div className="comment-translated-content">
@@ -1303,16 +1314,22 @@ const Post = ({ post, allPosts, onLike, onComment, onWitnessCreated, currentUser
 
     try {
       console.log(`🌐 Translating post ${post.id} content...`);
-
-      await new Promise(resolve => setTimeout(resolve, 800));
-      const mockTranslation = `[Translated] ${post.content}`;
-      setTranslatedContent(mockTranslation);
-
-      console.log(`✅ Post ${post.id} translation completed`);
+      
+      const result = await ApiService.translate(post.content, 'en');
+      
+      if (result.success) {
+        setTranslatedContent(result.translatedText);
+        console.log(`✅ Post ${post.id} translation completed:`, {
+          from: result.detectedSourceLanguage,
+          text: result.translatedText.substring(0, 50) + '...'
+        });
+      } else {
+        throw new Error(result.message || 'Translation failed');
+      }
 
     } catch (error) {
       console.error(`❌ Post ${post.id} translation error:`, error);
-      setTranslationError('翻譯失敗');
+      setTranslationError('Translation failed, please try again later');
     } finally {
       setIsTranslating(false);
     }
@@ -1723,6 +1740,9 @@ const Post = ({ post, allPosts, onLike, onComment, onWitnessCreated, currentUser
       </div>
 
       <div className="post-content">
+        {post.title && <h3>{post.title}</h3>}
+        <p>{post.content}</p>
+
         <button
           className={`post-translate-button ${isTranslating ? 'translating' : ''} ${translatedContent ? 'active' : ''}`}
           onClick={handleTranslate}
@@ -1731,9 +1751,6 @@ const Post = ({ post, allPosts, onLike, onComment, onWitnessCreated, currentUser
         >
           <TranslateIcon size={18} />
         </button>
-
-        {post.title && <h3>{post.title}</h3>}
-        <p>{post.content}</p>
 
         {translatedContent && (
           <div className="post-translated-content">
