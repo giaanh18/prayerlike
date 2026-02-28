@@ -10,6 +10,7 @@
   padding-bottom: 100px;
   box-sizing: border-box;
 }
+
 /* ✅ Terms Display Button - BO GÓC ÍT HƠN */
 .terms-display-button {
   width: auto;
@@ -19,7 +20,7 @@
   background-color: #ffffff;
   color: #333;
   border: none;
-  border-radius: 8px; /* ✅ GIẢM XUỐNG 8px - BO GÓC ÍT */
+  border-radius: 8px;
   font-size: 15px;
   font-weight: 700;
   letter-spacing: 0.8px;
@@ -40,12 +41,9 @@
     height: 40px;
     padding: 0 24px;
     font-size: 14px;
-    border-radius: 6px; /* ✅ BO GÓC ÍT TRÊN MOBILE */
+    border-radius: 6px;
   }
 }
-
-
-
 
 /* Permissions Box */
 .permissions-box {
@@ -78,6 +76,16 @@
   letter-spacing: 0.3px;
 }
 
+/* ✅ NEW: Policy Subtitle */
+.policy-subtitle {
+  font-size: 11px;
+  color: #666;
+  margin-bottom: 16px;
+  line-height: 1.4;
+  font-weight: 500;
+  text-align: center;
+}
+
 /* Permissions List */
 .permissions-list {
   display: flex;
@@ -103,6 +111,7 @@
   font-size: 14px;
   color: #555;
   flex: 1;
+  line-height: 1.4;
 }
 
 /* Optional Section */
@@ -129,6 +138,32 @@
   color: #666;
 }
 
+/* ✅ PRIVACY NOTICE - MỚI THÊM */
+.privacy-notice {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px;
+  background-color: #fff3cd;
+  border-left: 4px solid #ffc107;
+  margin: 16px 0;
+  border-radius: 6px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.notice-icon {
+  font-size: 18px;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.notice-text {
+  font-size: 13px;
+  color: #856404;
+  line-height: 1.5;
+  font-weight: 500;
+}
+
 /* Detail Link */
 .detail-link {
   text-align: right;
@@ -137,6 +172,7 @@
   margin-top: 12px;
   cursor: pointer;
   padding: 4px 0;
+  transition: all 0.2s;
 }
 
 .detail-link:hover {
@@ -202,9 +238,10 @@
 
 .checkbox-label {
   font-size: 13px;
-  color: #000000; /* ✅ ĐỔI TỪ rgba(255, 255, 255, 0.95) SANG ĐEN */
+  color: #000000;
   line-height: 1.4;
 }
+
 /* Navigation Buttons */
 .step2-buttons {
   position: fixed;
@@ -218,7 +255,6 @@
   z-index: 999;
 }
 
-/* 🚀 **修改點 1：提高主樣式權重，確保顏色被應用於非禁用狀態** */
 .action-button.continue-button {
   width: 100%;
   max-width: 250px;
@@ -228,28 +264,23 @@
   font-weight: 600 !important;
   letter-spacing: 0.5px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-  
-  /* 確保非禁用時的顏色 */
   background-color: #FFF9EC !important;
   color: #000000 !important;
   border: none !important;
 }
 
-/* 🚀 **修改點 2：提高 Hover 樣式權重** */
 .action-button.continue-button:hover:not(:disabled) {
   transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(255, 249, 236, 0.4);
   background-color: #FFF9EC !important; 
 }
 
-/* 🚀 **修改點 3：提高 Active 樣式權重** */
 .action-button.continue-button:active:not(:disabled) {
   transform: translateY(0);
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
   background-color: #FFF9EC !important;
 }
 
-/* 🚀 **修改點 4：提高 Disabled 樣式權重，維持灰色表示禁用** */
 .action-button.continue-button:disabled {
   background: #e0e0e0 !important;
   color: #999 !important;
@@ -257,22 +288,159 @@
   opacity: 0.6;
 }
 
-/* Responsive */
-@media (max-width: 375px) {
-  .step2-buttons {
-    width: calc(100% - 32px);
-    bottom: 16px;
-  }
+/* ===== TERMS ACCORDION ===== */
+.terms-accordion {
+  margin-top: 16px;
+}
 
-  /* 🚀 **修改點 5：媒體查詢內的按鈕樣式使用高權重選擇器** */
-  .action-button.continue-button {
-    height: 46px !important;
-    max-width: 100%;
+.terms-accordion-item {
+  margin-bottom: 12px;
+  border-bottom: 1px solid #f0f0f0;
+  padding-bottom: 12px;
+}
+
+.terms-accordion-item:last-child {
+  border-bottom: none;
+}
+
+.terms-accordion-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  cursor: pointer;
+  padding: 10px 8px;
+  background: #d8d8d8;
+  border-radius: 6px;
+  transition: background 0.2s;
+}
+
+.terms-accordion-header:hover {
+  background: #e9ecef;
+}
+
+.terms-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: #333;
+  flex: 1;
+  line-height: 1.4;
+}
+
+.terms-toggle-icon {
+  font-size: 10px;
+  color: #666;
+  margin-left: 8px;
+  transition: transform 0.3s;
+}
+
+.terms-accordion-content {
+  padding: 12px 8px 4px 8px;
+  animation: slideDown 0.3s ease-out;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    max-height: 0;
+  }
+  to {
+    opacity: 1;
+    max-height: 1000px;
   }
 }
 
+.terms-text {
+  font-size: 13px;
+  color: #555;
+  line-height: 1.5;
+  margin-bottom: 10px;
+}
 
-/* Responsive */
+/* ✅ NEW: Terms List */
+.terms-list {
+  margin: 8px 0;
+  padding-left: 20px;
+  list-style-type: disc;
+}
+
+.terms-list-item {
+  font-size: 13px;
+  color: #555;
+  line-height: 1.6;
+  margin-bottom: 6px;
+}
+
+/* ✅ NEW: Terms Subsections */
+.terms-subsections {
+  margin-top: 8px;
+}
+
+.terms-subsection {
+  margin-bottom: 12px;
+}
+
+.terms-subtitle {
+  font-size: 13px;
+  color: #333;
+  display: block;
+  margin-bottom: 6px;
+  font-weight: 600;
+}
+
+/* ✅ NEW: Terms Note */
+.terms-note {
+  font-size: 12px;
+  color: #666;
+  font-style: italic;
+  margin-top: 10px;
+  padding: 8px;
+  background: #f8f9fa;
+  border-radius: 4px;
+  line-height: 1.4;
+}
+
+/* ===== WARNING & CONTACT BOXES ===== */
+.terms-warning-box {
+  background: #fff3cd;
+  border-left: 3px solid #ffc107;
+  padding: 10px;
+  margin: 10px 0;
+  border-radius: 4px;
+}
+
+.terms-warning-box .permission-text {
+  font-size: 12px;
+  color: #856404;
+  margin: 0;
+  line-height: 1.5;
+}
+
+.terms-contact-box {
+  background: #e7f3ff;
+  border-left: 3px solid #2196F3;
+  padding: 10px;
+  margin: 10px 0;
+  border-radius: 4px;
+}
+
+.terms-contact-box .permission-text {
+  font-size: 12px;
+  color: #0d47a1;
+  margin: 0;
+  line-height: 1.5;
+}
+
+.terms-contact-box a {
+  color: #1976d2;
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.terms-contact-box a:hover {
+  text-decoration: underline;
+}
+
+/* ===== RESPONSIVE ADJUSTMENTS ===== */
 @media (max-width: 375px) {
   .step2-container {
     padding: 16px;
@@ -282,11 +450,33 @@
   .terms-display-button {
     max-width: 100%;
     height: 44px;
-    font-size: 15px; /* ✅ VẪN TO TRÊN MOBILE */
+    font-size: 15px;
   }
 
   .permissions-box {
     padding: 16px;
+  }
+
+  .policy-subtitle {
+    font-size: 10px;
+  }
+
+  .permission-text {
+    font-size: 13px;
+  }
+
+  /* ✅ Privacy Notice responsive */
+  .privacy-notice {
+    padding: 10px;
+    gap: 8px;
+  }
+
+  .notice-icon {
+    font-size: 16px;
+  }
+
+  .notice-text {
+    font-size: 12px;
   }
 
   .step2-buttons {
@@ -294,12 +484,47 @@
     bottom: 16px;
   }
 
-  .continue-button {
+  .action-button.continue-button {
     height: 46px !important;
     max-width: 100%;
   }
 
   .checkbox-label {
     font-size: 12px;
+  }
+
+  .terms-title {
+    font-size: 12px;
+  }
+
+  .terms-text {
+    font-size: 12px;
+  }
+
+  .terms-list-item {
+    font-size: 12px;
+  }
+
+  .terms-subtitle {
+    font-size: 12px;
+  }
+
+  .terms-note {
+    font-size: 11px;
+    padding: 6px;
+  }
+
+  .terms-accordion-content {
+    padding: 10px 6px 4px 6px;
+  }
+
+  .terms-warning-box,
+  .terms-contact-box {
+    padding: 8px;
+  }
+
+  .terms-warning-box .permission-text,
+  .terms-contact-box .permission-text {
+    font-size: 11px;
   }
 }

@@ -72,32 +72,90 @@ const CreatePostScreen = ({ onLogout }) => {
     navigate('/addfriend');
   }, [navigate]);
 
+  const handleNova = useCallback(() => {
+    if (navigatingRef.current) {
+      console.log('⚠️ Navigation already in progress, ignoring...');
+      return;
+    }
+
+    console.log('🤖 Navigate to Nova');
+    navigatingRef.current = true;
+    setActiveTab('Nova');
+    
+    setTimeout(() => {
+      navigatingRef.current = false;
+    }, 1000);
+    
+    navigate('/nova');
+  }, [navigate]);
+
+  // ✅ SỬA: Create text post → Navigate to /create-post/text
+  const handleCreateTextPost = useCallback(() => {
+    if (navigatingRef.current) {
+      console.log('⚠️ Navigation already in progress, ignoring...');
+      return;
+    }
+
+    console.log('📝 Create text post - Navigate to TextPostScreen');
+    navigatingRef.current = true;
+    
+    setTimeout(() => {
+      navigatingRef.current = false;
+    }, 500);
+    
+    navigate('/create-post/text');
+  }, [navigate]);
+
+  // ✅ SỬA: Create voice post → Navigate to /create-post/audio
+  const handleCreateVoicePost = useCallback(() => {
+    if (navigatingRef.current) {
+      console.log('⚠️ Navigation already in progress, ignoring...');
+      return;
+    }
+
+    console.log('🎤 Create voice post - Navigate to AudioPostScreen');
+    navigatingRef.current = true;
+    
+    setTimeout(() => {
+      navigatingRef.current = false;
+    }, 500);
+    
+    navigate('/create-post/audio', { 
+      state: { autoStart: true }
+    });
+  }, [navigate]);
+
   return (
     <div className="create-post-page">
       <div className="centered-layout">
         <button 
           className="back-button" 
-          onClick={() => navigate('/context')}
-          aria-label="返回首頁"
+          onClick={() => {
+            if (navigatingRef.current) return;
+            navigatingRef.current = true;
+            navigate('/context');
+            setTimeout(() => { navigatingRef.current = false; }, 1000);
+          }}
+          aria-label="Back to Home"
         >
           ←
         </button>
 
         <div className="button-container">
+          {/* ✅ SỬA: Create text post → /create-post/text */}
           <button
             className="post-button"
-            onClick={() => navigate('/create-post/text')}
-            aria-label="建立文字貼文"
+            onClick={handleCreateTextPost}
+            aria-label="Create text post"
           >
             Create text post
           </button>
           
+          {/* ✅ SỬA: Create voice post → /create-post/audio */}
           <button
             className="post-button"
-            onClick={() => navigate('/create-post/audio', { 
-              state: { autoStart: true }
-            })}
-            aria-label="建立音訊貼文"
+            onClick={handleCreateVoicePost}
+            aria-label="Create voice post"
           >
             Create voice post
           </button>
@@ -111,7 +169,7 @@ const CreatePostScreen = ({ onLogout }) => {
           onClick={handleHome}
           isActive={activeTab === 'Home'}
           size="medium"
-          ariaLabel="首頁"
+          ariaLabel="Home"
         />
         <CircleButton
           provider="Search"
@@ -127,7 +185,7 @@ const CreatePostScreen = ({ onLogout }) => {
           onClick={handleCreatePost}
           isActive={activeTab === 'Add'}
           size="medium"
-          ariaLabel="新增貼文"
+          ariaLabel="Create Post"
         />
         <CircleButton
           provider="Profile"
@@ -135,18 +193,15 @@ const CreatePostScreen = ({ onLogout }) => {
           onClick={handleProfile}
           isActive={activeTab === 'Profile'}
           size="medium"
-          ariaLabel="新增好友"
+          ariaLabel="Add Friend"
         />
-        {/* ✅ NÚT NOVA - BỎ CHỨC NĂNG LOGOUT */}
         <CircleButton
           provider="Nova"
           iconSrc={Nova}
-          onClick={() => {
-            console.log('🤖 Nova clicked - No action');
-          }}
+          onClick={handleNova}
           isActive={activeTab === 'Nova'}
           size="medium"
-          ariaLabel="nova小天使"
+          ariaLabel="Nova Assistant"
         />
       </div>
     </div>

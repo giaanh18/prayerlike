@@ -4,6 +4,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import ApiService from '../../services/api';
 import AppBackground from '../../components/AppBackground/AppBackground';
 import AvatarImage from '../../components/AvatarImage/AvatarImage';
+import { AppBridge } from '../../services/appbridge';
 import './Profile.css';
 
 const ProviderIcon = ({ provider }) => {
@@ -62,7 +63,7 @@ const Profile = ({ user, onLogout }) => {
       const sessionResult = await ApiService.getAuthSession();
       
       if (!sessionResult.success || !sessionResult.user) {
-        throw new Error('未登入或 session 已過期');
+        throw new Error('Not logged in or session expired');
       }
       
       const currentUserId = sessionResult.user.id || sessionResult.user.userId;
@@ -77,7 +78,6 @@ const Profile = ({ user, onLogout }) => {
       setSession(sessionResult.session);
       
       if (!viewingOwnProfile) {
-        // 檢視他人檔案
         setProfile({
           id: targetUserId,
           name: targetUserId,
@@ -87,17 +87,12 @@ const Profile = ({ user, onLogout }) => {
           avatar_url: null, 
           isPublicView: true
         });
-        // ❌ 已移除 setNewName('');
       } else {
-        // 檢視自己檔案
         const userData = sessionResult.user;
         const rawAccount = sessionResult.session?.account || {};
         const rawProfile = sessionResult.session?.profile || {};
 
-        // 從 account 或 profile 取得原始頭像路徑
         const rawAvatarUrl = rawAccount.avatar_url || rawProfile.avatar_url || rawProfile.picture;
-        
-        // 使用 ApiService 進行路徑補全
         const finalAvatarUrl = ApiService.processAvatarUrl(rawAvatarUrl);
 
         setProfile({
@@ -106,10 +101,9 @@ const Profile = ({ user, onLogout }) => {
           email: userData.email,
           tribe: userData.tribe,
           provider: sessionResult.session?.provider || 'email',
-          avatar_url: finalAvatarUrl, // 將處理後的網址存入 state
+          avatar_url: finalAvatarUrl,
           isPublicView: false
         });
-        // ❌ 已移除 setNewName(userData.name || '');
       }
       
     } catch (err) {
@@ -128,7 +122,6 @@ const Profile = ({ user, onLogout }) => {
             provider: userData.provider || 'email',
             isPublicView: false
           });
-          // ❌ 已移除 setNewName(userData.name || '');
           setError(null);
           setIsOwnProfile(true);
         }
@@ -140,9 +133,10 @@ const Profile = ({ user, onLogout }) => {
     }
   };
 
+  // ✅ CHỈ CHO PHÉP CHỌN ẢNH TỪ THƯ VIỆN - KHÔNG CHO CHỤP ẢNH
   const handleAvatarClick = () => {
     if (!isOwnProfile) {
-      alert('⚠️ 您無法更改其他用戶的頭像');
+      alert('⚠️ You cannot change other users\' avatars');
       return;
     }
     
@@ -151,39 +145,50 @@ const Profile = ({ user, onLogout }) => {
     input.accept = 'image/*';
     input.onchange = handleAvatarUpload;
     input.click();
+    
+    console.log('🖼️ Opening photo library (camera disabled)');
   };
 
   const handleAvatarUpload = async (e) => {
     const file = e.target.files?.[0];
-    if (!file) return;
+    if (!file) {
+      console.log('❌ No file selected');
+      return;
+    }
+
+    console.log('📁 File selected:', {
+      name: file.name,
+      type: file.type,
+      size: `${(file.size / 1024).toFixed(2)} KB`
+    });
 
     if (!file.type.startsWith('image/')) {
-      alert('⚠️ 請選擇圖片檔案');
+      alert('⚠️ Please select an image file');
       return;
     }
 
     if (file.size > 10 * 1024 * 1024) {
-      alert('⚠️ 圖片大小不能超過 10MB');
+      alert('⚠️ Image size cannot exceed 10MB');
       return;
     }
 
     setUploadingAvatar(true);
 
     try {
-      console.log('📸 Uploading avatar:', file.name);
+      console.log('📤 Uploading avatar:', file.name);
       
       const result = await ApiService.uploadAvatar(profile.id, file);
 
       if (result.success) {
         console.log('✅ Avatar uploaded successfully');
-        alert('✅ 頭像更新成功！');
+        alert('✅ Avatar updated successfully!');
         window.location.reload();
       } else {
-        throw new Error(result.message || '上傳失敗');
+        throw new Error(result.message || 'Upload failed');
       }
     } catch (err) {
       console.error('❌ Upload avatar error:', err);
-      alert(`❌ 上傳頭像失敗: ${err.message}`);
+      alert(`❌ Failed to upload avatar: ${err.message}`);
     } finally {
       setUploadingAvatar(false);
     }
@@ -193,32 +198,14 @@ const Profile = ({ user, onLogout }) => {
     navigate(-1);
   };
 
-  const handleLogout = async () => {
-    if (!isOwnProfile) {
-      handleBack();
-      return;
-    }
-    
-    const confirmLogout = window.confirm('確定要登出嗎？');
-    if (!confirmLogout) return;
-
-    try {
-      await ApiService.logout();
-      navigate('/login', { replace: true });
-    } catch (err) {
-      console.error('❌ Logout error:', err);
-      navigate('/login', { replace: true });
-    }
-  };
-
   const privacyPolicyText = `Pray Like Incense
 
 Personal Data Protection and Privacy Policy (Taiwan PDPA Version)
 
 1. Introduction
 
-Pray Like Incense (hereinafter referred to as “the Service”) values the privacy and personal data protection of every user.
-This Policy is established in accordance with the Personal Data Protection Act of Taiwan and relevant regulations, and explains how the Service collects, processes, uses, and protects users’ personal data.
+Pray Like Incense (hereinafter referred to as "the Service") values the privacy and personal data protection of every user.
+This Policy is established in accordance with the Personal Data Protection Act of Taiwan and relevant regulations, and explains how the Service collects, processes, uses, and protects users' personal data.
 
 ⸻
 
@@ -229,7 +216,7 @@ The Service collects personal data solely for the following purposes:
 	2.	Publishing prayer requests, responses (Amen), and intercessory interaction features
 	3.	Multilingual translation, system notifications, and service optimization
 	4.	Account management, system maintenance, and security control
-	5.	Internal statistics and analysis related to the Service’s mission (without personal identification)
+	5.	Internal statistics and analysis related to the Service's mission (without personal identification)
 
 All collection purposes are reasonable, necessary, and directly related to religious and community services.
 
@@ -322,35 +309,14 @@ The Service will respond and assist with related requests within a reasonable ti
     setShowPrivacyDialog(false);
   };
 
-  const handleDeleteAccount = () => {
-    if (!isOwnProfile) {
-      alert('⚠️ 您無法刪除其他用戶的帳號');
-      return;
-    }
-
-    const confirmDelete = window.confirm(
-      '⚠️ 確定要刪除帳號嗎？\n\n此操作無法復原，所有資料將被永久刪除。'
-    );
-    
-    if (confirmDelete) {
-      const doubleConfirm = window.confirm(
-        '🚨 最後確認：真的要刪除帳號嗎？'
-      );
-      
-      if (doubleConfirm) {
-        // TODO: 實作刪除帳號 API
-        console.log('🗑️ Delete account requested');
-        alert('此功能尚未開放');
-      }
-    }
-  };
+  // ❌ ĐÃ XÓA FUNCTION handleDeleteAccount
 
   if (loading) {
     return (
       <AppBackground backgroundColor="#2D3656">
         <div className="profile-loading">
           <div className="loading-spinner"></div>
-          <p>載入個人資料中...</p>
+          <p>Loading profile...</p>
         </div>
       </AppBackground>
     );
@@ -361,13 +327,13 @@ The Service will respond and assist with related requests within a reasonable ti
       <AppBackground backgroundColor="#2D3656">
         <div className="profile-error">
           <div className="error-icon">⚠️</div>
-          <h3>載入失敗</h3>
+          <h3>Loading Failed</h3>
           <p>{error}</p>
           <button onClick={loadProfile} className="retry-btn">
-            重試
+            Retry
           </button>
           <button onClick={handleBack} className="back-btn">
-            返回
+            Back
           </button>
         </div>
       </AppBackground>
@@ -401,12 +367,9 @@ The Service will respond and assist with related requests within a reasonable ti
         {/* HEADER */}
         <div className="profile-header">
           <button className="back-button" onClick={handleBack}>
-            ← 
+            ←
           </button>
-          <h1>{isOwnProfile ? '個人資料' : `${profile?.name} 的資料`}</h1>
-          <button className="logout-button" onClick={handleLogout}>
-            {isOwnProfile ? '登出' : '關閉'}
-          </button>
+          <h1>{isOwnProfile ? 'Profile' : `${profile?.name}'s Profile`}</h1>
         </div>
 
         {/* AVATAR SECTION */}
@@ -451,14 +414,14 @@ The Service will respond and assist with related requests within a reasonable ti
           )}
 
           <div className="info-item">
-            <label>暱稱 (Nickname)</label>
+            <label>Nickname</label>
             <div className="info-value">
-              <span>{profile?.name || '未設定'}</span>
+              <span>{profile?.name || 'Not set'}</span>
             </div>
           </div>
 
           <div className="info-item">
-            <label>用戶 ID (User ID)</label>
+            <label>User ID</label>
             <div className="info-value">
               <span>{profile?.id}</span>
             </div>
@@ -466,7 +429,7 @@ The Service will respond and assist with related requests within a reasonable ti
 
           {profile?.tribe !== null && profile?.tribe !== undefined && (
             <div className="info-item">
-              <label>支派 (Tribe)</label>
+              <label>Tribe</label>
               <div className="info-value">
                 <span>Tribe {profile.tribe}</span>
               </div>
@@ -474,7 +437,7 @@ The Service will respond and assist with related requests within a reasonable ti
           )}
         </div>
 
-        {/* TERMS & CONDITIONS SECTION */}
+        {/* ✅ TERMS & CONDITIONS SECTION - CHỈ CÒN PRIVACY POLICY */}
         {isOwnProfile && (
           <div className="terms-section">
             <h2 className="terms-title">TERMS & CONDITIONS</h2>
@@ -486,16 +449,14 @@ The Service will respond and assist with related requests within a reasonable ti
               </button>
             </div>
 
-            <button className="delete-account-btn" onClick={handleDeleteAccount}>
-              Delete Weverse Account
-            </button>
+            {/* ❌ ĐÃ XÓA BUTTON DELETE ACCOUNT */}
           </div>
         )}
 
         {/* PUBLIC VIEW NOTICE */}
         {!isOwnProfile && (
           <div className="public-view-notice">
-            <p>🔒 這是公開資料頁面，僅顯示基本資訊</p>
+            <p>🔒 This is a public profile page showing basic information only</p>
           </div>
         )}
       </div>

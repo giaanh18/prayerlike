@@ -17,13 +17,13 @@ const TextPostScreen = ({ user }) => {
   const navigate = useNavigate();
   const location = useLocation();
 
-  // 接收資料
+  // Receive data
   const transcriptFromAudio = location.state?.transcript || 
                                location.state?.initialContent || '';
   const cameFromAudio = location.state?.fromAudio || false;
   const recordId = location.state?.recordId;
 
-  // ✅ Kiểm tra user có tribe chưa
+  // ✅ Check if user has tribe
   const [currentTribeId, setCurrentTribeId] = useState(() => {
     const storedUser = JSON.parse(localStorage.getItem('userData') || '{}');
     return storedUser.tribe !== undefined ? storedUser.tribe : user?.tribe;
@@ -31,7 +31,7 @@ const TextPostScreen = ({ user }) => {
 
   const hasTribe = currentTribeId !== null && currentTribeId !== undefined;
 
-  // ✅ Sync tribe từ localStorage
+  // ✅ Sync tribe from localStorage
   useEffect(() => {
     const storedUser = JSON.parse(localStorage.getItem('userData') || '{}');
     
@@ -54,16 +54,16 @@ const TextPostScreen = ({ user }) => {
   const [isCategoryOpen, setIsCategoryOpen] = useState(false);
   const [statusMessage, setStatusMessage] = useState('');
 
-  // 控制送出狀態
+  // Control submission state
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // ✅ 頁籤狀態管理
+  // ✅ Tab state management
   const [activeTab, setActiveTab] = useState('Add');
 
   // Refs
   const privacyRef = useRef(null);
   const categoryRef = useRef(null);
-  // 防止連點的邏輯鎖
+  // Logic lock to prevent duplicate clicks
   const isSubmittingRef = useRef(false);
 
   const charCount = content.length;
@@ -99,7 +99,7 @@ const TextPostScreen = ({ user }) => {
 
   const handleSubmit = async () => {
     if (isSubmittingRef.current) {
-        console.log("⏳ 重複點擊攔截：正在送出中...");
+        console.log("⏳ Duplicate click intercepted: Submission in progress...");
         return;
     }
 
@@ -112,9 +112,9 @@ const TextPostScreen = ({ user }) => {
       return;
     }
 
-    // ✅ CHẶN nếu chọn Tribe Prayer hoặc Tribe privacy mà chưa có tribe
+    // ✅ BLOCK if Tribe Prayer or Tribe privacy is selected but user has no tribe
     if ((category === 'Tribe Prayer' || privacy === 'Tribe') && !hasTribe) {
-      alert('⚠️ 您尚未選擇支派！\n請先選擇您的支派才能使用 Tribe 相關功能。');
+      alert('⚠️ You have not selected a tribe yet!\nPlease select your tribe first to use Tribe-related features.');
       return;
     }
 
@@ -141,7 +141,7 @@ const TextPostScreen = ({ user }) => {
         uuid: null 
       };
 
-      console.log("🚀 發送貼文 Payload:", postPayload);
+      console.log("🚀 Sending post Payload:", postPayload);
 
       const result = await ApiService.createPost(
         user.id, 
@@ -197,7 +197,7 @@ const TextPostScreen = ({ user }) => {
     navigate('/notifications');
   };
 
-  // ✅ Chặn Tribe nếu chưa có tribe
+  // ✅ Block Tribe if user has no tribe
   const privacyOptions = hasTribe 
     ? ['Public', 'Family', 'Tribe', 'Individual']
     : ['Public', 'Family', 'Individual'];
@@ -209,11 +209,11 @@ const TextPostScreen = ({ user }) => {
   return (
     <div className="text-post-screen">
       
-      {/* 返回按鈕 */}
+      {/* Back button */}
       <button 
         className="back-button" 
         onClick={() => navigate('/create-post')} 
-        aria-label="返回上一頁"
+        aria-label="Back to previous page"
         disabled={isSubmitting} 
       >
         ←
@@ -254,13 +254,13 @@ const TextPostScreen = ({ user }) => {
                   </div>
                 ))}
                 
-                {/* ✅ Hiển thị Tribe bị khóa nếu chưa có tribe */}
+                {/* ✅ Display locked Tribe if user has no tribe */}
                 {!hasTribe && (
                   <div 
                     className="dropdown-item disabled"
                     onClick={(e) => {
                       e.stopPropagation();
-                      alert('⚠️ 您尚未選擇支派！\n請先選擇您的支派才能使用 Tribe Privacy。');
+                      alert('⚠️ You have not selected a tribe yet!\nPlease select your tribe first to use Tribe Privacy.');
                     }}
                   >
                     Tribe 🔒
@@ -286,9 +286,9 @@ const TextPostScreen = ({ user }) => {
                     key={option} 
                     className={`dropdown-item ${category === option ? 'selected' : ''}`}
                     onClick={() => {
-                      // ✅ CHẶN chọn Tribe Prayer nếu chưa có tribe
+                      // ✅ BLOCK selecting Tribe Prayer if user has no tribe
                       if (option === 'Tribe Prayer' && !hasTribe) {
-                        alert('⚠️ 您尚未選擇支派！\n請先選擇您的支派才能使用 Tribe Prayer 功能。');
+                        alert('⚠️ You have not selected a tribe yet!\nPlease select your tribe first to use Tribe Prayer feature.');
                         return;
                       }
                       
@@ -297,18 +297,18 @@ const TextPostScreen = ({ user }) => {
                     }}
                   >
                     {option}
-                    {/* ✅ Hiển thị 🔒 nếu là Tribe Prayer và chưa có tribe */}
+                    {/* ✅ Display 🔒 if Tribe Prayer and user has no tribe */}
                     {option === 'Tribe Prayer' && !hasTribe && ' 🔒'}
                   </div>
                 ))}
                 
-                {/* ✅ Hiển thị Tribe Prayer bị khóa nếu chưa có tribe */}
+                {/* ✅ Display locked Tribe Prayer if user has no tribe */}
                 {!hasTribe && (
                   <div 
                     className="dropdown-item disabled"
                     onClick={(e) => {
                       e.stopPropagation();
-                      alert('⚠️ 您尚未選擇支派！\n請先選擇您的支派才能使用 Tribe Prayer 功能。');
+                      alert('⚠️ You have not selected a tribe yet!\nPlease select your tribe first to use Tribe Prayer feature.');
                     }}
                   >
                     Tribe Prayer 🔒
@@ -372,7 +372,7 @@ const TextPostScreen = ({ user }) => {
 
       </div>
 
-      {/* ✅ 底部導航列 */}
+      {/* ✅ Bottom navigation bar */}
       <div className="bottom-navigation">
         <CircleButton 
           provider="Home" 
@@ -380,7 +380,7 @@ const TextPostScreen = ({ user }) => {
           onClick={handleHome} 
           isActive={activeTab === 'Home'} 
           size="medium" 
-          ariaLabel="首頁" 
+          ariaLabel="Home" 
         />
         <CircleButton 
           provider="Search" 
@@ -388,7 +388,7 @@ const TextPostScreen = ({ user }) => {
           onClick={handleSearch} 
           isActive={activeTab === 'Search'} 
           size="medium" 
-          ariaLabel="搜尋" 
+          ariaLabel="Search" 
         />
         <CircleButton 
           provider="Add" 
@@ -396,7 +396,7 @@ const TextPostScreen = ({ user }) => {
           onClick={handleCreatePost} 
           isActive={activeTab === 'Add'} 
           size="medium" 
-          ariaLabel="新增貼文" 
+          ariaLabel="Create Post" 
         />
         <CircleButton 
           provider="Profile" 
@@ -404,7 +404,7 @@ const TextPostScreen = ({ user }) => {
           onClick={handleProfile} 
           isActive={activeTab === 'Profile'} 
           size="medium" 
-          ariaLabel="個人資料" 
+          ariaLabel="Profile" 
         />
         <CircleButton 
           provider="Nova" 
@@ -412,7 +412,7 @@ const TextPostScreen = ({ user }) => {
           onClick={handleNova} 
           isActive={activeTab === 'Nova'} 
           size="medium" 
-          ariaLabel="nova小天使" 
+          ariaLabel="Nova Assistant" 
         />
       </div>
     </div>

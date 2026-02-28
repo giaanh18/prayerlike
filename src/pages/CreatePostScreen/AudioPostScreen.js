@@ -11,14 +11,14 @@ import Add from '../../assets/icons/Addicon.png';
 import Profile from '../../assets/icons/Profileicon.png';
 import Nova from '../../assets/icons/Nova.png';
 
-// ================= 環境檢測 =================
+// ================= Environment Detection =================
 const isInApp = () =>
   typeof window !== "undefined" &&
   typeof window.flutter_inappwebview !== "undefined";
 
 function AudioPostScreen({ onClose = () => {}, onUploadSuccess = () => {} }) {
   const navigate = useNavigate();
-  // 🔴 除錯用狀態：將 Log 顯示在螢幕上
+  // 🔴 Debug state: Display logs on screen
   const [debugLogs, setDebugLogs] = useState([]);
   const addLog = (msg) => {
     console.log(msg);
@@ -32,34 +32,34 @@ function AudioPostScreen({ onClose = () => {}, onUploadSuccess = () => {} }) {
   const [uploadMessage, setUploadMessage] = useState('');
   const [activeButton, setActiveButton] = useState(null);
 
-  // 頁籤狀態管理
+  // Tab state management
   const [activeTab, setActiveTab] = useState('Add');
 
-  // App 環境狀態
+  // App environment state
   const [isAppEnvironment, setIsAppEnvironment] = useState(false);
   const [flutterRecordId, setFlutterRecordId] = useState('');
 
-  // Refs（僅保留需要的）
+  // Refs (only keep necessary ones)
   const audioChunksRef = useRef([]);
   const abortPollingRef = useRef(false);
 
-  // 環境檢測
+  // Environment detection
   useEffect(() => {
     const inApp = isInApp();
     setIsAppEnvironment(inApp);
     if (inApp) {
-      addLog('✅ 偵測到 APP 環境');
+      addLog('✅ APP environment detected');
     } else {
-      addLog('🌐 目前是 WEB 環境');
+      addLog('🌐 Currently in WEB environment');
     }
   }, []);
 
-  // 設置接收 Flutter recordId 的回調
+  // Setup callback to receive Flutter recordId
   useEffect(() => {
     window.receiveAudioId = (id) => {
       const recordId = String(id ?? "");
       setFlutterRecordId(recordId);
-      addLog(`📌 從 Flutter 收到 recordId: ${recordId}`);
+      addLog(`📌 Received recordId from Flutter: ${recordId}`);
       
       if (recordId) {
         handleFlutterRecordId(recordId);
@@ -71,7 +71,7 @@ function AudioPostScreen({ onClose = () => {}, onUploadSuccess = () => {} }) {
     };
   }, []);
 
-  // 確保組件卸載時，釋放 URL 資源（不涉及任何麥克風權限）
+  // Ensure URL resources are released when component unmounts (does not involve any microphone permissions)
   useEffect(() => {
     return () => {
       cleanupResources();
@@ -79,43 +79,43 @@ function AudioPostScreen({ onClose = () => {}, onUploadSuccess = () => {} }) {
     };
   }, []);
 
-  // 資源清理函數：不再操作任何麥克風/錄音硬體，只清掉前端 URL 資源
+  // Resource cleanup function: No longer handles any microphone/recording hardware, only cleans up frontend URL resources
   const cleanupResources = () => {
     if (audioURL) {
       URL.revokeObjectURL(audioURL);
     }
   };
 
-  // 接收 App 回傳的錄音結果（Base64 或 URL）
+  // Receive recording result from App (Base64 or URL)
   useEffect(() => {
     const onMessage = (event) => {
       let data = event?.data;
-      addLog(`📩 收到 msg. Type: ${typeof data}`);
+      addLog(`📩 Received msg. Type: ${typeof data}`);
 
-      // 1. 嘗試解析字串格式的 JSON (解決部分 App 傳回字串導致無反應的問題)
+      // 1. Try to parse JSON string format (fixes issue with some Apps returning strings causing no response)
       if (typeof data === 'string') {
         try {
           data = JSON.parse(data);
-          addLog('✅ JSON 解析成功');
+          addLog('✅ JSON parsing successful');
         } catch (e) {
-          addLog(`⚠️ JSON 解析失敗: ${e.message.slice(0, 20)}`);
-          // 不是 JSON 字串，忽略，繼續往下走 (有些 App 可能真的傳字串且不是 JSON)
+          addLog(`⚠️ JSON parsing failed: ${e.message.slice(0, 20)}`);
+          // Not a JSON string, ignore and continue (some Apps may send strings that aren't JSON)
         }
       }
 
       if (!data || typeof data !== 'object') {
-        addLog('⚠️ 資料無效/非物件');
+        addLog('⚠️ Invalid data/not an object');
         return;
       }
       
       if (data.type) addLog(`🔍 Type: ${data.type}`);
 
-      // ✅ App 回傳錄音完成
+      // ✅ App returned recording complete
       if (data.type === 'AUDIO_RECORDING_READY') {
         try {
           const payload = data.payload || {};
 
-          // 1) App 直接給檔案 URL（例如本機檔案或 App 自己的 blob url）
+          // 1) App directly provides file URL (e.g. local file or App's own blob url)
           if (payload.audioUrl) {
             setAudioBlob(null);
             setAudioURL(payload.audioUrl);
@@ -124,7 +124,7 @@ function AudioPostScreen({ onClose = () => {}, onUploadSuccess = () => {} }) {
             return;
           }
 
-          // 2) App 給 base64 + mimeType（Web 端轉成 Blob）
+          // 2) App provides base64 + mimeType (Web side converts to Blob)
           const base64 = payload.base64;
           const mimeType = payload.mimeType || 'audio/webm';
 
@@ -143,23 +143,23 @@ function AudioPostScreen({ onClose = () => {}, onUploadSuccess = () => {} }) {
           setRecordingState('preview');
           setActiveButton(null);
         } catch (e) {
-          console.error('❌ 解析 App 錄音回傳失敗:', e);
+          console.error('❌ Failed to parse App recording response:', e);
           setRecordingState('error');
-          setUploadMessage(`處理失敗: ${e.message}`);
+          setUploadMessage(`Processing failed: ${e.message}`);
           setActiveButton(null);
         }
       }
 
-      // ✅ App 回傳錄音失敗
+      // ✅ App returned recording error
       if (data.type === 'AUDIO_RECORDING_ERROR') {
-        const message = data.payload?.message || '錄音失敗';
-        console.error('❌ App 錄音錯誤:', message);
+        const message = data.payload?.message || 'Recording failed';
+        console.error('❌ App recording error:', message);
         setRecordingState('error');
-        setUploadMessage(`處理失敗: ${message}`);
+        setUploadMessage(`Processing failed: ${message}`);
         setActiveButton(null);
       }
 
-      // （可選）App 回傳即時音量偵測
+      // (Optional) App returns real-time volume detection
       if (data.type === 'AUDIO_INPUT_LEVEL') {
         const level = Number(data.payload?.level ?? 0);
         setHasAudioInput(level > 0);
@@ -170,22 +170,22 @@ function AudioPostScreen({ onClose = () => {}, onUploadSuccess = () => {} }) {
     return () => window.removeEventListener('message', onMessage);
   }, [audioURL]);
 
-  // 處理 Flutter 返回的 recordId
+  // Handle recordId returned from Flutter
   const handleFlutterRecordId = async (receivedRecordId) => {
-    addLog('🔄 開始處理 Flutter recordId');
+    addLog('🔄 Starting to process Flutter recordId');
     setRecordingState('uploading');
-    setUploadMessage('已收到錄音 ID，等待轉錄結果...');
+    setUploadMessage('Received recording ID, waiting for transcription result...');
     abortPollingRef.current = false;
 
     try {
       const transcriptData = await pollForTranscript(receivedRecordId);
-      addLog('✅ 轉錄完成');
+      addLog('✅ Transcription complete');
       
       const finalTranscript = transcriptData.transcript || '';
       const finalAudioUrl = transcriptData.audio_url || '';
 
       setRecordingState('success');
-      setUploadMessage('轉錄成功！');
+      setUploadMessage('Transcription successful!');
 
       cleanupResources();
 
@@ -203,9 +203,9 @@ function AudioPostScreen({ onClose = () => {}, onUploadSuccess = () => {} }) {
       if (onClose) onClose();
 
     } catch (error) {
-      console.error('❌ 處理 Flutter recordId 失敗:', error);
+      console.error('❌ Failed to process Flutter recordId:', error);
       setRecordingState('error');
-      setUploadMessage(`處理失敗: ${error.message}`);
+      setUploadMessage(`Processing failed: ${error.message}`);
       setActiveButton(null);
     }
   };
@@ -213,44 +213,44 @@ function AudioPostScreen({ onClose = () => {}, onUploadSuccess = () => {} }) {
   const startRecording = async () => {
     setActiveButton('start');
 
-    // 開始前清理舊 URL（不涉及任何權限）
+    // Clean up old URLs before starting (does not involve any permissions)
     cleanupResources();
 
     try {
-      // ✅ 檢查是否在 App 環境
+      // ✅ Check if in App environment
       if (isAppEnvironment) {
-        addLog('📱 App 環境：嘗試呼叫 Flutter showOverlay');
+        addLog('📱 App environment: Attempting to call Flutter showOverlay');
         
         if (typeof window.flutter_inappwebview?.callHandler === "function") {
           try {
             const res = await window.flutter_inappwebview.callHandler("showOverlay");
-            addLog(`✅ showOverlay 成功: ${JSON.stringify(res)}`);
+            addLog(`✅ showOverlay successful: ${JSON.stringify(res)}`);
             setRecordingState('recording');
-            setUploadMessage('等待 Flutter 返回錄音結果...');
+            setUploadMessage('Waiting for Flutter to return recording result...');
             return;
           } catch (e) {
-            addLog(`⚠️ showOverlay 失敗: ${e.message}，改用 Web 錄音`);
-            console.error('呼叫 showOverlay 失敗', e);
-            // 如果 Flutter 調用失敗，繼續使用 Web 錄音
+            addLog(`⚠️ showOverlay failed: ${e.message}, switching to Web recording`);
+            console.error('Failed to call showOverlay', e);
+            // If Flutter call fails, continue with Web recording
           }
         } else {
-          addLog('⚠️ 無 callHandler，改用 Web 錄音');
+          addLog('⚠️ No callHandler, switching to Web recording');
         }
       }
 
-      // Web 環境或 Flutter 調用失敗時，使用原有的錄音邏輯
-      addLog('🌐 使用 Web 錄音');
+      // Use original recording logic when in Web environment or Flutter call fails
+      addLog('🌐 Using Web recording');
       window.AppBridge?.postMessage?.(JSON.stringify({ type: 'START_RECORDING' }));
 
-      // UI 狀態切換
+      // UI state switch
       setRecordingState('recording');
       setHasAudioInput(false);
 
     } catch (error) {
-      console.error('❌ 無法開始錄音:', error);
-      addLog(`❌ 錄音錯誤: ${error.message}`);
+      console.error('❌ Unable to start recording:', error);
+      addLog(`❌ Recording error: ${error.message}`);
       setRecordingState('error');
-      setUploadMessage(`處理失敗: ${error.message}`);
+      setUploadMessage(`Processing failed: ${error.message}`);
       setActiveButton(null);
     }
   };
@@ -258,49 +258,49 @@ function AudioPostScreen({ onClose = () => {}, onUploadSuccess = () => {} }) {
   const stopRecording = () => {
     setActiveButton('stop');
 
-    // 2. 立即給予 UI 回饋，避免等待 App 回傳時看起來像當機
+    // 2. Provide immediate UI feedback to avoid looking frozen while waiting for App response
     setRecordingState('uploading'); 
     setUploadMessage('Processing audio...');
 
     try {
-      // ✅ 通知 App 停止錄音，並由 App 回傳 AUDIO_RECORDING_READY
+      // ✅ Notify App to stop recording, App will return AUDIO_RECORDING_READY
       window.AppBridge?.postMessage?.(JSON.stringify({ type: 'STOP_RECORDING' }));
-      addLog('📤 已發送 STOP_RECORDING');
+      addLog('📤 Sent STOP_RECORDING');
     } catch (error) {
-      console.error('❌ 無法呼叫 App 停止錄音:', error);
+      console.error('❌ Unable to call App to stop recording:', error);
       setRecordingState('error');
-      setUploadMessage(`處理失敗: ${error.message}`);
+      setUploadMessage(`Processing failed: ${error.message}`);
       setActiveButton(null);
     }
   };
 
-  // 輪詢轉錄結果 (保持原有邏輯)
+  // Poll for transcription result (keep original logic)
   const pollForTranscript = async (recordId, maxRetries = 10, interval = 2000) => {
     for (let i = 0; i < maxRetries; i++) {
-      console.log(`⏳ [Polling] 第 ${i + 1} 次檢查轉錄狀態...`);
+      console.log(`⏳ [Polling] Attempt ${i + 1} to check transcription status...`);
       
       const response = await fetch(`https://xiaohua.54ucl.com:8011/recording/api/v1/transcript/${recordId}`, {
         method: 'GET'
       });
 
       if (!response.ok) {
-        throw new Error(`檢查狀態失敗: ${response.status}`);
+        throw new Error(`Status check failed: ${response.status}`);
       }
 
       const data = await response.json();
-      console.log("📥 收到回應:", data);
+      console.log("📥 Received response:", data);
 
       if (data.status === 'completed') {
         return data; 
       }
       
       if (data.status === 'failed') {
-        throw new Error('伺服器回傳轉錄失敗');
+        throw new Error('Server returned transcription failure');
       }
 
       await new Promise(resolve => setTimeout(resolve, interval));
     }
-    throw new Error('等待轉錄逾時');
+    throw new Error('Transcription timeout');
   };
 
   const handleConfirm = async () => {
@@ -308,13 +308,13 @@ function AudioPostScreen({ onClose = () => {}, onUploadSuccess = () => {} }) {
     if (!audioBlob && !audioURL) return;
 
     setRecordingState('uploading');
-    setUploadMessage('上傳音訊中...');
+    setUploadMessage('Uploading audio...');
     
     try {
-      console.log("🚀 [Step 1] 開始上傳音檔...");
+      console.log("🚀 [Step 1] Starting audio upload...");
       const formData = new FormData();
       
-      // 確保檔名有副檔名
+      // Ensure filename has extension
       const ext = audioBlob.type.includes('mp4') ? 'mp4' : 'webm';
       formData.append('file', audioBlob, `recording.${ext}`);
 
@@ -324,28 +324,28 @@ function AudioPostScreen({ onClose = () => {}, onUploadSuccess = () => {} }) {
       });
 
       if (!uploadResponse.ok) {
-        throw new Error(`音訊上傳失敗 Status: ${uploadResponse.status}`);
+        throw new Error(`Audio upload failed Status: ${uploadResponse.status}`);
       }
 
       const uploadData = await uploadResponse.json();
       const recordId = uploadData.record_id;
-      if (!recordId) throw new Error('未收到 Record ID');
+      if (!recordId) throw new Error('Record ID not received');
 
-      console.log("✅ [Step 1] 上傳成功，Record ID:", recordId);
+      console.log("✅ [Step 1] Upload successful, Record ID:", recordId);
 
       setUploadMessage('Transcribing text (please wait)...');
       
       const transcriptData = await pollForTranscript(recordId);
 
-      console.log("✅ [Step 2] 轉錄完成，內容:", transcriptData);
+      console.log("✅ [Step 2] Transcription complete, content:", transcriptData);
       
       const finalTranscript = transcriptData.transcript || '';
       const finalAudioUrl = transcriptData.audio_url || '';
 
       setRecordingState('success');
-      setUploadMessage('轉錄成功！');
+      setUploadMessage('Transcription successful!');
 
-      console.log("🚀 [Step 3] 跳轉至 TextPostScreen，攜帶文字:", finalTranscript);
+      console.log("🚀 [Step 3] Navigating to TextPostScreen with text:", finalTranscript);
       
       cleanupResources(); 
 
@@ -363,9 +363,9 @@ function AudioPostScreen({ onClose = () => {}, onUploadSuccess = () => {} }) {
       if (onClose) onClose();
 
     } catch (error) {
-      console.error('❌ 錯誤:', error);
+      console.error('❌ Error:', error);
       setRecordingState('error');
-      setUploadMessage(`處理失敗: ${error.message}`);
+      setUploadMessage(`Processing failed: ${error.message}`);
       setActiveButton(null);
     }
   };
@@ -378,10 +378,10 @@ function AudioPostScreen({ onClose = () => {}, onUploadSuccess = () => {} }) {
   };
 
   const handleReRecord = () => {
-    console.log("🔄 重置錄音狀態");
+    console.log("🔄 Reset recording state");
     setActiveButton(null);
     
-    // 清理舊資源
+    // Clean up old resources
     cleanupResources();
     
     setAudioBlob(null);
@@ -479,7 +479,7 @@ function AudioPostScreen({ onClose = () => {}, onUploadSuccess = () => {} }) {
             <span className="recording-text">Recording...</span>
           </div>
           <div className={`audio-detection ${hasAudioInput ? 'detected' : 'waiting'}`}>
-            {hasAudioInput ? '✓ 偵測到聲音' : 'Waiting for audio input...'}
+            {hasAudioInput ? '✓ Audio detected' : 'Waiting for audio input...'}
           </div>
           <div className="recording-wave">
             <div className="wave-bar"></div>
@@ -538,7 +538,7 @@ function AudioPostScreen({ onClose = () => {}, onUploadSuccess = () => {} }) {
       <button 
         className="back-button" 
         onClick={() => navigate('/create-post')} 
-        aria-label="返回上一頁"
+        aria-label="Back to previous page"
       >
         ←
       </button>
@@ -557,7 +557,7 @@ function AudioPostScreen({ onClose = () => {}, onUploadSuccess = () => {} }) {
             {renderButtons()}
           </div>
           
-          {/* 🔴 除錯視窗：顯示最新的 Logs */}
+          {/* 🔴 Debug window: Display latest Logs */}
           <div style={{
             position: 'absolute', bottom: 0, left: 0, right: 0,
             background: 'rgba(0,0,0,0.8)', color: '#0f0', fontSize: '10px',
@@ -579,7 +579,7 @@ function AudioPostScreen({ onClose = () => {}, onUploadSuccess = () => {} }) {
           onClick={handleHome} 
           isActive={activeTab === 'Home'} 
           size="medium" 
-          ariaLabel="首頁" 
+          ariaLabel="Home" 
         />
         <CircleButton 
           provider="Search" 
@@ -587,7 +587,7 @@ function AudioPostScreen({ onClose = () => {}, onUploadSuccess = () => {} }) {
           onClick={handleSearch} 
           isActive={activeTab === 'Search'} 
           size="medium" 
-          ariaLabel="搜尋" 
+          ariaLabel="Search" 
         />
         <CircleButton 
           provider="Add" 
@@ -595,7 +595,7 @@ function AudioPostScreen({ onClose = () => {}, onUploadSuccess = () => {} }) {
           onClick={handleCreatePost} 
           isActive={activeTab === 'Add'} 
           size="medium" 
-          ariaLabel="新增貼文" 
+          ariaLabel="Create Post" 
         />
         <CircleButton 
           provider="Profile" 
@@ -603,7 +603,7 @@ function AudioPostScreen({ onClose = () => {}, onUploadSuccess = () => {} }) {
           onClick={handleProfile} 
           isActive={activeTab === 'Profile'} 
           size="medium" 
-          ariaLabel="個人資料" 
+          ariaLabel="Profile" 
         />
         <CircleButton 
           provider="Nova" 
@@ -611,7 +611,7 @@ function AudioPostScreen({ onClose = () => {}, onUploadSuccess = () => {} }) {
           onClick={handleNova} 
           isActive={activeTab === 'Nova'} 
           size="medium" 
-          ariaLabel="nova小天使" 
+          ariaLabel="Nova Assistant" 
         />
       </div>
     </div>

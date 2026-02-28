@@ -114,19 +114,22 @@
   display: flex;
   align-items: center;
   gap: 16px;
-  cursor: pointer;
-  transition: all 0.3s ease;
+  /* ❌ ĐÃ XÓA: cursor: pointer; */
+  cursor: default;
+  /* ❌ ĐÃ XÓA: transition effects */
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
-.fl-card:hover {
+/* ❌ ĐÃ XÓA: HOVER EFFECT */
+/* .fl-card:hover {
   transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-}
+} */
 
-.fl-card:active {
+/* ❌ ĐÃ XÓA: ACTIVE EFFECT */
+/* .fl-card:active {
   transform: translateY(0);
-}
+} */
 
 /* ==================== AVATAR ==================== */
 .fl-avatar {
@@ -263,7 +266,7 @@
 }
 
 /* ==================== ✅ BOTTOM NAVIGATION - GIỐNG CONTEXT ==================== */
-.fl-bottom-nav {
+.bottom-navigation {
   position: fixed !important;
   bottom: 0 !important;
   left: 0;
@@ -277,54 +280,6 @@
   padding: 0 20px 20px 20px !important;
   box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.3);
   z-index: 9999 !important;
-}
-
-/* ✅ BUTTON STYLE - GIỐNG CONTEXT */
-.fl-nav-btn {
-  width: 56px !important;
-  height: 56px !important;
-  min-width: 56px !important;
-  min-height: 56px !important;
-  border-radius: 50% !important;
-  background:#D9D9D9(255, 255, 255, 0.1) !important;
-  border: none !important;
-  display: flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  cursor: pointer !important;
-  transition: all 0.3s ease !important;
-  padding: 0 !important;
-  flex-shrink: 0 !important;
-  position: relative !important;
-}
-
-/* ✅ ICON TRONG BUTTON */
-.fl-nav-btn img {
-  width: 28px !important;
-  height: 28px !important;
-  object-fit: contain !important;
-  filter: brightness(1.1) !important;
-}
-
-/* ✅ HOVER EFFECT */
-.fl-nav-btn:hover {
-  background: rgba(255, 255, 255, 0.2) !important;
-  transform: scale(1.05) !important;
-}
-
-/* ✅ ACTIVE STATE - VÀNG */
-.fl-nav-btn.active {
-  background: #FFD700 !important;
-  box-shadow: 0 4px 12px rgba(255, 215, 0, 0.4) !important;
-}
-
-.fl-nav-btn.active img {
-  filter: brightness(0.8) !important;
-}
-
-/* ✅ CLICK EFFECT */
-.fl-nav-btn:active {
-  transform: scale(0.95) !important;
 }
 
 /* ==================== SCROLLBAR ==================== */
@@ -347,11 +302,6 @@
 }
 
 /* ==================== ACCESSIBILITY ==================== */
-.fl-nav-btn:focus-visible {
-  outline: 3px solid #FFD700 !important;
-  outline-offset: 2px !important;
-}
-
 button:focus-visible {
   outline: 3px solid #FFD700;
   outline-offset: 2px;
@@ -369,21 +319,9 @@ button:focus-visible {
 
 /* ==================== RESPONSIVE ==================== */
 @media (max-width: 768px) {
-  .fl-bottom-nav {
+  .bottom-navigation {
     height: 110px !important;
     padding: 10px 16px 20px 16px !important;
-  }
-
-  .fl-nav-btn {
-    width: 52px !important;
-    height: 52px !important;
-    min-width: 52px !important;
-    min-height: 52px !important;
-  }
-
-  .fl-nav-btn img {
-    width: 26px !important;
-    height: 26px !important;
   }
 
   .fl-container {
@@ -392,21 +330,9 @@ button:focus-visible {
 }
 
 @media (max-width: 480px) {
-  .fl-bottom-nav {
+  .bottom-navigation {
     height: 70px !important;
     padding: 10px 12px !important;
-  }
-
-  .fl-nav-btn {
-    width: 48px !important;
-    height: 48px !important;
-    min-width: 48px !important;
-    min-height: 48px !important;
-  }
-
-  .fl-nav-btn img {
-    width: 24px !important;
-    height: 24px !important;
   }
 
   .fl-container {
@@ -441,20 +367,8 @@ button:focus-visible {
 }
 
 @media (max-width: 375px) {
-  .fl-bottom-nav {
+  .bottom-navigation {
     padding: 8px 10px !important;
-  }
-
-  .fl-nav-btn {
-    width: 44px !important;
-    height: 44px !important;
-    min-width: 44px !important;
-    min-height: 44px !important;
-  }
-
-  .fl-nav-btn img {
-    width: 22px !important;
-    height: 22px !important;
   }
 
   .fl-page-title {
@@ -494,44 +408,6 @@ button:focus-visible {
   .fl-card {
     border: 2px solid #000000;
   }
-
-  .fl-nav-btn {
-    border: 1px solid #FFFFFF !important;
-  }
-
-  .fl-nav-btn.active {
-    border: 2px solid #000000 !important;
-  }
 }
 
 /* ==================== END OF FILE ==================== */
-/* ==================== ✅ OVERRIDE BOTTOM NAV - ĐỒNG NHẤT VỚI CONTEXT ==================== */
-
-/* Đảm bảo bottom nav của FriendList giống hệt Context */
-.bottom-navigation {
-  position: fixed !important;
-  bottom: 0 !important;
-  left: 0;
-  right: 0;
-  display: flex;
-  justify-content: space-around;
-  align-items: center;
-  background: #2D3656;
-  border-top: 1px solid rgba(255, 255, 255, 0.15);
-  height: 80px !important;
-  padding: 0 20px 20px 20px !important;
-  box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.3);
-  z-index: 9999 !important;
-}
-
-/* ==================== 動畫效果 ==================== */
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}

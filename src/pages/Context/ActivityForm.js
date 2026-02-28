@@ -17,7 +17,7 @@ const ActivityForm = ({ user, onBack }) => {
     description: ''
   });
 
-  // ✅ State cho file uploads
+  // ✅ State for file uploads
   const [coverImage, setCoverImage] = useState(null);
   const [coverImagePreview, setCoverImagePreview] = useState(null);
   const [images, setImages] = useState([]);
@@ -25,7 +25,7 @@ const ActivityForm = ({ user, onBack }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [uploadProgress, setUploadProgress] = useState('');
 
-  // ✅ Cleanup URLs khi component unmount
+  // ✅ Cleanup URLs when component unmounts
   useEffect(() => {
     return () => {
       if (coverImagePreview) {
@@ -50,12 +50,12 @@ const ActivityForm = ({ user, onBack }) => {
     const file = e.target.files[0];
     if (file) {
       if (!file.type.startsWith('image/')) {
-        alert('請選擇圖片文件！');
+        alert('Please select an image file!');
         e.target.value = '';
         return;
       }
       if (file.size > 5 * 1024 * 1024) {
-        alert('圖片大小不能超過 5MB！');
+        alert('Image size cannot exceed 5MB!');
         e.target.value = '';
         return;
       }
@@ -79,11 +79,11 @@ const ActivityForm = ({ user, onBack }) => {
 
     const validFiles = files.filter(file => {
       if (!file.type.startsWith('image/')) {
-        alert(`${file.name} 不是圖片文件！`);
+        alert(`${file.name} is not an image file!`);
         return false;
       }
       if (file.size > 5 * 1024 * 1024) {
-        alert(`${file.name} 大小超過 5MB！`);
+        alert(`${file.name} size exceeds 5MB!`);
         return false;
       }
       return true;
@@ -189,26 +189,26 @@ const ActivityForm = ({ user, onBack }) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsSubmitting(true);
-    setUploadProgress('準備中...');
+    setUploadProgress('Preparing...');
 
     try {
       // ✅ Validation
       if (!formData.eventName?.trim()) {
-        alert('請填寫活動名稱！');
+        alert('Please enter event name!');
         setIsSubmitting(false);
         setUploadProgress('');
         return;
       }
 
       if (!formData.eventLocation?.trim()) {
-        alert('請填寫活動地點！');
+        alert('Please enter event location!');
         setIsSubmitting(false);
         setUploadProgress('');
         return;
       }
 
       if (!formData.eventDate) {
-        alert('請選擇活動日期！');
+        alert('Please select event date!');
         setIsSubmitting(false);
         setUploadProgress('');
         return;
@@ -217,16 +217,16 @@ const ActivityForm = ({ user, onBack }) => {
       const currentUser = user || ApiService.getCurrentUser();
       
       if (!currentUser || !currentUser.id) {
-        alert('請先登入！');
+        alert('Please log in first!');
         setIsSubmitting(false);
         setUploadProgress('');
         navigate('/login');
         return;
       }
 
-      // ✅ KIỂM TRA TRIBE
+      // ✅ CHECK TRIBE
       if (!currentUser.tribe) {
-        alert('⚠️ 您尚未選擇支派！\n請先選擇支派才能建立活動。');
+        alert('⚠️ You have not selected a tribe yet!\nPlease select your tribe first to create an activity.');
         setIsSubmitting(false);
         setUploadProgress('');
         return;
@@ -240,7 +240,7 @@ const ActivityForm = ({ user, onBack }) => {
       console.log('⏰ Parsed time:', parsedTime);
       console.log('🏛️ User tribe:', currentUser.tribe);
 
-      setUploadProgress('創建活動中...');
+      setUploadProgress('Creating activity...');
 
       // ✅ Build description
       let description = formData.description?.trim() || '';
@@ -251,16 +251,16 @@ const ActivityForm = ({ user, onBack }) => {
         description += (description ? '\n' : '') + `Max participants: ${formData.maxParticipants}`;
       }
 
-      // ✅ Build activity data - GỬI FILE OBJECTS + TRIBE
+      // ✅ Build activity data - SEND FILE OBJECTS + TRIBE
       const activityData = {
         title: formData.eventName.trim(),
         location: formData.eventLocation.trim(),
         event_date: parsedDate,
         event_time: parsedTime || '00:00-23:59',
         description: description.trim() || '',
-        // ✅ THÊM TRIBE (QUAN TRỌNG!)
+        // ✅ ADD TRIBE (IMPORTANT!)
         tribe: currentUser.tribe,
-        // ✅ GỬI FILE OBJECTS TRỰC TIẾP
+        // ✅ SEND FILE OBJECTS DIRECTLY
         coverImageFile: coverImage || null,
         imageFiles: images.length > 0 ? images : []
       };
@@ -282,7 +282,7 @@ const ActivityForm = ({ user, onBack }) => {
       if (result.success) {
         console.log('✅ Activity created successfully:', result.activity);
         
-        alert('活動創建成功！');
+        alert('Activity created successfully!');
         
         // ✅ Cleanup URLs
         if (coverImagePreview) URL.revokeObjectURL(coverImagePreview);
@@ -319,37 +319,37 @@ const ActivityForm = ({ user, onBack }) => {
           });
         }
       } else {
-        // ✅ XỬ LÝ ERROR MESSAGE
+        // ✅ HANDLE ERROR MESSAGE
         console.error('❌ Create failed:', result);
         
-        let errorMessage = '創建失敗';
+        let errorMessage = 'Creation failed';
         
         if (result.message) {
           if (typeof result.message === 'string') {
-            errorMessage = `創建失敗: ${result.message}`;
+            errorMessage = `Creation failed: ${result.message}`;
           } else if (typeof result.message === 'object') {
-            errorMessage = `創建失敗:\n${JSON.stringify(result.message, null, 2)}`;
+            errorMessage = `Creation failed:\n${JSON.stringify(result.message, null, 2)}`;
           }
         }
         
         if (result.error && result.error !== result.message) {
-          errorMessage += `\n\n錯誤: ${result.error}`;
+          errorMessage += `\n\nError: ${result.error}`;
         }
         
         if (result.details) {
           console.error('📋 Error details:', result.details);
           
           if (result.details.detail && Array.isArray(result.details.detail)) {
-            errorMessage += '\n\n驗證錯誤:';
+            errorMessage += '\n\nValidation errors:';
             result.details.detail.forEach((err, index) => {
               const location = err.loc ? err.loc.join(' > ') : 'unknown';
               const message = err.msg || err.message || JSON.stringify(err);
               errorMessage += `\n${index + 1}. [${location}] ${message}`;
             });
           } else if (typeof result.details === 'string') {
-            errorMessage += `\n\n詳細: ${result.details}`;
+            errorMessage += `\n\nDetails: ${result.details}`;
           } else {
-            errorMessage += `\n\n詳細:\n${JSON.stringify(result.details, null, 2)}`;
+            errorMessage += `\n\nDetails:\n${JSON.stringify(result.details, null, 2)}`;
           }
         }
         
@@ -363,10 +363,10 @@ const ActivityForm = ({ user, onBack }) => {
     } catch (error) {
       console.error('💥 Submit error:', error);
       
-      let errorMessage = '發生錯誤';
+      let errorMessage = 'An error occurred';
       
       if (error.message) {
-        errorMessage = `發生錯誤: ${error.message}`;
+        errorMessage = `An error occurred: ${error.message}`;
       }
       
       if (error.response) {
@@ -391,7 +391,7 @@ const ActivityForm = ({ user, onBack }) => {
                     formData.description || coverImage || images.length > 0;
     
     if (hasData && !isSubmitting) {
-      const confirmLeave = window.confirm('確定要離開嗎？未保存的資料將會遺失。');
+      const confirmLeave = window.confirm('Are you sure you want to leave? Unsaved data will be lost.');
       if (!confirmLeave) return;
     }
     
@@ -414,7 +414,7 @@ const ActivityForm = ({ user, onBack }) => {
             className="back-button" 
             onClick={handleCancel} 
             disabled={isSubmitting}
-            aria-label="返回"
+            aria-label="Back"
           >
             ←
           </button>
@@ -498,24 +498,6 @@ const ActivityForm = ({ user, onBack }) => {
             />
           </div>
 
-          {/* Description */}
-          <div className="form-group">
-            <label htmlFor="description">Description (optional)</label>
-            <textarea
-              id="description"
-              name="description"
-              value={formData.description}
-              onChange={handleChange}
-              placeholder="Activity description..."
-              rows="4"
-              disabled={isSubmitting}
-              maxLength={2000}
-            />
-            <small className="char-count">
-              {formData.description.length} / 2000
-            </small>
-          </div>
-
           {/* ✅ Cover Image Upload */}
           <div className="form-group">
             <label>Cover Image</label>
@@ -551,7 +533,7 @@ const ActivityForm = ({ user, onBack }) => {
                   onClick={removeCoverImage}
                   className="remove-image-btn"
                   disabled={isSubmitting}
-                  aria-label="移除封面圖片"
+                  aria-label="Remove cover image"
                 >
                   ×
                 </button>
@@ -600,7 +582,7 @@ const ActivityForm = ({ user, onBack }) => {
                         onClick={() => removeImage(index)}
                         className="remove-image-btn-small"
                         disabled={isSubmitting}
-                        aria-label={`移除圖片 ${index + 1}`}
+                        aria-label={`Remove image ${index + 1}`}
                       >
                         ×
                       </button>

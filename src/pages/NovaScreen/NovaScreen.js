@@ -36,7 +36,7 @@ function NovaScreen({ user, onLogout }) {
   const [isTyping, setIsTyping] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   
-  // ✅ AI Usage State - CHỈ LƯU DỮ LIỆU TỪ API (KHÔNG TÍNH TOÁN)
+  // ✅ AI Usage State - ONLY STORE DATA FROM API (NO CALCULATION)
   const [aiUsage, setAiUsage] = useState({ 
     used: 0, 
     limit: 10,
@@ -53,12 +53,12 @@ function NovaScreen({ user, onLogout }) {
   const inputRef = useRef(null);
   const usageCheckInterval = useRef(null);
 
-  // ✅ Load AI sessions & usage khi component mount
+  // ✅ Load AI sessions & usage when component mounts
   useEffect(() => {
     loadAISessions();
     loadAIUsageFromAPI();
     
-    // ✅ Check usage từ API mỗi 30 giây
+    // ✅ Check usage from API every 30 seconds
     usageCheckInterval.current = setInterval(() => {
       loadAIUsageFromAPI();
     }, 30000); // 30 seconds
@@ -70,7 +70,7 @@ function NovaScreen({ user, onLogout }) {
     };
   }, []);
 
-  // ✅ Load AI Usage TỪ API - CHỈ LƯU, KHÔNG TÍNH TOÁN
+  // ✅ Load AI Usage FROM API - ONLY STORE, NO CALCULATION
   const loadAIUsageFromAPI = async () => {
     try {
       console.log('📊 Loading AI Usage from API...');
@@ -78,7 +78,7 @@ function NovaScreen({ user, onLogout }) {
       const result = await ApiService.getAIUsage();
       
       if (result.success) {
-        // ✅ CHỈ LƯU DỮ LIỆU TỪ API, KHÔNG TÍNH TOÁN GÌ THÊM
+        // ✅ ONLY STORE DATA FROM API, NO ADDITIONAL CALCULATION
         setAiUsage({
           used: result.used || 0,
           limit: result.limit || 10,
@@ -141,22 +141,22 @@ function NovaScreen({ user, onLogout }) {
       return;
     }
 
-    // ✅ Kiểm tra expired từ API
+    // ✅ Check expired from API
     if (aiUsage.isExpired) {
       alert(
-        `⚠️ 對話已過期！\n\n` +
-        `您已經 ${aiUsage.windowHours} 小時未活動。\n` +
-        `請點擊 "New Chat" 開始新對話。`
+        `⚠️ Conversation has expired!\n\n` +
+        `You have been inactive for ${aiUsage.windowHours} hours.\n` +
+        `Please click "New Chat" to start a new conversation.`
       );
       return;
     }
 
-    // ✅ Kiểm tra giới hạn
+    // ✅ Check limit
     if (aiUsage.used >= aiUsage.limit) {
       alert(
-        `⚠️ 已達使用上限！\n\n` +
-        `您已使用 ${aiUsage.limit} 次提問。\n` +
-        `請等待 ${aiUsage.windowHours} 小時後重試。`
+        `⚠️ Usage limit reached!\n\n` +
+        `You have used ${aiUsage.limit} questions.\n` +
+        `Please wait ${aiUsage.windowHours} hours before trying again.`
       );
       return;
     }
@@ -198,7 +198,7 @@ function NovaScreen({ user, onLogout }) {
           setCurrentSessionUuid(result.sessionUuid);
         }
 
-        // ✅ Reload usage từ API
+        // ✅ Reload usage from API
         await loadAIUsageFromAPI();
 
         console.log('✅ AI response received:', {
@@ -270,7 +270,7 @@ function NovaScreen({ user, onLogout }) {
   const handleDeleteConversation = async (e, conversationId) => {
     e.stopPropagation();
     
-    const confirmDelete = window.confirm('Bạn có chắc muốn xóa cuộc trò chuyện này?');
+    const confirmDelete = window.confirm('Are you sure you want to delete this conversation?');
     if (!confirmDelete) return;
 
     try {
@@ -287,18 +287,23 @@ function NovaScreen({ user, onLogout }) {
       }
     } catch (error) {
       console.error('❌ Delete conversation error:', error);
-      alert('Không thể xóa cuộc trò chuyện. Vui lòng thử lại.');
+      alert('Unable to delete conversation. Please try again.');
     }
   };
 
+  // ✅ SỬA: Lưu callback thực sự
   const showExitConfirmation = (navigationCallback) => {
     setPendingNavigation(() => navigationCallback);
     setShowExitDialog(true);
   };
 
+  // ✅ SỬA: Thực thi callback đã lưu
   const handleConfirmExit = () => {
     setShowExitDialog(false);
-    navigate('/history');
+    if (pendingNavigation && typeof pendingNavigation === 'function') {
+      pendingNavigation(); // ← THỰC THI CALLBACK
+    }
+    setPendingNavigation(null);
   };
 
   const handleCancelExit = () => {
@@ -338,7 +343,7 @@ function NovaScreen({ user, onLogout }) {
     setActiveTab('Nova');
   };
 
-  // ✅ Format reset time - CHỈ HIỂN THỊ, KHÔNG TÍNH TOÁN
+  // ✅ Format reset time - DISPLAY ONLY, NO CALCULATION
   const formatResetTime = () => {
     if (!aiUsage.resetsAt) return null;
     
@@ -365,7 +370,7 @@ function NovaScreen({ user, onLogout }) {
     return activeConversationData?.expired === true;
   };
 
-  // ✅ Kiểm tra có thể gửi tin nhắn không
+  // ✅ Check if can send message
   const canSendMessage = () => {
     return !aiUsage.isExpired &&
       !isActiveConversationExpired() &&
@@ -386,24 +391,24 @@ function NovaScreen({ user, onLogout }) {
         <div className="exit-dialog-overlay">
           <div className="exit-dialog">
             <div className="exit-dialog-header">
-              <h2>確認離開</h2>
+              <h2>Confirm Exit</h2>
             </div>
             <div className="exit-dialog-body">
-              <p>您確定要離開 Nova AI 助手嗎？</p>
-              <p className="exit-dialog-subtitle">您的對話將被保存到歷史記錄中</p>
+              <p>Are you sure you want to leave Nova AI Assistant?</p>
+              <p className="exit-dialog-subtitle">Your conversation will be saved to history</p>
             </div>
             <div className="exit-dialog-actions">
               <button 
                 className="exit-dialog-btn cancel"
                 onClick={handleCancelExit}
               >
-                取消
+                Cancel
               </button>
               <button 
                 className="exit-dialog-btn confirm"
                 onClick={handleConfirmExit}
               >
-                確認離開
+                Confirm Exit
               </button>
             </div>
           </div>
@@ -424,14 +429,14 @@ function NovaScreen({ user, onLogout }) {
           </button>
         </div>
 
-        {/* ✅ AI Usage Display - CHỈ HIỂN THỊ DỮ LIỆU TỪ API */}
+        {/* ✅ AI Usage Display - ONLY DISPLAY DATA FROM API */}
         <div className={`ai-usage-display ${aiUsage.isExpired ? 'expired' : ''}`}>
           <div className="usage-header">
             <span className="usage-title">
-              {aiUsage.isExpired ? '⏰ 已過期' : '使用量'}
+              {aiUsage.isExpired ? '⏰ Expired' : 'Usage'}
             </span>
             <span className="usage-badge">
-              {aiUsage.isExpired ? '已鎖定' : `${aiUsage.limit - aiUsage.used} 剩餘`}
+              {aiUsage.isExpired ? 'Locked' : `${aiUsage.limit - aiUsage.used} Remaining`}
             </span>
           </div>
           
@@ -445,16 +450,16 @@ function NovaScreen({ user, onLogout }) {
               </div>
               <div className="usage-info">
                 <p className="usage-text">
-                  <strong>{aiUsage.used}</strong> / {aiUsage.limit} 次提問
+                  <strong>{aiUsage.used}</strong> / {aiUsage.limit} questions
                 </p>
                 {aiUsage.resetsAt && (
                   <p className="usage-reset">
-                    🕐 重置於: {formatResetTime()}
+                    🕐 Resets at: {formatResetTime()}
                   </p>
                 )}
                 {!aiUsage.resetsAt && (
                   <p className="usage-reset">
-                    ℹ️ 開始對話後計時 {aiUsage.windowHours} 小時
+                    ℹ️ Timer starts after {aiUsage.windowHours} hours of conversation
                   </p>
                 )}
               </div>
@@ -463,15 +468,15 @@ function NovaScreen({ user, onLogout }) {
           
           {aiUsage.isExpired && (
             <div className="usage-expired-message">
-              <p>⚠️ 對話已過期</p>
+              <p>⚠️ Conversation Expired</p>
               <p className="expired-subtitle">
-                {aiUsage.windowHours} 小時未活動
+                {aiUsage.windowHours} hours of inactivity
               </p>
               <button 
                 className="new-chat-btn-small"
                 onClick={handleNewChat}
               >
-                開始新對話
+                Start New Chat
               </button>
             </div>
           )}
@@ -538,7 +543,7 @@ function NovaScreen({ user, onLogout }) {
               <p className="nova-status">
                 <span className={`status-dot ${aiUsage.isExpired ? 'expired' : ''}`}></span>
                 {aiUsage.isExpired 
-                  ? `已過期 • 請開始新對話` 
+                  ? `Expired • Please start a new conversation` 
                   : `Online • ${aiUsage.limit - aiUsage.used} questions remaining`
                 }
               </p>
@@ -631,15 +636,15 @@ function NovaScreen({ user, onLogout }) {
             <textarea
               ref={inputRef}
               className="nova-input"
-              placeholder={
+              placeholder={(
                 isActiveConversationExpired()
                   ? "This conversation has expired..."
                   : aiUsage.isExpired
-                    ? "對話已過期，請開始新對話..." 
+                    ? "Conversation expired, please start a new chat..." 
                     : aiUsage.used >= aiUsage.limit 
-                      ? "已達使用上限..." 
+                      ? "Usage limit reached..." 
                       : "Ask Nova anything..."
-              }
+              )}
               value={inputText}
               onChange={(e) => setInputText(e.target.value)}
               onKeyPress={handleKeyPress}
@@ -670,14 +675,14 @@ function NovaScreen({ user, onLogout }) {
 
           {aiUsage.isExpired && (
             <p className="usage-limit-warning expired">
-              ⚠️ 對話已過期 ({aiUsage.windowHours} 小時未活動)。請點擊 "New Chat" 開始新對話。
+              ⚠️ Conversation expired ({aiUsage.windowHours} hours of inactivity). Please click "New Chat" to start a new conversation.
             </p>
           )}
           
           {!aiUsage.isExpired && !isActiveConversationExpired() && aiUsage.used >= aiUsage.limit && (
             <p className="usage-limit-warning">
-              ⚠️ 已達使用上限 ({aiUsage.limit} 次提問)。
-              {aiUsage.resetsAt && ` 重置於: ${formatResetTime()}`}
+              ⚠️ Usage limit reached ({aiUsage.limit} questions).
+              {aiUsage.resetsAt && ` Resets at: ${formatResetTime()}`}
             </p>
           )}
         </div>

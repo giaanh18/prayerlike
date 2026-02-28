@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import ApiService from '../../services/api';
 import TRANSCRIPT_API from '../../services/TranscriptAPI';
 
-// 導入新元件
+// Import new components
 import AppBackground from '../../components/AppBackground/AppBackground';
 import UserHeader from '../../components/UserHeader/UserHeader';
 import NotificationBell from '../../components/NotificationBell/NotificationBell';
@@ -17,7 +17,7 @@ import NoTribeDetail from '../Context/steps/NoTribeDetail';
 import VoiceRecordButton from '../../components/VoiceRecordButton/VoiceRecordButton';
 import AvatarImage from '../../components/AvatarImage/AvatarImage';
 
-// 導入圖片資源
+// Import image resources
 import family_and_personal from '../../assets/icons/family_and_personal.png';
 import church from '../../assets/icons/church.png';
 import kingdom from '../../assets/icons/kingdom.png';
@@ -32,7 +32,7 @@ import Nova from '../../assets/icons/Nova.png';
 import Mdi from '../../assets/icons/mdi_family.png';
 import Fluent from '../../assets/icons/fluent_people-interwoven-20-filled.png';
 
-// 以下為所有可能的支派
+// The following are all possible tribes
 import judahIcon from '../../assets/images/tribes/judah.png';
 import reubenIcon from '../../assets/images/tribes/reuben.png';
 import gadIcon from '../../assets/images/tribes/gad.png';
@@ -48,7 +48,7 @@ import benjaminIcon from '../../assets/images/tribes/benjamin.png';
 
 import './PrayerHub.css';
 
-// ==================== 支派 ID 對照表 ====================
+// ==================== TRIBE ID MAPPING TABLE ====================
 const tribeIdMap = {
   1: { name: 'Judah', icon: judahIcon },
   2: { name: 'Reuben', icon: reubenIcon },
@@ -64,14 +64,14 @@ const tribeIdMap = {
   12: { name: 'Benjamin', icon: benjaminIcon },
 };
 
-// ==================== 🌐 TRANSLATE ICON COMPONENT ====================
+// ==================== TRANSLATE ICON COMPONENT ====================
 const TranslateIcon = ({ size = 18 }) => (
   <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" style={{ width: size, height: size }}>
     <path d="M12.87 15.07l-2.54-2.51.03-.03c1.74-1.94 2.98-4.17 3.71-6.53H17V4h-7V2H8v2H1v1.99h11.17C11.5 7.92 10.44 9.75 9 11.35 8.07 10.32 7.3 9.19 6.69 8h-2c.73 1.63 1.73 3.17 2.98 4.56l-5.09 5.02L4 19l5-5 3.11 3.11.76-2.04zM18.5 10h-2L12 22h2l1.12-3h4.75L21 22h2l-4.5-12zm-2.62 7l1.62-4.33L19.12 17h-3.24z" fill="currentColor" />
   </svg>
 );
 
-// ==================== ✅ WITNESS WALL COMPONENT ====================
+// ==================== WITNESS WALL COMPONENT ====================
 const WitnessWall = ({ currentUserId, allPosts, privacyFilter, categoryFilter, refreshBalance }) => {
   const [witnesses, setWitnesses] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -165,7 +165,7 @@ const WitnessWall = ({ currentUserId, allPosts, privacyFilter, categoryFilter, r
     return (
       <div className="witness-wall-loading">
         <div className="witness-wall-loading-spinner"></div>
-        <p>載入見證中...</p>
+        <p>Loading witnesses...</p>
       </div>
     );
   }
@@ -174,8 +174,8 @@ const WitnessWall = ({ currentUserId, allPosts, privacyFilter, categoryFilter, r
     return (
       <div className="witness-wall-empty">
         <div className="witness-wall-empty-icon">✨</div>
-        <h3>尚無見證</h3>
-        <p>此分類目前沒有見證，成為第一個分享見證的人！</p>
+        <h3>No Witnesses</h3>
+        <p>No witnesses in this category yet. Be the first to share!</p>
       </div>
     );
   }
@@ -209,7 +209,7 @@ const WitnessWall = ({ currentUserId, allPosts, privacyFilter, categoryFilter, r
                     </div>
                     <div className="post-info">
                       <div className="post-author">{originalPost.userid || originalPost.author}</div>
-                      <div className="post-time">{originalPost.datetime || '剛剛'}</div>
+                      <div className="post-time">{originalPost.datetime || 'Just now'}</div>
                     </div>
                   </div>
 
@@ -220,7 +220,7 @@ const WitnessWall = ({ currentUserId, allPosts, privacyFilter, categoryFilter, r
 
                   {renderMediaBlock(
                     originalImageUrl,
-                    '原始貼文圖片',
+                    'Original Post Image',
                     originalPost?.category,
                     originalPost?.privacy
                   )}
@@ -240,7 +240,7 @@ const WitnessWall = ({ currentUserId, allPosts, privacyFilter, categoryFilter, r
                   </div>
                   <div className="witness-wall-info">
                     <div className="witness-wall-author">{witness.userid}</div>
-                    <div className="witness-wall-time">{witness.datetime || '剛剛'}</div>
+                    <div className="witness-wall-time">{witness.datetime || 'Just now'}</div>
                   </div>
                 </div>
                 
@@ -251,7 +251,7 @@ const WitnessWall = ({ currentUserId, allPosts, privacyFilter, categoryFilter, r
 
                 {renderMediaBlock(
                   witnessImageUrl,
-                  '見證圖片',
+                  'Witness Image',
                   witness.category,
                   witness.privacy
                 )}
@@ -264,7 +264,7 @@ const WitnessWall = ({ currentUserId, allPosts, privacyFilter, categoryFilter, r
   );
 };
 
-// ==================== ✅ COMMENT COMPONENT (ĐÃ XÓA NÚT EDIT, DELETE VÀ CHAR COUNT) ====================
+// ==================== COMMENT COMPONENT ====================
 const Comment = ({ comment, onReply, onEdit, onDelete, onLike, currentUserId, postDocid, commentState }) => {
   const [isReplying, setIsReplying] = useState(false);
   const [replyText, setReplyText] = useState('');
@@ -283,7 +283,7 @@ const Comment = ({ comment, onReply, onEdit, onDelete, onLike, currentUserId, po
     setTranslationError(null);
   }, [comment.id]);
 
-    const handleTranslate = async () => {
+  const handleTranslate = async () => {
     if (isTranslating) return;
 
     if (translatedContent) {
@@ -295,16 +295,17 @@ const Comment = ({ comment, onReply, onEdit, onDelete, onLike, currentUserId, po
     setTranslationError(null);
 
     try {
-      console.log(`🌐 Translating comment ${comment.id} to 繁體中文...`);
+      // ✅ THAY ĐỔI: Xóa "to Traditional Chinese"
+      console.log(`🌐 Translating comment ${comment.id} content...`);
       
-      // ✅ GỌI GOOGLE TRANSLATION API
-      const result = await ApiService.translate(comment.content, 'zh-TW');
+      // ✅ ĐÃ ĐÚNG: 'en'
+      const result = await ApiService.translate(comment.content, 'en');
       
       if (result.success) {
         setTranslatedContent(result.translatedText);
+        // ✅ THAY ĐỔI: Xóa "to: 'zh-TW',"
         console.log(`✅ Comment ${comment.id} translation completed:`, {
           from: result.detectedSourceLanguage,
-          to: 'zh-TW',
           text: result.translatedText.substring(0, 50) + '...'
         });
       } else {
@@ -313,12 +314,11 @@ const Comment = ({ comment, onReply, onEdit, onDelete, onLike, currentUserId, po
 
     } catch (error) {
       console.error(`❌ Comment ${comment.id} translation error:`, error);
-      setTranslationError('翻譯失敗，請稍後再試');
+      setTranslationError('Translation failed, please try again later');
     } finally {
       setIsTranslating(false);
     }
   };
-
 
   const loadReplies = async () => {
     if (loadingReplies || comment.isReply) return;
@@ -333,7 +333,7 @@ const Comment = ({ comment, onReply, onEdit, onDelete, onLike, currentUserId, po
         setReplies(commentReplies);
       }
     } catch (error) {
-      console.error('❌ 載入回覆錯誤:', error);
+      console.error('❌ Error loading replies:', error);
     } finally {
       setLoadingReplies(false);
     }
@@ -352,17 +352,17 @@ const Comment = ({ comment, onReply, onEdit, onDelete, onLike, currentUserId, po
       });
 
       if (result.success) {
-        console.log('✅ 回覆成功:', result.comment);
+        console.log('✅ Reply successful:', result.comment);
         setReplyText('');
         setIsReplying(false);
         setShowReplies(true);
         if (onReply) onReply(comment.id, result.comment);
       } else {
-        alert(`回覆失敗: ${result.message}`);
+        alert(`Reply failed: ${result.message}`);
       }
     } catch (error) {
-      console.error('❌ 回覆錯誤:', error);
-      alert(`回覆時發生錯誤: ${error.message}`);
+      console.error('❌ Reply error:', error);
+      alert(`Error posting reply: ${error.message}`);
     } finally {
       setIsSubmitting(false);
     }
@@ -389,19 +389,18 @@ const Comment = ({ comment, onReply, onEdit, onDelete, onLike, currentUserId, po
       <div className="comment-content">
         <p>{comment.content}</p>
 
-        {/* ✅ GIỮ LẠI NÚT DỊCH */}
         <button
           className={`comment-translate-button ${isTranslating ? 'translating' : ''} ${translatedContent ? 'active' : ''}`}
           onClick={handleTranslate}
           disabled={isTranslating}
-          title={translatedContent ? '隱藏翻譯' : '翻譯此評論'}
+          title={translatedContent ? 'Hide Translation' : 'Translate this comment'}
         >
           <TranslateIcon size={14} />
         </button>
 
         {translatedContent && (
           <div className="comment-translated-content">
-            <span className="translate-label">🌐 翻譯:</span>
+            <span className="translate-label">🌐 Translation:</span>
             <p>{translatedContent}</p>
           </div>
         )}
@@ -418,7 +417,7 @@ const Comment = ({ comment, onReply, onEdit, onDelete, onLike, currentUserId, po
           className={`comment-action-btn like ${commentState?.isLiked ? 'active-amen' : ''}`}
           onClick={() => onLike(comment.id)}
           disabled={commentState?.isLiking}
-          title={commentState?.isLiked ? '取消 Amen' : 'Amen 評論'}
+          title={commentState?.isLiked ? 'Remove Amen' : 'Amen Comment'}
         >
           {commentState?.isLiking ? 'Processing...' : `AMEN (${commentState?.likeCount || 0})`}
         </button>
@@ -427,9 +426,9 @@ const Comment = ({ comment, onReply, onEdit, onDelete, onLike, currentUserId, po
           <button
             className="comment-action-btn reply"
             onClick={() => setIsReplying(!isReplying)}
-            title="回覆評論"
+            title="Reply to comment"
           >
-            💬 回覆
+            💬 Reply
           </button>
         )}
 
@@ -442,20 +441,19 @@ const Comment = ({ comment, onReply, onEdit, onDelete, onLike, currentUserId, po
                 loadReplies();
               }
             }}
-            title={showReplies ? '隱藏回覆' : '顯示回覆'}
+            title={showReplies ? 'Hide replies' : 'Show replies'}
           >
-            {showReplies ? '隱藏' : '顯示'} {replies.length} 則回覆
+            {showReplies ? 'Hide' : 'Show'} {replies.length} replies
           </button>
         )}
       </div>
 
-      {/* ✅ ĐÃ XÓA PHẦN CHAR COUNT (0/300) */}
       {isReplying && (
         <form onSubmit={handleReplySubmit} className="comment-reply-form">
           <textarea
             value={replyText}
             onChange={(e) => setReplyText(e.target.value)}
-            placeholder="寫下您的回覆..."
+            placeholder="Write your reply..."
             rows="2"
             maxLength="300"
           />
@@ -465,7 +463,7 @@ const Comment = ({ comment, onReply, onEdit, onDelete, onLike, currentUserId, po
               disabled={!replyText.trim() || isSubmitting}
               className="comment-reply-submit"
             >
-              {isSubmitting ? '回覆中...' : '回覆'}
+              {isSubmitting ? 'Replying...' : 'Reply'}
             </button>
             <button
               type="button"
@@ -475,7 +473,7 @@ const Comment = ({ comment, onReply, onEdit, onDelete, onLike, currentUserId, po
               }}
               className="comment-reply-cancel"
             >
-              取消
+              Cancel
             </button>
           </div>
         </form>
@@ -484,7 +482,7 @@ const Comment = ({ comment, onReply, onEdit, onDelete, onLike, currentUserId, po
       {showReplies && (
         <div className="comment-replies">
           {loadingReplies ? (
-            <div className="loading-replies">載入回覆中...</div>
+            <div className="loading-replies">Loading replies...</div>
           ) : (
             replies.map(reply => (
               <Comment
@@ -505,7 +503,7 @@ const Comment = ({ comment, onReply, onEdit, onDelete, onLike, currentUserId, po
   );
 };
 
-// ==================== ✅ POST COMPONENT ====================
+// ==================== POST COMPONENT ====================
 const Post = ({ post, allPosts, onLike, onComment, currentUserId, selectedCategory, refreshBalance }) => {
   const [isCommenting, setIsCommenting] = useState(false);
   const [commentText, setCommentText] = useState('');
@@ -539,7 +537,7 @@ const Post = ({ post, allPosts, onLike, onComment, currentUserId, selectedCatego
     setTranslationError(null);
   }, [post.id]);
 
-    const handleTranslate = async () => {
+  const handleTranslate = async () => {
     if (isTranslating) return;
 
     if (translatedContent) {
@@ -551,16 +549,17 @@ const Post = ({ post, allPosts, onLike, onComment, currentUserId, selectedCatego
     setTranslationError(null);
 
     try {
-      console.log(`🌐 Translating post ${post.id} to 繁體中文...`);
+      // ✅ THAY ĐỔI: Xóa "to Traditional Chinese"
+      console.log(`🌐 Translating post ${post.id} content...`);
       
-      // ✅ GỌI GOOGLE TRANSLATION API
-      const result = await ApiService.translate(post.content, 'zh-TW');
+      // ✅ ĐÃ ĐÚNG: 'en'
+      const result = await ApiService.translate(post.content, 'en');
       
       if (result.success) {
         setTranslatedContent(result.translatedText);
+        // ✅ THAY ĐỔI: Xóa "to: 'zh-TW',"
         console.log(`✅ Post ${post.id} translation completed:`, {
           from: result.detectedSourceLanguage,
-          to: 'zh-TW',
           text: result.translatedText.substring(0, 50) + '...'
         });
       } else {
@@ -569,12 +568,11 @@ const Post = ({ post, allPosts, onLike, onComment, currentUserId, selectedCatego
 
     } catch (error) {
       console.error(`❌ Post ${post.id} translation error:`, error);
-      setTranslationError('翻譯失敗，請稍後再試');
+      setTranslationError('Translation failed, please try again later');
     } finally {
       setIsTranslating(false);
     }
   };
-
 
   const [transcriptData, setTranscriptData] = useState(null);
   const [isLoadingTranscript, setIsLoadingTranscript] = useState(false);
@@ -595,7 +593,7 @@ const Post = ({ post, allPosts, onLike, onComment, currentUserId, selectedCatego
         id: c.docid,
         author: c.userid,
         content: c.content,
-        time: c.datetime || '剛剛',
+        time: c.datetime || 'Just now',
         likes: c.amen_count || 0,
         isLiked: c.amened || false,
         isReply: true,
@@ -626,7 +624,7 @@ const Post = ({ post, allPosts, onLike, onComment, currentUserId, selectedCatego
       );
       setHasMoreComments(allReplies.length > page * pageSize);
     } catch (error) {
-      console.error('載入評論錯誤:', error);
+      console.error('Error loading comments:', error);
     } finally {
       setLoadingComments(false);
     }
@@ -653,17 +651,17 @@ const Post = ({ post, allPosts, onLike, onComment, currentUserId, selectedCatego
 
     setIsLoadingTranscript(true);
     try {
-      console.log(`🔍 查詢轉錄結果: ${post.audioRecordId}`);
+      console.log(`🔍 Querying transcript: ${post.audioRecordId}`);
       const result = await TRANSCRIPT_API.getTranscript(post.audioRecordId);
 
       if (result.success) {
         setTranscriptData(result);
         setShowTranscriptPanel(true);
       } else {
-        alert(`查詢轉錄結果失敗: ${result.error}`);
+        alert(`Failed to query transcript: ${result.error}`);
       }
     } catch (error) {
-      console.error('💥 查詢轉錄結果時發生錯誤:', error);
+      console.error('💥 Error querying transcript:', error);
     } finally {
       setIsLoadingTranscript(false);
     }
@@ -673,7 +671,7 @@ const Post = ({ post, allPosts, onLike, onComment, currentUserId, selectedCatego
     if (!post.audioRecordId || isDeletingRecord) return;
 
     const confirmDelete = window.confirm(
-      `確定要刪除這個錄音記錄嗎？\n\n錄音 ID: ${post.audioRecordId}\n\n此操作無法復原！`
+      `Are you sure you want to delete this recording?\n\nRecording ID: ${post.audioRecordId}\n\nThis action cannot be undone!`
     );
     if (!confirmDelete) return;
 
@@ -681,15 +679,15 @@ const Post = ({ post, allPosts, onLike, onComment, currentUserId, selectedCatego
     try {
       const result = await TRANSCRIPT_API.deleteRecord(post.audioRecordId);
       if (result.success) {
-        alert(`錄音記錄刪除成功！\n耗時: ${result.performance}`);
+        alert(`Recording deleted successfully!\nDuration: ${result.performance}`);
         setTranscriptData(null);
         setShowTranscriptPanel(false);
       } else {
-        alert(`刪除錄音記錄失敗: ${result.error}`);
+        alert(`Failed to delete recording: ${result.error}`);
       }
     } catch (error) {
-      console.error('💥 刪除錄音記錄時發生錯誤:', error);
-      alert(`刪除錄音記錄時發生錯誤: ${error.message}`);
+      console.error('💥 Error deleting recording:', error);
+      alert(`Error deleting recording: ${error.message}`);
     } finally {
       setIsDeletingRecord(false);
     }
@@ -698,7 +696,7 @@ const Post = ({ post, allPosts, onLike, onComment, currentUserId, selectedCatego
   const TranscriptPanel = () => (
     <div className="transcript-panel">
       <div className="transcript-header">
-        <h4>🎵 錄音轉錄結果</h4>
+        <h4>🎵 Audio Transcript</h4>
         <button
           className="close-transcript-button"
           onClick={() => setShowTranscriptPanel(false)}
@@ -708,12 +706,12 @@ const Post = ({ post, allPosts, onLike, onComment, currentUserId, selectedCatego
       </div>
       <div className="transcript-content">
         <div className="transcript-info">
-          <p><strong>錄音 ID:</strong> {transcriptData?.recordId}</p>
-          <p><strong>狀態:</strong> {transcriptData?.status}</p>
+          <p><strong>Recording ID:</strong> {transcriptData?.recordId}</p>
+          <p><strong>Status:</strong> {transcriptData?.status}</p>
         </div>
         {transcriptData?.transcript && (
           <div className="transcript-text">
-            <h5>📝 轉錄內容:</h5>
+            <h5>📝 Transcript:</h5>
             <div className="transcript-content-text">
               {transcriptData.transcript}
             </div>
@@ -721,8 +719,8 @@ const Post = ({ post, allPosts, onLike, onComment, currentUserId, selectedCatego
         )}
         {transcriptData?.audio_url && (
           <div className="transcript-audio">
-            <h5>🎧 音檔播放:</h5>
-            <audio controls src={transcriptData.audio_url}>您的瀏覽器不支援音訊播放</audio>
+            <h5>🎧 Audio Playback:</h5>
+            <audio controls src={transcriptData.audio_url}>Your browser does not support audio playback</audio>
           </div>
         )}
       </div>
@@ -840,7 +838,7 @@ const Post = ({ post, allPosts, onLike, onComment, currentUserId, selectedCatego
 
     setIsCommenting(true);
     try {
-      console.log(`💬 新增評論到貼文 docid=${post.id}:`, commentText.trim());
+      console.log(`💬 Adding comment to post docid=${post.id}:`, commentText.trim());
       const result = await ApiService.addComment({
         userid: currentUserId,
         content: commentText.trim(),
@@ -849,7 +847,7 @@ const Post = ({ post, allPosts, onLike, onComment, currentUserId, selectedCatego
       });
 
       if (result.success) {
-        console.log('✅ 評論新增成功:', result.comment);
+        console.log('✅ Comment added successfully:', result.comment);
 
         const newCommentId = result.comment?.docid || `temp-${Date.now()}`;
 
@@ -870,19 +868,19 @@ const Post = ({ post, allPosts, onLike, onComment, currentUserId, selectedCatego
           await refreshBalance();
         }
       } else {
-        alert(`評論失敗: ${result.message}`);
+        alert(`Comment failed: ${result.message}`);
       }
     } catch (error) {
-      console.error('💥 評論錯誤:', error);
-      alert(`評論時發生錯誤: ${error.message}`);
+      console.error('💥 Comment error:', error);
+      alert(`Error posting comment: ${error.message}`);
     } finally {
       setIsCommenting(false);
     }
   };
 
-  const handleCommentReply = (commentId, reply) => { console.log(`💬 回覆評論 ${commentId}:`, reply); };
-  const handleCommentEdit = (commentId, newContent) => { console.log(`✏️ 編輯評論 ${commentId}:`, newContent); };
-  const handleCommentDelete = (commentId) => { console.log(`🗑️ 刪除評論 ${commentId}`); };
+  const handleCommentReply = (commentId, reply) => { console.log(`💬 Reply to comment ${commentId}:`, reply); };
+  const handleCommentEdit = (commentId, newContent) => { console.log(`✏️ Edit comment ${commentId}:`, newContent); };
+  const handleCommentDelete = (commentId) => { console.log(`🗑️ Delete comment ${commentId}`); };
 
   return (
     <div className="post-card">
@@ -898,7 +896,7 @@ const Post = ({ post, allPosts, onLike, onComment, currentUserId, selectedCatego
         </div>
         <div className="post-info">
           <div className="post-author">{post.author}</div>
-          <div className="post-time">{post.time || post.datetime || '剛剛'}</div>
+          <div className="post-time">{post.time || post.datetime || 'Just now'}</div>
         </div>
 
         <div className="post-badges-container">
@@ -927,14 +925,14 @@ const Post = ({ post, allPosts, onLike, onComment, currentUserId, selectedCatego
           className={`post-translate-button ${isTranslating ? 'translating' : ''} ${translatedContent ? 'active' : ''}`}
           onClick={handleTranslate}
           disabled={isTranslating}
-          title={translatedContent ? '隱藏翻譯' : '翻譯此貼文'}
+          title={translatedContent ? 'Hide Translation' : 'Translate this post'}
         >
           <TranslateIcon size={18} />
         </button>
 
         {translatedContent && (
           <div className="post-translated-content">
-            <span className="translate-label">🌐 翻譯:</span>
+            <span className="translate-label">🌐 Translation:</span>
             <p>{translatedContent}</p>
           </div>
         )}
@@ -947,26 +945,26 @@ const Post = ({ post, allPosts, onLike, onComment, currentUserId, selectedCatego
 
         {post.image && (
           <div className="post-image">
-            <img src={post.image} alt="貼文圖片" />
+            <img src={post.image} alt="Post image" />
           </div>
         )}
         {post.audioRecordId && (
           <div className="post-audio-info">
-            <p>🎵 附帶錄音檔案 (UUID: {post.audioRecordId})</p>
+            <p>🎵 Attached audio file (UUID: {post.audioRecordId})</p>
             <div className="audio-management-buttons">
               <button
                 className={`audio-action-button ${isLoadingTranscript ? 'loading' : ''}`}
                 onClick={handleGetTranscript}
                 disabled={isLoadingTranscript || isDeletingRecord}
               >
-                {isLoadingTranscript ? '查詢中...' : '📝 查詢轉錄'}
+                {isLoadingTranscript ? 'Querying...' : '📝 Query Transcript'}
               </button>
               <button
                 className={`audio-action-button delete-button ${isDeletingRecord ? 'loading' : ''}`}
                 onClick={handleDeleteRecord}
                 disabled={isDeletingRecord || isLoadingTranscript}
               >
-                {isDeletingRecord ? '刪除中...' : '🗑️ 刪除錄音'}
+                {isDeletingRecord ? 'Deleting...' : '🗑️ Delete Recording'}
               </button>
             </div>
           </div>
@@ -982,7 +980,7 @@ const Post = ({ post, allPosts, onLike, onComment, currentUserId, selectedCatego
           className={`action-button action-amen ${isLiked ? 'active-amen' : ''}`}
           onClick={handleLike}
           disabled={isLiking}
-          title={isLiked ? '取消 Amen' : 'Amen 此貼文'}
+          title={isLiked ? 'Remove Amen' : 'Amen this post'}
         >
           {isLiking ? 'Processing...' : `AMEN (${likeCount})`}
         </button>
@@ -1002,7 +1000,7 @@ const Post = ({ post, allPosts, onLike, onComment, currentUserId, selectedCatego
               <textarea
                 value={commentText}
                 onChange={(e) => setCommentText(e.target.value)}
-                placeholder="寫下您的評論..."
+                placeholder="Write your comment..."
                 rows="3"
                 maxLength="500"
               />
@@ -1020,7 +1018,7 @@ const Post = ({ post, allPosts, onLike, onComment, currentUserId, selectedCatego
                 disabled={!commentText.trim() || isCommenting}
                 className="submit-btn comment-submit-btn"
               >
-                {isCommenting ? '發送中...' : '發送評論'}
+                {isCommenting ? 'Sending...' : 'Pray For You'}
               </button>
               <button
                 type="button"
@@ -1030,15 +1028,15 @@ const Post = ({ post, allPosts, onLike, onComment, currentUserId, selectedCatego
                 }}
                 className="cancel-btn"
               >
-                取消
+                Cancel
               </button>
             </div>
           </form>
 
           <div className="comments-section">
             <div className="comments-header">
-              <h4>💬 評論 ({comments.length})</h4>
-              {loadingComments && <span className="loading-indicator">載入中...</span>}
+              <h4>💬 Prayers({comments.length})</h4>
+              {loadingComments && <span className="loading-indicator">Loading...</span>}
             </div>
 
             <div className="comments-list">
@@ -1058,7 +1056,7 @@ const Post = ({ post, allPosts, onLike, onComment, currentUserId, selectedCatego
                 ))
               ) : (
                 <div className="no-comments">
-                  <p>尚無評論，成為第一個留言的人！</p>
+                  <p>No comments yet. Be the first to comment!</p>
                 </div>
               )}
             </div>
@@ -1070,7 +1068,7 @@ const Post = ({ post, allPosts, onLike, onComment, currentUserId, selectedCatego
                   disabled={loadingComments}
                   className="load-more-btn"
                 >
-                  {loadingComments ? '載入中...' : '載入更多評論'}
+                  {loadingComments ? 'Loading...' : 'Load More Comments'}
                 </button>
               </div>
             )}
@@ -1103,7 +1101,6 @@ const PrayerHub = ({ user, onLogout }) => {
   const [allPosts, setAllPosts] = useState([]);
   const [loading, setLoading] = useState(false);
 
-  // 新增：分頁狀態
   const [currentPage, setCurrentPage] = useState(1);
   const [hasNextPage, setHasNextPage] = useState(false);
 
@@ -1173,81 +1170,105 @@ const PrayerHub = ({ user, onLogout }) => {
   };
 
   const fetchPosts = useCallback(async (page = 1) => {
-    if (selectedPrayerCategory === 'Tribe Prayer' && !hasTribe) {
-      alert('⚠️ 無法載入 Tribe Prayer：您尚未選擇支派！');
-      setSelectedPrayerCategory(null);
-      return;
+  if (selectedPrayerCategory === 'Tribe Prayer' && !hasTribe) {
+    alert('⚠️ Cannot load Tribe Prayer: You haven\'t selected a tribe!');
+    setSelectedPrayerCategory(null);
+    return;
+  }
+
+  setCurrentPage(page);
+  setLoading(true);
+  try {
+    const currentUserId = user?.id || user?.userId || ApiService.getCurrentUserId();
+    
+    const filters = {
+      viewer_userid: currentUserId
+    };
+
+    if (selectedPrivacy && selectedPrivacy !== 'Public') {
+      filters.privacy = selectedPrivacy.toLowerCase();
     }
 
-    setCurrentPage(page);
-    setLoading(true);
-    try {
-      const currentUserId = user?.id || user?.userId || ApiService.getCurrentUserId();
+    if (selectedPrayerCategory) {
+      filters.category = selectedPrayerCategory;
+    }
+
+    console.log('📡 Fetching posts with filters:', filters);
+
+    let result = await ApiService.getPosts(page, 100, true, filters);
+
+    if (result && result.success && result.posts && result.posts.length > 0) {
+      const commentsCountMap = {};
+      result.posts.forEach(p => {
+        if (p.parent_docid && p.event !== 'witness') {
+          commentsCountMap[p.parent_docid] = (commentsCountMap[p.parent_docid] || 0) + 1;
+        }
+      });
+
+      const filteredPosts = result.posts.filter(post => !post.parent_docid && post.docid);
+
+      console.log(`📊 Total filtered posts: ${filteredPosts.length}`);
+
+      // ✅ MỚI: Phân trang ở frontend - Mỗi trang 100 posts
+      const postsPerPage = 100;
+      const startIndex = (page - 1) * postsPerPage;
+      const endIndex = startIndex + postsPerPage;
+      const paginatedPosts = filteredPosts.slice(startIndex, endIndex);
+
+      console.log(`📄 Page ${page}: Showing ${paginatedPosts.length}/${filteredPosts.length} posts (from index ${startIndex} to ${endIndex})`);
+
+      const transformedPosts = paginatedPosts.map(post => ({
+        id: post.docid,
+        sn: post.sn,
+        userid: post.userid,
+        likes: post.amen_count !== undefined ? post.amen_count : 0,
+        isLiked: (post.amened === true || post.amened === 1 || post.amened === 'true'),
+        calculatedComments: commentsCountMap[post.docid] || 0,
+        title: post.title || '',
+        content: post.content || '',
+        privacy: post.privacy ? post.privacy.toLowerCase() : 'public',
+        category: post.category || 'General',
+        author: post.author || post.userid || user?.name || 'Anonymous User',
+        time: post.datetime || 'Just now',
+        image: post.image || null,
+        audioRecordId: post.uuid || null,
+        avatar_url: ApiService.processAvatarUrl(post.avatar_url)
+      }));
       
-      const filters = {
-        viewer_userid: currentUserId
-      };
+      console.log(`✅ Loaded ${transformedPosts.length} posts`);
+      setPosts(transformedPosts);
+      setAllPosts(result.posts);
 
-      if (selectedPrivacy && selectedPrivacy !== 'Public') {
-        filters.privacy = selectedPrivacy.toLowerCase();
-      }
+      // ✅ MỚI: Kiểm tra có trang tiếp theo không
+      const totalPages = Math.ceil(filteredPosts.length / postsPerPage);
+      const hasNext = page < totalPages;
 
-      if (selectedPrayerCategory) {
-        filters.category = selectedPrayerCategory;
-      }
+      console.log(`📊 Pagination info:`, {
+        currentPage: page,
+        totalPages: totalPages,
+        postsOnThisPage: paginatedPosts.length,
+        totalFilteredPosts: filteredPosts.length,
+        hasNext: hasNext
+      });
 
-      console.log('📡 Fetching posts with filters:', filters);
-
-      let result = await ApiService.getPosts(page, 100, true, filters);
-
-      if (result && result.success && result.posts && result.posts.length > 0) {
-        const commentsCountMap = {};
-        result.posts.forEach(p => {
-          if (p.parent_docid && p.event !== 'witness') {
-            commentsCountMap[p.parent_docid] = (commentsCountMap[p.parent_docid] || 0) + 1;
-          }
-        });
-
-        const filteredPosts = result.posts.filter(post => !post.parent_docid && post.docid);
-
-        const transformedPosts = filteredPosts.map(post => ({
-          id: post.docid,
-          sn: post.sn,
-          userid: post.userid,
-          likes: post.amen_count !== undefined ? post.amen_count : 0,
-          isLiked: (post.amened === true || post.amened === 1 || post.amened === 'true'),
-          calculatedComments: commentsCountMap[post.docid] || 0,
-          title: post.title || '',
-          content: post.content || '',
-          privacy: post.privacy ? post.privacy.toLowerCase() : 'public',
-          category: post.category || 'General',
-          author: post.author || post.userid || user?.name || '匿名用戶',
-          time: post.datetime || '剛剛',
-          image: post.image || null,
-          audioRecordId: post.uuid || null,
-          avatar_url: ApiService.processAvatarUrl(post.avatar_url)
-        }));
-        
-        console.log(`✅ Loaded ${transformedPosts.length} posts`);
-        setPosts(transformedPosts);
-        setAllPosts(result.posts);
-        setHasNextPage(!!result.pagination?.has_next || result.posts.length === 100);
-        
-      } else {
-        console.log('ℹ️ No posts found');
-        setPosts([]);
-        setAllPosts([]);
-        setHasNextPage(false);
-      }
-    } catch (error) {
-      console.error('💥 取得貼文時發生錯誤:', error);
+      setHasNextPage(hasNext);
+      
+    } else {
+      console.log('ℹ️ No posts found');
       setPosts([]);
       setAllPosts([]);
       setHasNextPage(false);
-    } finally {
-      setLoading(false);
     }
-  }, [user, selectedPrivacy, selectedPrayerCategory, hasTribe]);
+  } catch (error) {
+    console.error('💥 Error fetching posts:', error);
+    setPosts([]);
+    setAllPosts([]);
+    setHasNextPage(false);
+  } finally {
+    setLoading(false);
+  }
+}, [user, selectedPrivacy, selectedPrayerCategory, hasTribe]);
+
 
   useEffect(() => {
     setCurrentPage(1);
@@ -1304,13 +1325,13 @@ const PrayerHub = ({ user, onLogout }) => {
       localStorage.setItem('userData', JSON.stringify(storedUser));
       console.log('💾 Tribe saved to localStorage');
     } catch (error) {
-      console.error('❌ Lỗi khi lưu tribe vào localStorage:', error);
+      console.error('❌ Error saving tribe to localStorage:', error);
     }
     
     setShowTribeDetail(false);
     
     setTimeout(() => {
-      alert('支派選擇成功！您的支派已更新。');
+      alert('Tribe selected successfully! Your tribe has been updated.');
     }, 100);
   };
 
@@ -1340,6 +1361,22 @@ const PrayerHub = ({ user, onLogout }) => {
     navigate('/login', { replace: true });
     setTimeout(() => { navigatingRef.current = false; }, 1000);
   };
+
+  const handleNotificationClick = useCallback(() => {
+    if (navigatingRef.current) {
+      console.log('⚠️ Navigation already in progress, ignoring...');
+      return;
+    }
+
+    console.log('🔔 Navigate to Notifications');
+    navigatingRef.current = true;
+    
+    setTimeout(() => {
+      navigatingRef.current = false;
+    }, 1000);
+    
+    navigate('/notifications');
+  }, [navigate]);
 
   const handleTabChange = (tab) => {
     if (navigatingRef.current) return;
@@ -1410,7 +1447,7 @@ const PrayerHub = ({ user, onLogout }) => {
   };
 
   const handleCommentPost = async (postId, commentText) => {
-    console.log(`💬 新評論於貼文 ${postId}:`, commentText);
+    console.log(`💬 New comment on post ${postId}:`, commentText);
     await fetchPosts();
     await refreshBalance();
   };
@@ -1456,7 +1493,7 @@ const PrayerHub = ({ user, onLogout }) => {
           familyIcon={Mdi}
           blessingIcon={Fluent}
           notificationCount={notificationCount}
-          onNotificationClick={() => {}}
+          onNotificationClick={handleNotificationClick}
           onCoinClick={handleCoinClick}
           onLogoClick={handleBack}
           onTribeLogoClick={handleTribeLogoClick}
@@ -1465,7 +1502,11 @@ const PrayerHub = ({ user, onLogout }) => {
         />
 
         <div className="top-action-bar">
-          <NotificationBell count={notificationCount} size="medium" />
+          <NotificationBell 
+            count={notificationCount} 
+            size="medium"
+            onClick={handleNotificationClick}
+          />
           <CoinDisplay 
             amount={loadingBalance ? '...' : coinAmount} 
             size="medium"
@@ -1531,7 +1572,7 @@ const PrayerHub = ({ user, onLogout }) => {
                       e.stopPropagation();
                       
                       if (option === 'Tribe Prayer' && !hasTribe) {
-                        alert('⚠️ 您尚未選擇支派！\n請先選擇您的支派才能使用 Tribe Prayer 功能。');
+                        alert('⚠️ You haven\'t selected a tribe!\nPlease select your tribe first to use the Tribe Prayer feature.');
                         return;
                       }
                       
@@ -1568,7 +1609,7 @@ const PrayerHub = ({ user, onLogout }) => {
             {loading ? (
               <div className="loading-container">
                 <div className="loading-spinner"></div>
-                <p>載入中...</p>
+                <p>Loading...</p>
               </div>
             ) : witnessWallActive ? (
               <WitnessWall
@@ -1593,7 +1634,6 @@ const PrayerHub = ({ user, onLogout }) => {
                   />
                 ))}
 
-                {/* ✅ 分頁按鈕 */}
                 <div className="pagination-controls" style={{ display: 'flex', justifyContent: 'center', gap: '20px', padding: '20px 0' }}>
                   <button 
                     onClick={handlePrevPage} 
@@ -1608,10 +1648,10 @@ const PrayerHub = ({ user, onLogout }) => {
                       cursor: currentPage === 1 ? 'not-allowed' : 'pointer'
                     }}
                   >
-                    ← 上一頁
+                    ← Previous
                   </button>
                   
-                  <span style={{ color: 'white', alignSelf: 'center' }}>第 {currentPage} 頁</span>
+                  <span style={{ color: 'white', alignSelf: 'center' }}>Page {currentPage}</span>
 
                   <button 
                     onClick={handleNextPage} 
@@ -1626,15 +1666,15 @@ const PrayerHub = ({ user, onLogout }) => {
                       cursor: !hasNextPage ? 'not-allowed' : 'pointer'
                     }}
                   >
-                    下一頁 →
+                    Next →
                   </button>
                 </div>
               </div>
             ) : (
               <div className="no-posts">
                 <div className="no-posts-icon">📭</div>
-                <h4>沒有符合條件的貼文</h4>
-                <p>嘗試切換到其他篩選條件查看現有貼文</p>
+                <h4>No matching posts</h4>
+                <p>Try switching to other filters to view existing posts</p>
               </div>
             )}
           </div>
@@ -1647,7 +1687,7 @@ const PrayerHub = ({ user, onLogout }) => {
             onClick={() => handleTabChange('Home')} 
             isActive={false} 
             size="medium" 
-            ariaLabel="首頁"
+            ariaLabel="Home"
           />
           
           <CircleButton 
@@ -1665,7 +1705,7 @@ const PrayerHub = ({ user, onLogout }) => {
             onClick={() => handleTabChange('Add')} 
             isActive={false} 
             size="medium"
-            ariaLabel="新增貼文"
+            ariaLabel="Add Post"
           />
           
           <CircleButton 
@@ -1674,7 +1714,7 @@ const PrayerHub = ({ user, onLogout }) => {
             onClick={() => handleTabChange('AddFriend')} 
             isActive={false} 
             size="medium" 
-            ariaLabel="新增好友"
+            ariaLabel="Add Friend"
           />
           
           <CircleButton 
@@ -1683,7 +1723,7 @@ const PrayerHub = ({ user, onLogout }) => {
             onClick={() => handleTabChange('Nova')} 
             isActive={false} 
             size="medium" 
-            ariaLabel="nova小天使"
+            ariaLabel="Nova Assistant"
           />
         </div>
       </div>

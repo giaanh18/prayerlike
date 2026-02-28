@@ -17,6 +17,7 @@ import ActivityForm from './ActivityForm';
 import VoiceRecordButton from '../../components/VoiceRecordButton/VoiceRecordButton';
 import AvatarImage from '../../components/AvatarImage/AvatarImage';
 
+
 // 導入圖片資源
 import family_and_personal from '../../assets/icons/family_and_personal.png';
 import church from '../../assets/icons/church.png';
@@ -88,30 +89,6 @@ const getActivityImageUrl = (imagePath) => {
   return fullUrl;
 };
 
-// ==================== 🖼️ WITNESS IMAGE HELPER ====================
-const getWitnessImageUrl = (imagePath) => {
-  if (!imagePath) {
-    console.warn('⚠️ getWitnessImageUrl: No image path provided');
-    return null;
-  }
-
-  if (imagePath.startsWith('http://') || imagePath.startsWith('https://')) {
-    console.log('✅ Witness image already full URL:', imagePath);
-    return imagePath;
-  }
-
-  const baseUrl = 'https://pray-api.yalinelena.church';
-  const cleanPath = imagePath.startsWith('/') ? imagePath : `/${imagePath}`;
-  const fullUrl = `${baseUrl}${cleanPath}`;
-
-  console.log('🔗 Converted witness image URL:', {
-    original: imagePath,
-    full: fullUrl
-  });
-
-  return fullUrl;
-};
-
 // ==================== 🌐 TRANSLATE ICON COMPONENT ====================
 const TranslateIcon = ({ size = 18 }) => (
   <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" style={{ width: size, height: size }}>
@@ -119,35 +96,13 @@ const TranslateIcon = ({ size = 18 }) => (
   </svg>
 );
 
-// ==================== 🌍 LANGUAGE NAMES ====================
-const getLanguageName = (code) => {
-  const languages = {
-    'en': 'English',
-    'vi': 'Tiếng Việt',
-    'zh-TW': '繁體中文',
-    'zh-CN': '简体中文',
-    'ja': '日本語',
-    'ko': '한국어',
-    'th': 'ภาษาไทย',
-    'fr': 'Français',
-    'de': 'Deutsch',
-    'es': 'Español',
-    'it': 'Italiano',
-    'pt': 'Português',
-    'ru': 'Русский',
-    'ar': 'العربية',
-    'hi': 'हिन्दी'
-  };
-  return languages[code] || code;
-};
-
 // ==================== ✅ WITNESS WALL COMPONENT ====================
-const WitnessWall = ({ 
-  selectedCategory, 
-  currentUserId, 
-  allPosts, 
+const WitnessWall = ({
+  selectedCategory,
+  currentUserId,
+  allPosts,
   refreshBalance,
-  viewScope = 'my'
+  viewScope = 'my'  // ✅ THÊM DÒNG NÀY
 }) => {
 
   const [witnesses, setWitnesses] = useState([]);
@@ -156,7 +111,7 @@ const WitnessWall = ({
     current_page: 1,
     total_pages: 1,
     total_items: 0,
-    per_page: 100, // ✅ THAY ĐỔI: 10 → 100
+    per_page: 10,
     has_next: false,
     has_prev: false
   });
@@ -164,25 +119,29 @@ const WitnessWall = ({
 
   const [postStates, setPostStates] = useState({});
   const [commentStates, setCommentStates] = useState({});
+
+  // ✅ THÊM: Translation states cho mỗi original post trong Witness Wall
   const [translationStates, setTranslationStates] = useState({});
 
+  // ✅ THÊM: Handle translate cho original post trong Witness Wall
   const handleTranslateOriginalPost = async (postId, content) => {
     const currentState = translationStates[postId];
 
     if (currentState?.isTranslating) return;
 
+    // Toggle: Nếu đã dịch thì ẩn
     if (currentState?.translatedContent) {
       setTranslationStates(prev => ({
         ...prev,
         [postId]: {
           ...prev[postId],
-          translatedContent: null,
-          detectedLanguage: null
+          translatedContent: null
         }
       }));
       return;
     }
 
+    // Bắt đầu dịch
     setTranslationStates(prev => ({
       ...prev,
       [postId]: {
@@ -194,27 +153,21 @@ const WitnessWall = ({
 
     try {
       console.log(`🌐 Translating original post ${postId} in Witness Wall...`);
-      
-      const result = await ApiService.translate(content, 'zh-TW');
-      
-      if (result.success) {
-        setTranslationStates(prev => ({
-          ...prev,
-          [postId]: {
-            ...prev[postId],
-            translatedContent: result.translatedText,
-            detectedLanguage: result.detectedSourceLanguage,
-            isTranslating: false
-          }
-        }));
 
-        console.log(`✅ Original post ${postId} translation completed:`, {
-          from: result.detectedSourceLanguage,
-          text: result.translatedText.substring(0, 50) + '...'
-        });
-      } else {
-        throw new Error(result.message || 'Translation failed');
-      }
+      // ✅ TODO: Thay bằng API thật
+      await new Promise(resolve => setTimeout(resolve, 800));
+      const mockTranslation = `[Translated] ${content}`;
+
+      setTranslationStates(prev => ({
+        ...prev,
+        [postId]: {
+          ...prev[postId],
+          translatedContent: mockTranslation,
+          isTranslating: false
+        }
+      }));
+
+      console.log(`✅ Original post ${postId} translation completed`);
 
     } catch (error) {
       console.error(`❌ Original post ${postId} translation error:`, error);
@@ -222,7 +175,7 @@ const WitnessWall = ({
         ...prev,
         [postId]: {
           ...prev[postId],
-          translationError: '翻譯失敗，請稍後再試',
+          translationError: '翻譯失敗',
           isTranslating: false
         }
       }));
@@ -234,41 +187,10 @@ const WitnessWall = ({
     try {
       console.log(`✨ Loading Witness Wall - Page ${page}, Category: ${selectedCategory}, ViewScope: ${viewScope}`);
 
-      // ✅ THAY ĐỔI: limit = 100
       const result = await ApiService.getWitnessList(page, 100);
 
       if (result.success) {
-        console.log('📦 Raw witnesses data:', result.witnesses);
-        console.log('🖼️ Witnesses with images:');
-        result.witnesses.forEach((w, idx) => {
-          console.log(`  Witness ${idx + 1}:`, {
-            id: w.docid,
-            content: w.content?.substring(0, 30) + '...',
-            image_url: w.image_url || 'NO IMAGE_URL',
-            images: w.images || 'NO IMAGES'
-          });
-        });
-
-        const witnessesWithFullUrls = result.witnesses.map(witness => {
-          let imageUrls = [];
-          
-          if (witness.image_url) {
-            imageUrls.push(getWitnessImageUrl(witness.image_url));
-          }
-          
-          if (witness.images && Array.isArray(witness.images)) {
-            imageUrls = [...imageUrls, ...witness.images.map(img => getWitnessImageUrl(img))];
-          }
-          
-          return {
-            ...witness,
-            images: imageUrls
-          };
-        });
-
-        console.log('✅ Witnesses with full URLs:', witnessesWithFullUrls);
-
-        const filteredWitnesses = witnessesWithFullUrls.filter(witness => {
+        const filteredWitnesses = result.witnesses.filter(witness => {
           const originalPost = witness.original_post ||
             allPosts?.find(p => p.docid === witness.parent_docid);
 
@@ -277,10 +199,11 @@ const WitnessWall = ({
             return false;
           }
 
+          // ✅ Nếu đang ở Home (viewScope === 'my'), chỉ hiển thị witness của bài mình
           if (viewScope === 'my') {
-            const isMyPost = originalPost.userid === currentUserId || 
-                            originalPost.author === currentUserId;
-            
+            const isMyPost = originalPost.userid === currentUserId ||
+              originalPost.author === currentUserId;
+
             if (!isMyPost) {
               console.log(`🏠 Home mode: Skipping witness ${witness.docid} (not my post)`);
               return false;
@@ -302,8 +225,7 @@ const WitnessWall = ({
 
         console.log(`✅ Filtered ${filteredWitnesses.length}/${result.witnesses.length} witnesses for category: ${selectedCategory}${viewScope === 'my' ? ' (MY POSTS ONLY)' : ''}`);
 
-        // ✅ THAY ĐỔI: perPage = 100
-        const perPage = 100;
+        const perPage = 20;
         const startIndex = (page - 1) * perPage;
         const endIndex = startIndex + perPage;
         const paginatedWitnesses = filteredWitnesses.slice(startIndex, endIndex);
@@ -328,7 +250,7 @@ const WitnessWall = ({
           if (originalPost) {
             initialStates[originalPost.docid] = {
               likeCount: originalPost.amen_count || 0,
-              isLiked: originalPost.amened || false,
+              hasLiked: false,
               isLiking: false,
               commentCount: originalPost.comment_count || 0,
               showCommentForm: false,
@@ -341,7 +263,6 @@ const WitnessWall = ({
             initialTranslationStates[originalPost.docid] = {
               isTranslating: false,
               translatedContent: null,
-              detectedLanguage: null,
               translationError: null
             };
           }
@@ -361,6 +282,8 @@ const WitnessWall = ({
     }
   };
 
+
+
   useEffect(() => {
     loadWitnesses(currentPage);
   }, [currentPage]);
@@ -368,22 +291,18 @@ const WitnessWall = ({
   useEffect(() => {
     setCurrentPage(1);
     loadWitnesses(1);
-  }, [selectedCategory, viewScope]);
+  }, [selectedCategory, viewScope]); // ✅ THÊM viewScope
 
   const handleNextPage = () => {
     if (pagination.has_next) {
-      const nextPage = currentPage + 1;
-      setCurrentPage(nextPage);
-      loadWitnesses(nextPage);
+      setCurrentPage(prev => prev + 1);
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
   };
 
   const handlePrevPage = () => {
     if (pagination.has_prev) {
-      const prevPage = currentPage - 1;
-      setCurrentPage(prevPage);
-      loadWitnesses(prevPage);
+      setCurrentPage(prev => Math.max(1, prev - 1));
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
   };
@@ -393,16 +312,13 @@ const WitnessWall = ({
     if (!currentState || currentState.isLiking) return;
 
     const prevCount = currentState.likeCount;
-    const prevLiked = currentState.isLiked;
-    
-    const newLiked = !prevLiked;
-    const newCount = newLiked ? prevCount + 1 : Math.max(0, prevCount - 1);
+    const newCount = prevCount + 1;
 
     setPostStates(prev => ({
       ...prev,
       [postId]: {
         ...prev[postId],
-        isLiked: newLiked,
+        hasLiked: true,
         likeCount: newCount,
         isLiking: true
       }
@@ -413,19 +329,20 @@ const WitnessWall = ({
 
       if (result.success) {
         const finalCount = result.data?.amen_count !== undefined ? result.data.amen_count : newCount;
-        const finalLiked = result.data?.amened !== undefined ? result.data.amened : newLiked;
 
-        setPostStates(prev => ({
-          ...prev,
-          [postId]: {
-            ...prev[postId],
-            likeCount: finalCount,
-            isLiked: finalLiked,
-            isLiking: false
-          }
-        }));
+        setTimeout(() => {
+          setPostStates(prev => ({
+            ...prev,
+            [postId]: {
+              ...prev[postId],
+              likeCount: finalCount,
+              hasLiked: false,
+              isLiking: false
+            }
+          }));
+        }, 300);
 
-        console.log(`✅ Amen ${newLiked ? 'added' : 'removed'} for original post ${postId}:`, finalCount);
+        console.log(`✅ Liked original post ${postId}:`, finalCount);
 
         if (refreshBalance) {
           await refreshBalance();
@@ -439,7 +356,7 @@ const WitnessWall = ({
         ...prev,
         [postId]: {
           ...prev[postId],
-          isLiked: prevLiked,
+          hasLiked: false,
           likeCount: prevCount,
           isLiking: false
         }
@@ -452,16 +369,13 @@ const WitnessWall = ({
     if (!currentState || currentState.isLiking) return;
 
     const prevCount = currentState.likeCount;
-    const prevLiked = currentState.isLiked;
-    
-    const newLiked = !prevLiked;
-    const newCount = newLiked ? prevCount + 1 : Math.max(0, prevCount - 1);
+    const newCount = prevCount + 1;
 
     setCommentStates(prev => ({
       ...prev,
       [commentId]: {
         ...prev[commentId],
-        isLiked: newLiked,
+        hasLiked: true,
         likeCount: newCount,
         isLiking: true
       }
@@ -471,20 +385,23 @@ const WitnessWall = ({
       const result = await ApiService.likeComment(commentId, currentUserId);
 
       if (result.success) {
-        const finalCount = result.data?.amen_count !== undefined ? result.data.amen_count : newCount;
-        const finalLiked = result.data?.amened !== undefined ? result.data.amened : newLiked;
+        const finalCount = result.data?.amen_count !== undefined
+          ? result.data.amen_count
+          : newCount;
 
-        setCommentStates(prev => ({
-          ...prev,
-          [commentId]: {
-            ...prev[commentId],
-            likeCount: finalCount,
-            isLiked: finalLiked,
-            isLiking: false
-          }
-        }));
+        setTimeout(() => {
+          setCommentStates(prev => ({
+            ...prev,
+            [commentId]: {
+              ...prev[commentId],
+              likeCount: finalCount,
+              hasLiked: false,
+              isLiking: false
+            }
+          }));
+        }, 300);
 
-        console.log(`✅ Comment amen ${newLiked ? 'added' : 'removed'} ${commentId}:`, finalCount);
+        console.log(`✅ Liked comment ${commentId}:`, finalCount);
 
         if (refreshBalance) {
           await refreshBalance();
@@ -493,12 +410,12 @@ const WitnessWall = ({
         throw new Error(result.message || 'API Error');
       }
     } catch (error) {
-      console.error('❌ Comment amen error:', error);
+      console.error('❌ Like comment error:', error);
       setCommentStates(prev => ({
         ...prev,
         [commentId]: {
           ...prev[commentId],
-          isLiked: prevLiked,
+          hasLiked: false,
           likeCount: prevCount,
           isLiking: false
         }
@@ -526,7 +443,6 @@ const WitnessWall = ({
         content: c.content,
         time: c.datetime || '剛剛',
         likes: c.amen_count || 0,
-        isLiked: c.amened || false,
         isReply: true,
         userid: c.userid
       }));
@@ -535,7 +451,7 @@ const WitnessWall = ({
       formattedComments.forEach(comment => {
         newCommentStates[comment.id] = {
           likeCount: comment.likes || 0,
-          isLiked: comment.isLiked || false,
+          hasLiked: false,
           isLiking: false
         };
       });
@@ -627,7 +543,6 @@ const WitnessWall = ({
           content: currentState.commentText.trim(),
           time: '剛剛',
           likes: 0,
-          isLiked: false,
           isReply: true,
           userid: currentUserId
         };
@@ -636,7 +551,7 @@ const WitnessWall = ({
           ...prev,
           [newCommentId]: {
             likeCount: 0,
-            isLiked: false,
+            hasLiked: false,
             isLiking: false
           }
         }));
@@ -709,7 +624,7 @@ const WitnessWall = ({
 
           const postState = postStates[originalPost?.docid] || {
             likeCount: originalPost?.amen_count || 0,
-            isLiked: originalPost?.amened || false,
+            hasLiked: originalPost?.amened || false,
             isLiking: false,
             commentCount: originalPost?.comment_count || 0,
             showCommentForm: false,
@@ -719,10 +634,10 @@ const WitnessWall = ({
             loadingComments: false
           };
 
+          // ✅ THÊM: Lấy translation state cho original post
           const translationState = translationStates[originalPost?.docid] || {
             isTranslating: false,
             translatedContent: null,
-            detectedLanguage: null,
             translationError: null
           };
 
@@ -732,14 +647,15 @@ const WitnessWall = ({
                 <div className="witness-original-post-section">
                   <div className="post-header">
                     <div className="post-avatar">
-                      <AvatarImage 
-                        userId={originalPost.userid || originalPost.author}
-                        userName={originalPost.userid || originalPost.author}
-                        src={originalPost.avatar_url}
-                        size={48}
-                        clickable={true}
-                      />
-                    </div>
+  <AvatarImage 
+    userId={originalPost.userid || originalPost.author}
+    userName={originalPost.userid || originalPost.author}
+    src={ApiService.processAvatarUrl(originalPost.avatar_url)}
+    size={48}
+    clickable={true}
+  />
+</div>
+
                     <div className="post-info">
                       <div className="post-author">{originalPost.userid || originalPost.author}</div>
                       <div className="post-time">{originalPost.datetime || '剛剛'}</div>
@@ -758,10 +674,8 @@ const WitnessWall = ({
                     </div>
                   </div>
 
+                  {/* ✅ THÊM: Nút dịch với state riêng */}
                   <div className="post-content">
-                    {originalPost.title && <h3>{originalPost.title}</h3>}
-                    <p>{originalPost.content}</p>
-
                     <button
                       className={`post-translate-button ${translationState.isTranslating ? 'translating' : ''} ${translationState.translatedContent ? 'active' : ''}`}
                       onClick={() => handleTranslateOriginalPost(originalPost.docid, originalPost.content)}
@@ -771,15 +685,18 @@ const WitnessWall = ({
                       <TranslateIcon size={18} />
                     </button>
 
+                    {originalPost.title && <h3>{originalPost.title}</h3>}
+                    <p>{originalPost.content}</p>
+
+                    {/* ✅ THÊM: Hiển thị translated content */}
                     {translationState.translatedContent && (
                       <div className="post-translated-content">
-                        <span className="translate-label">
-                          🌐 翻譯 {translationState.detectedLanguage && `(從 ${getLanguageName(translationState.detectedLanguage)})`}:
-                        </span>
+                        <span className="translate-label">🌐 翻譯:</span>
                         <p>{translationState.translatedContent}</p>
                       </div>
                     )}
 
+                    {/* ✅ THÊM: Hiển thị translation error */}
                     {translationState.translationError && (
                       <div className="post-translation-error">
                         ⚠️ {translationState.translationError}
@@ -789,12 +706,12 @@ const WitnessWall = ({
 
                   <div className="post-actions">
                     <button
-                      className={`action-button action-amen ${postState.isLiked ? 'active-amen' : ''}`}
+                      className={`action-button action-amen ${postState.hasLiked ? 'active-amen' : ''}`}
                       onClick={() => handleLikeOriginalPost(originalPost.docid)}
                       disabled={postState.isLiking}
-                      title={postState.isLiked ? '取消 Amen' : 'Amen 此貼文'}
                     >
-                      {postState.isLiking ? 'Processing...' : `AMEN (${postState.likeCount})`}
+                      {postState.isLiking ? 'Processing...' :
+                        (postState.hasLiked ? `AMENED (${postState.likeCount})` : `AMEN (${postState.likeCount})`)}
                     </button>
 
                     <button
@@ -829,6 +746,9 @@ const WitnessWall = ({
                           />
                         </div>
 
+                        <div className="form-info">
+                          <span className="char-count">{postState.commentText.length}/500</span>
+                        </div>
                         <div className="form-actions">
                           <button
                             type="submit"
@@ -858,7 +778,7 @@ const WitnessWall = ({
                             postState.comments.map(comment => {
                               const commentState = commentStates[comment.id] || {
                                 likeCount: comment.likes || 0,
-                                isLiked: comment.isLiked || false,
+                                hasLiked: false,
                                 isLiking: false
                               };
 
@@ -866,13 +786,15 @@ const WitnessWall = ({
                                 <div key={comment.id} className="comment comment-reply">
                                   <div className="comment-header">
                                     <div className="comment-avatar">
-                                      <AvatarImage 
-                                        userId={comment.userid || comment.author}
-                                        userName={comment.author}
-                                        size={32}
-                                        clickable={true}
-                                      />
-                                    </div>
+  <AvatarImage 
+    userId={comment.userid || comment.author}
+    userName={comment.author}
+    src={ApiService.processAvatarUrl(comment.avatar_url)}
+    size={32}
+    clickable={true}
+  />
+</div>
+
                                     <div className="comment-info">
                                       <div className="comment-author">{comment.author}</div>
                                       <div className="comment-time">{comment.time}</div>
@@ -884,12 +806,12 @@ const WitnessWall = ({
 
                                   <div className="comment-actions">
                                     <button
-                                      className={`comment-like-btn ${commentState.isLiked ? 'active-amen' : ''}`}
+                                      className={`comment-like-btn ${commentState.hasLiked ? 'active-amen' : ''}`}
                                       onClick={() => handleLikeComment(comment.id)}
                                       disabled={commentState.isLiking}
-                                      title={commentState.isLiked ? '取消 Amen' : 'Amen 評論'}
                                     >
-                                      {commentState.isLiking ? 'Processing...' : `AMEN (${commentState.likeCount})`}
+                                      {commentState.isLiking ? 'Processing...' :
+                                        (commentState.hasLiked ? `AMENED (${commentState.likeCount})` : `AMEN (${commentState.likeCount})`)}
                                     </button>
                                   </div>
                                 </div>
@@ -907,18 +829,18 @@ const WitnessWall = ({
                   )}
                 </div>
               )}
-              
               <div className="witness-section">
                 <div className="witness-wall-header">
                   <div className="witness-wall-avatar">
-                    <AvatarImage 
-                      userId={witness.userid}
-                      userName={witness.userid}
-                      src={witness.avatar_url}
-                      size={48}
-                      clickable={true}
-                    />
-                  </div>
+  <AvatarImage 
+    userId={witness.userid}
+    userName={witness.userid}
+    src={ApiService.processAvatarUrl(witness.avatar_url)}
+    size={48}
+    clickable={true}
+  />
+</div>
+
                   <div className="witness-wall-info">
                     <div className="witness-wall-author">{witness.userid}</div>
                     <div className="witness-wall-time">{witness.datetime || '剛剛'}</div>
@@ -928,27 +850,6 @@ const WitnessWall = ({
                 <div className="witness-wall-content">
                   {witness.title && <h4>{witness.title}</h4>}
                   <p>{witness.content}</p>
-                  
-                  {witness.images && witness.images.length > 0 && (
-                    <div className="witness-images-container">
-                      {witness.images.map((imageUrl, index) => (
-                        <div key={index} className="witness-image-wrapper">
-                          <img 
-                            src={imageUrl} 
-                            alt={`Witness image ${index + 1}`}
-                            className="witness-image"
-                            onError={(e) => {
-                              console.error('❌ Witness image load failed:', imageUrl);
-                              e.target.style.display = 'none';
-                            }}
-                            onLoad={() => {
-                              console.log('✅ Witness image loaded:', imageUrl);
-                            }}
-                          />
-                        </div>
-                      ))}
-                    </div>
-                  )}
                 </div>
               </div>
             </div>
@@ -1034,23 +935,25 @@ const PrivacyDropdown = ({ onChange, initialValue = 'public' }) => {
 };
 
 // ==================== COMMENT COMPONENT ====================
-const Comment = ({ comment, onReply, onLike, currentUserId, postDocid, commentState }) => {
+const Comment = ({ comment, onReply, onEdit, onDelete, onLike, currentUserId, postDocid, commentState }) => {
   const [isReplying, setIsReplying] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
   const [replyText, setReplyText] = useState('');
+  const [editText, setEditText] = useState(comment.content);
   const [showReplies, setShowReplies] = useState(false);
   const [replies, setReplies] = useState([]);
   const [loadingReplies, setLoadingReplies] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // ✅ THÊM: Translation state riêng cho comment này
   const [isTranslating, setIsTranslating] = useState(false);
   const [translatedContent, setTranslatedContent] = useState(null);
-  const [detectedLanguage, setDetectedLanguage] = useState(null);
   const [translationError, setTranslationError] = useState(null);
 
+  // ✅ THÊM: Reset translation khi comment.id thay đổi
   useEffect(() => {
     setIsTranslating(false);
     setTranslatedContent(null);
-    setDetectedLanguage(null);
     setTranslationError(null);
   }, [comment.id]);
 
@@ -1059,7 +962,6 @@ const Comment = ({ comment, onReply, onLike, currentUserId, postDocid, commentSt
 
     if (translatedContent) {
       setTranslatedContent(null);
-      setDetectedLanguage(null);
       return;
     }
 
@@ -1068,23 +970,16 @@ const Comment = ({ comment, onReply, onLike, currentUserId, postDocid, commentSt
 
     try {
       console.log(`🌐 Translating comment ${comment.id} content...`);
-      
-      const result = await ApiService.translate(comment.content, 'zh-TW');
-      
-      if (result.success) {
-        setTranslatedContent(result.translatedText);
-        setDetectedLanguage(result.detectedSourceLanguage);
-        console.log(`✅ Comment ${comment.id} translation completed:`, {
-          from: result.detectedSourceLanguage,
-          text: result.translatedText.substring(0, 50) + '...'
-        });
-      } else {
-        throw new Error(result.message || 'Translation failed');
-      }
+
+      await new Promise(resolve => setTimeout(resolve, 800));
+      const mockTranslation = `[Translated] ${comment.content}`;
+      setTranslatedContent(mockTranslation);
+
+      console.log(`✅ Comment ${comment.id} translation completed`);
 
     } catch (error) {
       console.error(`❌ Comment ${comment.id} translation error:`, error);
-      setTranslationError('翻譯失敗，請稍後再試');
+      setTranslationError('翻譯失敗');
     } finally {
       setIsTranslating(false);
     }
@@ -1138,28 +1033,89 @@ const Comment = ({ comment, onReply, onLike, currentUserId, postDocid, commentSt
     }
   };
 
+  const handleEditSubmit = async (e) => {
+    e.preventDefault();
+    if (!editText.trim() || isSubmitting) return;
+
+    setIsSubmitting(true);
+    try {
+      const result = await ApiService.editComment(
+        comment.id,
+        currentUserId,
+        editText.trim()
+      );
+
+      if (result.success) {
+        console.log('✅ 編輯成功:', result.comment);
+        setIsEditing(false);
+        if (onEdit) onEdit(comment.id, editText.trim());
+      } else {
+        alert(`編輯失敗: ${result.message}`);
+      }
+    } catch (error) {
+      console.error('❌ 編輯錯誤:', error);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    const confirmDelete = window.confirm('確定要刪除這則評論嗎？此操作無法復原！');
+    if (!confirmDelete) return;
+
+    try {
+      const result = await ApiService.deleteComment(comment.id, currentUserId);
+      if (result.success) {
+        console.log('✅ 刪除成功');
+        if (onDelete) onDelete(comment.id);
+      } else {
+        alert(`刪除失敗: ${result.message}`);
+      }
+    } catch (error) {
+      console.error('❌ 刪除錯誤:', error);
+    }
+  };
+
+  const isOwner = comment.userid === currentUserId || comment.userid === String(currentUserId);
+
   return (
     <div className={`comment ${comment.isReply ? 'comment-reply' : ''}`}>
       <div className="comment-header">
         <div className="comment-avatar">
-          <AvatarImage 
-            userId={comment.userid || comment.author}
-            userName={comment.author}
-            src={comment.avatar_url}
-            size={32}
-            clickable={true}
-          />
-        </div>
+  <AvatarImage 
+    userId={comment.userid || comment.author}
+    userName={comment.author}
+    src={ApiService.processAvatarUrl(comment.avatar_url)}
+    size={32}
+    clickable={true}
+  />
+</div>
+
         <div className="comment-info">
           <div className="comment-author">{comment.author}</div>
           <div className="comment-time">{comment.time}</div>
         </div>
+        {isOwner && (
+          <div className="comment-owner-actions">
+            <button
+              className="comment-action-btn edit"
+              onClick={() => setIsEditing(!isEditing)}
+              title="編輯評論"
+            >
+              ✏️
+            </button>
+            <button
+              className="comment-action-btn delete"
+              onClick={handleDelete}
+              title="刪除評論"
+            >
+              🗑️
+            </button>
+          </div>
+        )}
       </div>
 
       <div className="comment-content">
-        <p>{comment.content}</p>
-
-        {/* ✅ GIỮ LẠI NÚT DỊCH */}
         <button
           className={`comment-translate-button ${isTranslating ? 'translating' : ''} ${translatedContent ? 'active' : ''}`}
           onClick={handleTranslate}
@@ -1169,30 +1125,64 @@ const Comment = ({ comment, onReply, onLike, currentUserId, postDocid, commentSt
           <TranslateIcon size={14} />
         </button>
 
-        {translatedContent && (
-          <div className="comment-translated-content">
-            <span className="translate-label">
-              🌐 翻譯 {detectedLanguage && `(從 ${getLanguageName(detectedLanguage)})`}:
-            </span>
-            <p>{translatedContent}</p>
-          </div>
-        )}
+        {isEditing ? (
+          <form onSubmit={handleEditSubmit} className="comment-edit-form">
+            <textarea
+              value={editText}
+              onChange={(e) => setEditText(e.target.value)}
+              placeholder="編輯您的評論..."
+              rows="2"
+              maxLength="500"
+            />
+            <div className="comment-edit-actions">
+              <button
+                type="submit"
+                disabled={!editText.trim() || isSubmitting}
+                className="comment-save-btn"
+              >
+                {isSubmitting ? '儲存中...' : '儲存'}
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setIsEditing(false);
+                  setEditText(comment.content);
+                }}
+                className="comment-cancel-btn"
+              >
+                取消
+              </button>
+            </div>
+          </form>
+        ) : (
+          <>
+            <p>{comment.content}</p>
 
-        {translationError && (
-          <div className="comment-translation-error">
-            ⚠️ {translationError}
-          </div>
+            {translatedContent && (
+              <div className="comment-translated-content">
+                <span className="translate-label">🌐 翻譯:</span>
+                <p>{translatedContent}</p>
+              </div>
+            )}
+
+            {translationError && (
+              <div className="comment-translation-error">
+                ⚠️ {translationError}
+              </div>
+            )}
+          </>
         )}
       </div>
 
       <div className="comment-actions">
         <button
-          className={`comment-action-btn like ${commentState?.isLiked ? 'active-amen' : ''}`}
+          className={`comment-action-btn like ${commentState?.hasLiked ? 'active-amen' : ''}`}
           onClick={() => onLike(comment.id)}
           disabled={commentState?.isLiking}
-          title={commentState?.isLiked ? '取消 Amen' : 'Amen 評論'}
+          title="Amen 評論"
         >
-          {commentState?.isLiking ? 'Processing...' : `AMEN (${commentState?.likeCount || 0})`}
+          {commentState?.isLiking ? 'Processing...' :
+            (commentState?.hasLiked ? `AMENED (${commentState?.likeCount || 0})` : `AMEN (${commentState?.likeCount || 0})`)}
         </button>
 
         {!comment.isReply && (
@@ -1220,6 +1210,7 @@ const Comment = ({ comment, onReply, onLike, currentUserId, postDocid, commentSt
           </button>
         )}
       </div>
+
 
       {isReplying && (
         <form onSubmit={handleReplySubmit} className="comment-reply-form">
@@ -1261,7 +1252,8 @@ const Comment = ({ comment, onReply, onLike, currentUserId, postDocid, commentSt
               <Comment
                 key={reply.id}
                 comment={reply}
-                onReply={onReply}
+                onEdit={onEdit}
+                onDelete={onDelete}
                 onLike={onLike}
                 currentUserId={currentUserId}
                 postDocid={postDocid}
@@ -1277,6 +1269,7 @@ const Comment = ({ comment, onReply, onLike, currentUserId, postDocid, commentSt
 
 // ==================== POST COMPONENT ====================
 const Post = ({ post, allPosts, onLike, onComment, onWitnessCreated, currentUserId, selectedCategory, refreshBalance }) => {
+  const [isLiking, setIsLiking] = useState(false);
   const [isCommenting, setIsCommenting] = useState(false);
   const [commentText, setCommentText] = useState('');
   const [comments, setComments] = useState([]);
@@ -1288,46 +1281,24 @@ const Post = ({ post, allPosts, onLike, onComment, onWitnessCreated, currentUser
 
   const isLikingRef = useRef(false);
 
-  const [likeCount, setLikeCount] = useState(post.amen_count || post.likes || 0);
-  const [isLiked, setIsLiked] = useState(post.amened || post.isLiked || false);
-  const [isLiking, setIsLiking] = useState(false);
+  const [likeCount, setLikeCount] = useState(post.likes || 0);
+  const [hasLiked, setHasLiked] = useState(false);
 
   const [witnessText, setWitnessText] = useState('');
   const [isSubmittingWitness, setIsSubmittingWitness] = useState(false);
   const [witnessCount, setWitnessCount] = useState(0);
 
-  const [hasWitnessed, setHasWitnessed] = useState(false);
-
-  const [witnessImageFile, setWitnessImageFile] = useState(null);
-  const [witnessImagePreview, setWitnessImagePreview] = useState(null);
-
   const [activeForm, setActiveForm] = useState(null);
 
+  // ✅ THÊM: Translation state riêng cho post này
   const [isTranslating, setIsTranslating] = useState(false);
   const [translatedContent, setTranslatedContent] = useState(null);
-  const [detectedLanguage, setDetectedLanguage] = useState(null);
   const [translationError, setTranslationError] = useState(null);
 
-  useEffect(() => {
-    setLikeCount(post.amen_count || post.likes || 0);
-    setIsLiked(post.amened || post.isLiked || false);
-  }, [post.amen_count, post.likes, post.amened, post.isLiked]);
-
-  useEffect(() => {
-    const userWitness = allPosts.find(
-      p => p.parent_docid === post.id && 
-           p.event === 'witness' && 
-           (p.userid === currentUserId || p.author === currentUserId)
-    );
-    setHasWitnessed(!!userWitness);
-    
-    console.log(`🔍 Post ${post.id} - User ${currentUserId} witnessed:`, !!userWitness);
-  }, [allPosts, post.id, currentUserId]);
-
+  // ✅ THÊM: Reset translation khi post.id thay đổi
   useEffect(() => {
     setIsTranslating(false);
     setTranslatedContent(null);
-    setDetectedLanguage(null);
     setTranslationError(null);
   }, [post.id]);
 
@@ -1336,7 +1307,6 @@ const Post = ({ post, allPosts, onLike, onComment, onWitnessCreated, currentUser
 
     if (translatedContent) {
       setTranslatedContent(null);
-      setDetectedLanguage(null);
       return;
     }
 
@@ -1345,64 +1315,34 @@ const Post = ({ post, allPosts, onLike, onComment, onWitnessCreated, currentUser
 
     try {
       console.log(`🌐 Translating post ${post.id} content...`);
-      
-      const result = await ApiService.translate(post.content, 'zh-TW');
-      
-      if (result.success) {
-        setTranslatedContent(result.translatedText);
-        setDetectedLanguage(result.detectedSourceLanguage);
-        console.log(`✅ Post ${post.id} translation completed:`, {
-          from: result.detectedSourceLanguage,
-          text: result.translatedText.substring(0, 50) + '...'
-        });
-      } else {
-        throw new Error(result.message || 'Translation failed');
-      }
+
+      await new Promise(resolve => setTimeout(resolve, 800));
+      const mockTranslation = `[Translated] ${post.content}`;
+      setTranslatedContent(mockTranslation);
+
+      console.log(`✅ Post ${post.id} translation completed`);
 
     } catch (error) {
       console.error(`❌ Post ${post.id} translation error:`, error);
-      setTranslationError('翻譯失敗，請稍後再試');
+      setTranslationError('翻譯失敗');
     } finally {
       setIsTranslating(false);
     }
   };
 
   useEffect(() => {
+    if (post.likes !== undefined) setLikeCount(post.likes);
+
     const postWitnesses = allPosts.filter(
       p => p.parent_docid === post.id && p.event === 'witness'
     );
     setWitnessCount(postWitnesses.length);
-  }, [allPosts, post.id]);
+  }, [post.likes, allPosts, post.id]);
 
   const [transcriptData, setTranscriptData] = useState(null);
   const [isLoadingTranscript, setIsLoadingTranscript] = useState(false);
   const [isDeletingRecord, setIsDeletingRecord] = useState(false);
   const [showTranscriptPanel, setShowTranscriptPanel] = useState(false);
-
-  const handleWitnessImageChange = (e) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      if (!file.type.startsWith('image/')) {
-        alert('⚠️ Vui lòng chỉ chọn file ảnh!');
-        return;
-      }
-      
-      if (file.size > 5 * 1024 * 1024) {
-        alert('⚠️ Kích thước ảnh không được vượt quá 5MB!');
-        return;
-      }
-      
-      setWitnessImageFile(file);
-      
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setWitnessImagePreview(reader.result);
-      };
-      reader.readAsDataURL(file);
-      
-      console.log('📸 Witness image selected:', file.name, `(${(file.size / 1024).toFixed(2)} KB)`);
-    }
-  };
 
   const handleWitnessSubmit = async (e) => {
     e.preventDefault();
@@ -1411,25 +1351,18 @@ const Post = ({ post, allPosts, onLike, onComment, onWitnessCreated, currentUser
     setIsSubmittingWitness(true);
     try {
       console.log(`✨ 新增見證到貼文 docid=${post.id}:`, witnessText.trim());
-      console.log(`📸 Has image: ${!!witnessImageFile}`);
 
       const result = await ApiService.createWitness(
         currentUserId,
         witnessText.trim(),
-        post.id,
-        witnessImageFile
+        post.id
       );
 
       if (result.success) {
         console.log('✅ 見證新增成功:', result.witness);
 
         setWitnessText('');
-        setWitnessImageFile(null);
-        setWitnessImagePreview(null);
         setActiveForm(null);
-        
-        setHasWitnessed(true);
-        setWitnessCount(prev => prev + 1);
 
         if (refreshBalance) {
           await refreshBalance();
@@ -1452,16 +1385,9 @@ const Post = ({ post, allPosts, onLike, onComment, onWitnessCreated, currentUser
   };
 
   const handleToggleWitnessForm = () => {
-    if (hasWitnessed && activeForm !== 'witness') {
-      alert('⚠️ 您已經為此貼文建立過見證了！\n每個貼文只能建立一次見證。');
-      return;
-    }
-
     if (activeForm === 'witness') {
       setActiveForm(null);
       setWitnessText('');
-      setWitnessImageFile(null);
-      setWitnessImagePreview(null);
     } else {
       setActiveForm('witness');
       setCommentText('');
@@ -1485,7 +1411,6 @@ const Post = ({ post, allPosts, onLike, onComment, onWitnessCreated, currentUser
         content: c.content,
         time: c.datetime || '剛剛',
         likes: c.amen_count || 0,
-        isLiked: c.amened || false,
         isReply: true,
         userid: c.userid
       }));
@@ -1494,7 +1419,7 @@ const Post = ({ post, allPosts, onLike, onComment, onWitnessCreated, currentUser
       formattedComments.forEach(comment => {
         newCommentStates[comment.id] = {
           likeCount: comment.likes || 0,
-          isLiked: comment.isLiked || false,
+          hasLiked: false,
           isLiking: false
         };
       });
@@ -1529,8 +1454,6 @@ const Post = ({ post, allPosts, onLike, onComment, onWitnessCreated, currentUser
     } else {
       setActiveForm('comment');
       setWitnessText('');
-      setWitnessImageFile(null);
-      setWitnessImagePreview(null);
       if (comments.length === 0) {
         loadComments(1, false);
         setCommentPage(1);
@@ -1591,7 +1514,7 @@ const Post = ({ post, allPosts, onLike, onComment, onWitnessCreated, currentUser
     }
   };
 
-  const TranscriptPanel = ()=> (
+  const TranscriptPanel = () => (
     <div className="transcript-panel">
       <div className="transcript-header">
         <h4>🎵 錄音轉錄結果</h4>
@@ -1628,26 +1551,26 @@ const Post = ({ post, allPosts, onLike, onComment, onWitnessCreated, currentUser
   const handleLike = async () => {
     if (isLikingRef.current) return;
     isLikingRef.current = true;
-    setIsLiking(true);
 
     const prevCount = likeCount;
-    const prevLiked = isLiked;
-    
-    const newLiked = !prevLiked;
-    const newCount = newLiked ? prevCount + 1 : Math.max(0, prevCount - 1);
+    const willIncrease = !post.isLiked;
+    const optimisticCount = willIncrease ? prevCount + 1 : Math.max(0, prevCount - 1);
 
-    setIsLiked(newLiked);
-    setLikeCount(newCount);
+    setHasLiked(true);
+    setLikeCount(optimisticCount);
 
     try {
       const result = await ApiService.likePost(post.id, currentUserId);
 
       if (result.success) {
-        const finalCount = result.data?.amen_count !== undefined ? result.data.amen_count : newCount;
-        const finalLiked = result.data?.amened !== undefined ? result.data.amened : newLiked;
+        const finalCount = result.data?.amen_count !== undefined ? result.data.amen_count : optimisticCount;
+        const finalLiked = result.data?.amened !== undefined ? result.data.amened : !post.isLiked;
 
         setLikeCount(finalCount);
-        setIsLiked(finalLiked);
+
+        setTimeout(() => {
+          setHasLiked(false);
+        }, 300);
 
         if (onLike) {
           onLike(post.id, finalLiked, finalCount);
@@ -1656,14 +1579,12 @@ const Post = ({ post, allPosts, onLike, onComment, onWitnessCreated, currentUser
         if (refreshBalance) {
           await refreshBalance();
         }
-
-        console.log(`✅ Amen ${newLiked ? 'added' : 'removed'} for post ${post.id}:`, finalCount);
       } else {
         throw new Error(result.message || 'API Error');
       }
     } catch (error) {
-      console.error('❌ Amen error:', error);
-      setIsLiked(prevLiked);
+      console.error('Like error:', error);
+      setHasLiked(false);
       setLikeCount(prevCount);
     } finally {
       isLikingRef.current = false;
@@ -1676,16 +1597,13 @@ const Post = ({ post, allPosts, onLike, onComment, onWitnessCreated, currentUser
     if (!currentState || currentState.isLiking) return;
 
     const prevCount = currentState.likeCount;
-    const prevLiked = currentState.isLiked;
-    
-    const newLiked = !prevLiked;
-    const newCount = newLiked ? prevCount + 1 : Math.max(0, prevCount - 1);
+    const newCount = prevCount + 1;
 
     setCommentStates(prev => ({
       ...prev,
       [commentId]: {
         ...prev[commentId],
-        isLiked: newLiked,
+        hasLiked: true,
         likeCount: newCount,
         isLiking: true
       }
@@ -1696,19 +1614,20 @@ const Post = ({ post, allPosts, onLike, onComment, onWitnessCreated, currentUser
 
       if (result.success) {
         const finalCount = result.data?.amen_count !== undefined ? result.data.amen_count : newCount;
-        const finalLiked = result.data?.amened !== undefined ? result.data.amened : newLiked;
 
-        setCommentStates(prev => ({
-          ...prev,
-          [commentId]: {
-            ...prev[commentId],
-            likeCount: finalCount,
-            isLiked: finalLiked,
-            isLiking: false
-          }
-        }));
+        setTimeout(() => {
+          setCommentStates(prev => ({
+            ...prev,
+            [commentId]: {
+              ...prev[commentId],
+              likeCount: finalCount,
+              hasLiked: false,
+              isLiking: false
+            }
+          }));
+        }, 300);
 
-        console.log(`✅ Comment amen ${newLiked ? 'added' : 'removed'} ${commentId}:`, finalCount);
+        console.log(`✅ Liked comment ${commentId}:`, finalCount);
 
         if (refreshBalance) {
           await refreshBalance();
@@ -1717,12 +1636,12 @@ const Post = ({ post, allPosts, onLike, onComment, onWitnessCreated, currentUser
         throw new Error(result.message || 'API Error');
       }
     } catch (error) {
-      console.error('❌ Comment amen error:', error);
+      console.error('❌ Like comment error:', error);
       setCommentStates(prev => ({
         ...prev,
         [commentId]: {
           ...prev[commentId],
-          isLiked: prevLiked,
+          hasLiked: false,
           likeCount: prevCount,
           isLiking: false
         }
@@ -1753,7 +1672,7 @@ const Post = ({ post, allPosts, onLike, onComment, onWitnessCreated, currentUser
           ...prev,
           [newCommentId]: {
             likeCount: 0,
-            isLiked: false,
+            hasLiked: false,
             isLiking: false
           }
         }));
@@ -1776,18 +1695,23 @@ const Post = ({ post, allPosts, onLike, onComment, onWitnessCreated, currentUser
     }
   };
 
+  const handleCommentReply = (commentId, reply) => { console.log(`💬 回覆評論 ${commentId}:`, reply); };
+  const handleCommentEdit = (commentId, newContent) => { console.log(`✏️ 編輯評論 ${commentId}:`, newContent); };
+  const handleCommentDelete = (commentId) => { console.log(`🗑️ 刪除評論 ${commentId}`); };
+
   return (
     <div className="post-card">
       <div className="post-header">
         <div className="post-avatar">
-          <AvatarImage 
-            userId={post.userid || post.author}
-            userName={post.author}
-            src={post.avatar_url}
-            size={48}
-            clickable={true}
-          />
-        </div>
+  <AvatarImage 
+    userId={post.userid || post.author}
+    userName={post.author}
+    src={post.avatar_url}
+    size={48}
+    clickable={true}
+  />
+</div>
+
         <div className="post-info">
           <div className="post-author">{post.author}</div>
           <div className="post-time">{post.time || post.datetime || '剛剛'}</div>
@@ -1812,9 +1736,6 @@ const Post = ({ post, allPosts, onLike, onComment, onWitnessCreated, currentUser
       </div>
 
       <div className="post-content">
-        {post.title && <h3>{post.title}</h3>}
-        <p>{post.content}</p>
-
         <button
           className={`post-translate-button ${isTranslating ? 'translating' : ''} ${translatedContent ? 'active' : ''}`}
           onClick={handleTranslate}
@@ -1824,11 +1745,12 @@ const Post = ({ post, allPosts, onLike, onComment, onWitnessCreated, currentUser
           <TranslateIcon size={18} />
         </button>
 
+        {post.title && <h3>{post.title}</h3>}
+        <p>{post.content}</p>
+
         {translatedContent && (
           <div className="post-translated-content">
-            <span className="translate-label">
-              🌐 翻譯 {detectedLanguage && `(從 ${getLanguageName(detectedLanguage)})`}:
-            </span>
+            <span className="translate-label">🌐 翻譯:</span>
             <p>{translatedContent}</p>
           </div>
         )}
@@ -1873,12 +1795,11 @@ const Post = ({ post, allPosts, onLike, onComment, onWitnessCreated, currentUser
 
       <div className="post-actions">
         <button
-          className={`action-button action-amen ${isLiked ? 'active-amen' : ''}`}
+          className={`action-button action-amen ${hasLiked ? 'active-amen' : ''}`}
           onClick={handleLike}
           disabled={isLiking}
-          title={isLiked ? '取消 Amen' : 'Amen 此貼文'}
         >
-          {isLiking ? 'Processing...' : `AMEN (${likeCount})`}
+          {isLiking ? 'Processing...' : (hasLiked ? `AMENED (${likeCount})` : `AMEN (${likeCount})`)}
         </button>
 
         <button
@@ -1889,12 +1810,10 @@ const Post = ({ post, allPosts, onLike, onComment, onWitnessCreated, currentUser
         </button>
 
         <button
-          className={`action-button action-witness ${activeForm === 'witness' ? 'active-witness' : ''} ${hasWitnessed ? 'witnessed-done' : ''}`}
+          className={`action-button action-witness ${activeForm === 'witness' ? 'active-witness' : ''}`}
           onClick={handleToggleWitnessForm}
-          disabled={hasWitnessed}
-          title={hasWitnessed ? '您已經為此貼文建立過見證' : '分享見證'}
         >
-          {hasWitnessed ? `✓ WITNESSED (${witnessCount})` : `WITNESS (${witnessCount})`}
+          WITNESS ({witnessCount})
         </button>
       </div>
 
@@ -1908,48 +1827,9 @@ const Post = ({ post, allPosts, onLike, onComment, onWitnessCreated, currentUser
               rows="4"
               maxLength="1000"
             />
-            
-            <div className="witness-image-upload">
-              <label htmlFor={`witness-image-${post.id}`} className="image-upload-label">
-                📷 Thêm ảnh
-              </label>
-              <input
-                id={`witness-image-${post.id}`}
-                type="file"
-                accept="image/*"
-                onChange={handleWitnessImageChange}
-                style={{ display: 'none' }}
-              />
-              
-              {witnessImagePreview && (
-                <div className="image-preview-container">
-                  <img 
-                    src={witnessImagePreview} 
-                    alt="Preview" 
-                    className="image-preview"
-                  />
-                  <button
-                    type="button"
-                    className="remove-image-btn"
-                    onClick={() => {
-                      setWitnessImageFile(null);
-                      setWitnessImagePreview(null);
-                    }}
-                  >
-                    ✕
-                  </button>
-                </div>
-              )}
-            </div>
-            
             <div className="form-info">
-              {witnessImageFile && (
-                <span className="file-info">
-                  📎 {witnessImageFile.name} ({(witnessImageFile.size / 1024).toFixed(2)} KB)
-                </span>
-              )}
+              <span className="char-count">{witnessText.length}/1000</span>
             </div>
-            
             <div className="form-actions">
               <button
                 type="submit"
@@ -1963,8 +1843,6 @@ const Post = ({ post, allPosts, onLike, onComment, onWitnessCreated, currentUser
                 onClick={() => {
                   setActiveForm(null);
                   setWitnessText('');
-                  setWitnessImageFile(null);
-                  setWitnessImagePreview(null);
                 }}
                 className="cancel-btn"
               >
@@ -1992,6 +1870,10 @@ const Post = ({ post, allPosts, onLike, onComment, onWitnessCreated, currentUser
                   setCommentText(prev => prev + (prev ? ' ' : '') + transcript);
                 }}
               />
+            </div>
+
+            <div className="form-info">
+              <span className="char-count">{commentText.length}/500</span>
             </div>
             <div className="form-actions">
               <button
@@ -2026,7 +1908,9 @@ const Post = ({ post, allPosts, onLike, onComment, onWitnessCreated, currentUser
                   <Comment
                     key={comment.id}
                     comment={comment}
-                    onReply={(commentId, reply) => console.log(`💬 回覆評論 ${commentId}:`, reply)}
+                    onReply={handleCommentReply}
+                    onEdit={handleCommentEdit}
+                    onDelete={handleCommentDelete}
                     onLike={handleLikeComment}
                     currentUserId={currentUserId}
                     postDocid={post.id}
@@ -2083,14 +1967,11 @@ const MainApp = ({ user, onLogout }) => {
 
   const [selectedCategory, setSelectedCategory] = useState(initialCategory);
   const [viewMode, setViewMode] = useState('original');
-  const [viewScope, setViewScope] = useState('my');
+  const [viewScope, setViewScope] = useState('my'); // 'my' = Home (chỉ mình), 'all' = Prayer Hub (tất cả)
   const [showActivityForm, setShowActivityForm] = useState(false);
   const [activities, setActivities] = useState([]);
 
-  // ✅ THÊM: State cho pagination
-  const [currentPage, setCurrentPage] = useState(1);
-  const [hasMorePosts, setHasMorePosts] = useState(false);
-  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const navigatingRef = useRef(false);
 
   const hasTribe = currentTribeId !== null && currentTribeId !== undefined;
 
@@ -2221,7 +2102,21 @@ const MainApp = ({ user, onLogout }) => {
     navigate('/create-post', { replace: true });
   };
 
-  const handleNotificationClick = () => { };
+  const handleNotificationClick = useCallback(() => {
+      if (navigatingRef.current) {
+        console.log('⚠️ Navigation already in progress, ignoring...');
+        return;
+      }
+  
+      console.log('🔔 Navigate to Notifications');
+      navigatingRef.current = true;
+      
+      setTimeout(() => {
+        navigatingRef.current = false;
+      }, 1000);
+      
+      navigate('/notifications');
+    }, [navigate]);
 
   const handleCoinClick = () => {
     console.log('💰 Coin clicked from context - navigating to YB History');
@@ -2377,7 +2272,7 @@ const MainApp = ({ user, onLogout }) => {
       ApiService.clearCache();
 
       console.log(`🔄 Fetching posts for ${postCategory}...`);
-      await fetchPosts(postCategory, 1, false);
+      await fetchPosts(postCategory);
 
       await refreshBalance();
 
@@ -2405,9 +2300,7 @@ const MainApp = ({ user, onLogout }) => {
     setLoading(true);
     try {
       ApiService.clearCache();
-      setCurrentPage(1);
-      setHasMorePosts(false);
-      await fetchPosts(selectedCategory, 1, false);
+      await fetchPosts(selectedCategory);
     } catch (error) {
       console.error('💥 重新載入貼文錯誤:', error);
     } finally {
@@ -2428,25 +2321,18 @@ const MainApp = ({ user, onLogout }) => {
     }
 
     setSelectedCategory(category);
-    setCurrentPage(1);
-    setHasMorePosts(false);
-    fetchPosts(category, 1, false);
+    fetchPosts(category);
   };
 
   const getDemoPosts = useCallback(() => [], [user?.name]);
 
-  // ✅ SỬA: fetchPosts với pagination support
-  const fetchPosts = useCallback(async (categoryOverride, pageNumber = 1, append = false) => {
-    if (append) {
-      setIsLoadingMore(true);
-    } else {
-      setLoading(true);
-    }
-    
+  const fetchPosts = useCallback(async (categoryOverride) => {
+    setLoading(true);
     try {
-      console.log(`📡 從API取得貼文 - Page ${pageNumber}...`);
+      console.log('📡 從API取得貼文...');
 
       const categoryToFetch = categoryOverride !== undefined ? categoryOverride : selectedCategory;
+
       const currentUserId = user?.id || user?.userId || ApiService.getCurrentUserId();
 
       const filters = {
@@ -2457,18 +2343,19 @@ const MainApp = ({ user, onLogout }) => {
         filters.category = categoryToFetch;
       }
 
+      // ✅ THÊM: Nếu đang ở Home, chỉ lấy bài của mình
       if (viewScope === 'my') {
-        filters.userid = currentUserId;
+        filters.userid = currentUserId; // Chỉ lấy bài của user hiện tại
         console.log('🏠 Home mode: Filtering posts by current user only');
       } else {
         console.log('🌍 Prayer Hub mode: Showing all posts');
       }
 
-      // ✅ THAY ĐỔI: Gọi API với page number và limit 100
-      let result = await ApiService.getPosts(pageNumber, 100, true, filters);
+
+      let result = await ApiService.getPosts(1, 50, true, filters);
 
       if (result && result.success && result.posts && result.posts.length > 0) {
-        console.log(`✅ 貼文取得成功 - Page ${pageNumber}:`, result.posts.length, 'posts');
+        console.log('✅ 貼文取得成功:', result.posts);
 
         const commentsCountMap = {};
         result.posts.forEach(p => {
@@ -2482,7 +2369,8 @@ const MainApp = ({ user, onLogout }) => {
         const transformedPosts = filteredPosts.map(post => ({
           id: post.docid,
           sn: post.sn,
-          userid: post.userid,
+          userid: post.userid || post.author_id,
+          avatar_url: post.avatar_url,
           likes: post.amen_count !== undefined ? post.amen_count : 0,
           isLiked: (post.amened === true || post.amened === 1 || post.amened === 'true'),
           calculatedComments: commentsCountMap[post.docid] || 0,
@@ -2494,79 +2382,29 @@ const MainApp = ({ user, onLogout }) => {
           time: post.datetime || '剛剛',
           image: post.image || null,
           audioRecordId: post.uuid || null,
-          comments: 0,
-          amen_count: post.amen_count,
-          amened: post.amened,
-          avatar_url: post.avatar_url
+          comments: 0
         }));
 
-        // ✅ THAY ĐỔI: Append hoặc replace posts
-        if (append) {
-          setPosts(prevPosts => [...prevPosts, ...transformedPosts]);
-          setAllPosts(prevPosts => [...prevPosts, ...result.posts]);
-        } else {
-          setPosts(transformedPosts);
-          setAllPosts(result.posts);
-        }
+        console.log('📋 Transformed posts sample (first post):', transformedPosts[0]);
 
-        // ✅ THAY ĐỔI: Kiểm tra có thêm posts không
-        const pagination = result.pagination || {};
-        setHasMorePosts(pagination.has_next || result.posts.length === 100);
-        
+        setPosts(transformedPosts);
+        setAllPosts(result.posts);
       } else {
         console.log('⚠️ API 回應為空或失敗');
-        if (!append) {
-          setPosts([]);
-          setAllPosts([]);
-        }
-        setHasMorePosts(false);
+        setPosts([]);
+        setAllPosts([]);
       }
     } catch (error) {
       console.error('💥 取得貼文時發生錯誤:', error);
-      if (!append) {
-        setPosts([]);
-      }
-      setHasMorePosts(false);
+      setPosts([]);
     } finally {
-      if (append) {
-        setIsLoadingMore(false);
-      } else {
-        setLoading(false);
-      }
+      setLoading(false);
     }
-  }, [getDemoPosts, user, selectedCategory, mapCategoryToPrivacy, viewScope]);
-  
-
-  // ✅ THÊM: Hàm load more posts
-  const handleLoadMorePosts = () => {
-    const nextPage = currentPage + 1;
-    setCurrentPage(nextPage);
-    fetchPosts(selectedCategory, nextPage, true);
-  };
-
-  const handleNextPage = () => {
-    if (hasMorePosts) {
-      const nextPage = currentPage + 1;
-      setCurrentPage(nextPage);
-      fetchPosts(selectedCategory, nextPage, false);
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    }
-  };
-
-  const handlePrevPage = () => {
-    if (currentPage > 1) {
-      const prevPage = currentPage - 1;
-      setCurrentPage(prevPage);
-      fetchPosts(selectedCategory, prevPage, false);
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    }
-  };
+  }, [getDemoPosts, user, selectedCategory, mapCategoryToPrivacy]);
 
   useEffect(() => {
     console.log('🏠 MainApp 載入，使用者:', user);
-    setCurrentPage(1);
-    setHasMorePosts(false);
-    fetchPosts(initialCategory, 1, false);
+    fetchPosts(initialCategory);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -2788,13 +2626,15 @@ const MainApp = ({ user, onLogout }) => {
                         <div key={activity.id} className="activity-card">
                           <div className="activity-header">
                             <div className="activity-avatar">
-                              <AvatarImage 
-                                userId={activity.author}
-                                userName={activity.author}
-                                size={48}
-                                clickable={true}
-                              />
-                            </div>
+  <AvatarImage 
+    userId={activity.author}
+    userName={activity.author}
+    src={ApiService.processAvatarUrl(activity.avatar_url)}
+    size={48}
+    clickable={true}
+  />
+</div>
+
                             <div className="activity-info">
                               <div className="activity-author">{activity.author}</div>
                               <div className="activity-time">{activity.datetime}</div>
@@ -2875,7 +2715,9 @@ const MainApp = ({ user, onLogout }) => {
                 currentUserId={user?.id}
                 allPosts={allPosts}
                 refreshBalance={refreshBalance}
-                viewScope={viewScope}
+                viewScope={viewScope}  // ✅ THÊM DÒNG NÀY
+
+
               />
             ) : !loading && filteredPosts.length > 0 ? (
               <div className="posts-feed">
@@ -2892,43 +2734,6 @@ const MainApp = ({ user, onLogout }) => {
                     refreshBalance={refreshBalance}
                   />
                 ))}
-                
-                {/* ✅ THÊM: Nút Load More */}
-                <div className="pagination-controls" style={{ display: 'flex', justifyContent: 'center', gap: '20px', padding: '20px 0' }}>
-                  <button
-                    onClick={handlePrevPage}
-                    disabled={currentPage === 1 || loading}
-                    className="pagination-btn"
-                    style={{
-                      padding: '8px 16px',
-                      borderRadius: '20px',
-                      border: 'none',
-                      backgroundColor: currentPage === 1 ? '#ccc' : '#4CAF50',
-                      color: 'white',
-                      cursor: currentPage === 1 ? 'not-allowed' : 'pointer'
-                    }}
-                  >
-                    ← 上一頁
-                  </button>
-
-                  <span style={{ color: 'white', alignSelf: 'center' }}>第 {currentPage} 頁</span>
-
-                  <button
-                    onClick={handleNextPage}
-                    disabled={!hasMorePosts || loading}
-                    className="pagination-btn"
-                    style={{
-                      padding: '8px 16px',
-                      borderRadius: '20px',
-                      border: 'none',
-                      backgroundColor: !hasMorePosts ? '#ccc' : '#4CAF50',
-                      color: 'white',
-                      cursor: !hasMorePosts ? 'not-allowed' : 'pointer'
-                    }}
-                  >
-                    下一頁 →
-                  </button>
-                </div>
               </div>
             ) : !loading ? (
               <div className="no-posts">
@@ -2950,23 +2755,22 @@ const MainApp = ({ user, onLogout }) => {
             iconSrc={Home}
             onClick={() => {
               console.log('🏠 Home clicked - Showing MY posts only');
-              setViewScope('my');
+              setViewScope('my'); // ✅ Set về "chỉ mình"
               handleTabChange('Home');
-              setCurrentPage(1);
-              setHasMorePosts(false);
-              fetchPosts(selectedCategory, 1, false);
+              fetchPosts(selectedCategory); // ✅ Reload posts
             }}
             isActive={activeTab === 'Home'}
             size="medium"
             ariaLabel="首頁"
           />
 
+
           <CircleButton
             provider="PrayerHub"
             iconSrc={Search}
             onClick={() => {
               console.log('🙏 Prayer Hub clicked - Showing ALL posts');
-              setViewScope('all');
+              setViewScope('all'); // ✅ Set về "tất cả"
               setActiveTab('PrayerHub');
               navigate('/prayer-hub');
             }}
@@ -2974,6 +2778,7 @@ const MainApp = ({ user, onLogout }) => {
             size="medium"
             ariaLabel="Prayer Hub"
           />
+
 
           <CircleButton
             provider="Add"
@@ -3012,6 +2817,7 @@ const MainApp = ({ user, onLogout }) => {
             size="medium"
             ariaLabel="Nova AI Assistant"
           />
+
         </div>
       </div>
     </AppBackground>
@@ -3019,3 +2825,4 @@ const MainApp = ({ user, onLogout }) => {
 };
 
 export default MainApp;
+

@@ -16,15 +16,16 @@ import facebookIcon from '../../assets/icons/facebook-icon.png';
 import googleIcon from '../../assets/icons/google-icon.png';
 
 import './login.css';
+import { AppBridge } from '../../services/appbridge';
 
-// ================== 開發者後門設定 ==================
+// ================== Developer Backdoor Settings ==================
 const isDevelopment = process.env.NODE_ENV === 'development';
 const DEV_BACKDOOR_EMAIL = 'test@example.ucl';
 
-// ================== 測試帳號資訊 ====================
+// ================== Test Account Information ====================
 const mockUser = {
   id: 999,
-  name: '測試開發者 (Dev)',
+  name: 'Test Developer (Dev)',
   email: DEV_BACKDOOR_EMAIL,
   tribe: null,
   avatar: `https://ui-avatars.com/api/?name=Dev&background=random&color=fff`,
@@ -57,31 +58,31 @@ const Login = ({ onLogin }) => {
     EMAIL_VERIFICATION_COUNTDOWN_DEFAULT_SECONDS 
   );
 
-  // ✅ 修改：封裝「登入後續處理」邏輯，供 Email 驗證與 Social Login 共用
+  // ✅ CHANGE: Encapsulate "login success handling" logic, shared by Email verification and Social Login
   const processLoginSuccess = useCallback(async (sessionData, userEmail = null) => {
     try {
       console.log('👤 Process Login Success...');
       console.log('📊 Session Data:', sessionData);
       
-      // ✅ 檢查 session 是否有效
+      // ✅ Check if session is valid
       if (!sessionData || !sessionData.authenticated) {
-        console.error('❌ Session 無效');
-        setError('登入狀態無效，請重試');
+        console.error('❌ Invalid session');
+        setError('Invalid login status, please try again');
         setIsLoading(false);
         return;
       }
 
-      // ✅ 取得 session 中的 user 資訊
+      // ✅ Get user info from session
       const sessionUser = sessionData.user || {};
       const sessionEmail = sessionUser.email || userEmail;
 
       console.log('📧 Session Email:', sessionEmail);
       console.log('🆕 First Login:', sessionData.first_login);
       
-      // ✅ 如果是第一次登入 → 導向 /signup
+      // ✅ If first login → Redirect to /signup
       if (sessionData.first_login === true) {
         console.log('🆕 First login detected → Redirect to /signup');
-        setSuccess('第一次登入，正在前往註冊頁面...');
+        setSuccess('First login detected, redirecting to registration page...');
         
         setTimeout(() => {
           navigate('/signup', { 
@@ -97,17 +98,17 @@ const Login = ({ onLogin }) => {
         return;
       }
 
-      // ✅ 不是第一次登入 → 取得 profile
+      // ✅ Not first login → Fetch profile
       console.log('👤 Returning user → Fetch profile');
       
       try {
         const profile = await AuthAPI.getProfile();
         console.log('👤 Profile data:', profile);
 
-        // ✅ 檢查 profile 是否完整
+        // ✅ Check if profile is complete
         if (!profile || !profile.user_id) {
-          console.warn('⚠️ Profile 不完整，導向 /signup');
-          setSuccess('需要完成註冊資訊，正在前往註冊頁面...');
+          console.warn('⚠️ Profile incomplete, redirecting to /signup');
+          setSuccess('Registration information needed, redirecting to registration page...');
           
           setTimeout(() => {
             navigate('/signup', { 
@@ -122,7 +123,7 @@ const Login = ({ onLogin }) => {
           return;
         }
 
-        // ✅ Profile 完整 → 登入成功
+        // ✅ Profile complete → Login success
         const rawAvatar =
           sessionData?.account?.avatar_url ||
           sessionData?.profile?.avatar_url ||
@@ -144,7 +145,16 @@ const Login = ({ onLogin }) => {
         };
 
         console.log('✅ Login Success - User Data:', userData);
-        setLoginSuccessMessage('登入成功，正在進入系統...');
+
+        // ==========================================
+        // 👇 ✅ 新增：通知 Flutter 綁定 OneSignal 推播
+        // ==========================================
+        if (userData && userData.id) {
+          AppBridge.syncLogin(userData.id);
+        }
+        // ==========================================
+
+        setLoginSuccessMessage('Login successful, entering system...');
         
         setTimeout(() => {
           setLoginSuccessMessage('');
@@ -156,12 +166,12 @@ const Login = ({ onLogin }) => {
         }, 1000);
 
       } catch (profileError) {
-        console.error('❌ 無法取得 profile:', profileError);
+        console.error('❌ Unable to fetch profile:', profileError);
         
-        // ✅ 如果是 404 或 profile 不存在 → 導向 signup
+        // ✅ If 404 or profile does not exist → Redirect to signup
         if (profileError.message?.includes('404') || profileError.message?.includes('not found')) {
-          console.log('⚠️ Profile 不存在，導向 /signup');
-          setSuccess('需要建立新帳號，正在前往註冊頁面...');
+          console.log('⚠️ Profile does not exist, redirecting to /signup');
+          setSuccess('New account needed, redirecting to registration page...');
           
           setTimeout(() => {
             navigate('/signup', { 
@@ -174,25 +184,25 @@ const Login = ({ onLogin }) => {
             });
           }, 1000);
         } else {
-          setError('無法取得帳號資訊，請重試');
+          setError('Unable to fetch account information, please try again');
           setIsLoading(false);
         }
       }
 
     } catch (error) {
-      console.error('💥 processLoginSuccess 發生錯誤:', error);
-      setError(error.message || '登入失敗，請重試');
+      console.error('💥 Error in processLoginSuccess:', error);
+      setError(error.message || 'Login failed, please try again');
       setIsLoading(false);
     }
   }, [navigate, onLogin]);
 
-  // ✅ useEffect: 檢查從 Social Login 返回的狀態
+  // ✅ useEffect: Check Social Login return status
   useEffect(() => {
     const checkSocialLoginStatus = async () => {
       const oauthProvider = sessionStorage.getItem('oauth_provider');
       
       if (oauthProvider) {
-        console.log(`🔄 檢測到從 ${oauthProvider} 登入返回，檢查 Session...`);
+        console.log(`🔄 Detected return from ${oauthProvider} login, checking Session...`);
         setIsLoading(true);
         sessionStorage.removeItem('oauth_provider');
         
@@ -204,12 +214,12 @@ const Login = ({ onLogin }) => {
             console.log('✅ Social Login Verified!');
             await processLoginSuccess(session);
           } else {
-            setError(`${oauthProvider} 登入未完成或失敗，請重試`);
+            setError(`${oauthProvider} login incomplete or failed, please try again`);
             setIsLoading(false);
           }
         } catch (err) {
           console.error('❌ Check session error:', err);
-          setError('登入狀態確認失敗');
+          setError('Login status verification failed');
           setIsLoading(false);
         }
       }
@@ -236,65 +246,71 @@ const Login = ({ onLogin }) => {
   };
 
   const handleVerify = async () => {
-    // ================== 後門邏輯 ==================
+    // ================== Backdoor Logic ==================
     if (isDevelopment && email === DEV_BACKDOOR_EMAIL) {
       console.warn('⚠️ DEV BACKDOOR: Bypassing login with mock user.');
+
+      // 👇 新增這行：讓開發者後門也能測試推播
+      if (mockUser && mockUser.id) {
+        AppBridge.syncLogin(mockUser.id);
+      }
+
       onLogin(mockUser);
       return; 
     }
-    // ================== 上線需移除 =================
+    // ================== Remove before production =================
 
     if (!email) {
-      setError('請輸入 Email');
+      setError('Please enter email');
       return;
     }
 
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
-      setError('請輸入正確的 Email 格式');
+      setError('Please enter a valid email format');
       return;
     }
 
     try {
       setError('');
       setSuccess('');
-      console.log('📧 發送 OTP 到:', email);
+      console.log('📧 Sending OTP to:', email);
       
       await AuthAPI.requestOTP(email);
       
-      setSuccess('驗證碼已發送到您的信箱');
+      setSuccess('Verification code sent to your email');
       sendVerificationCode();
       
-      console.log('✅ OTP 發送成功');
+      console.log('✅ OTP sent successfully');
     } catch (error) {
-      console.error('❌ 發送 OTP 失敗:', error);
-      setError(error.message || '發送驗證碼失敗，請稍後再試');
+      console.error('❌ Failed to send OTP:', error);
+      setError(error.message || 'Failed to send verification code, please try again later');
     }
   };
 
   const handleLogin = async () => {
-    console.log('🔐 驗證碼確認流程開始');
+    console.log('🔐 Verification code confirmation process started');
     console.log('📧 Email:', email);
-    console.log('🔢 驗證碼:', verificationCode);
+    console.log('🔢 Verification code:', verificationCode);
 
     if (!email) {
-      setError('請輸入 Email');
+      setError('Please enter email');
       return;
     }
 
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
-      setError('請輸入正確的 Email 格式');
+      setError('Please enter a valid email format');
       return;
     }
 
     if (!isVerificationSent) {
-      setError('請先發送驗證碼');
+      setError('Please send verification code first');
       return;
     }
 
     if (!verificationCode || verificationCode.length !== 6) {
-      setError('請輸入 6 位數驗證碼');
+      setError('Please enter 6-digit verification code');
       return;
     }
 
@@ -303,33 +319,33 @@ const Login = ({ onLogin }) => {
     setSuccess('');
 
     try {
-      console.log('📡 呼叫 /auth/otp/verify...');
+      console.log('📡 Calling /auth/otp/verify...');
       const verifyResult = await AuthAPI.verifyOTP(email, verificationCode);
       console.log('📊 Verify result:', verifyResult);
       
       if (!verifyResult.ok) {
-        setError('驗證碼錯誤，請重新輸入');
+        setError('Incorrect verification code, please re-enter');
         setIsLoading(false);
         return;
       }
 
-      console.log('✅ OTP 驗證成功');
-      console.log('📡 呼叫 /auth/session...');
+      console.log('✅ OTP verification successful');
+      console.log('📡 Calling /auth/session...');
       const session = await AuthAPI.getSession();
       console.log('📊 Session data:', session);
 
       if (!session.authenticated) {
-        setError('驗證失敗，請重試');
+        setError('Verification failed, please try again');
         setIsLoading(false);
         return;
       }
 
-      // ✅ 呼叫共用的登入成功處理函式
+      // ✅ Call shared login success handler function
       await processLoginSuccess(session, email);
 
     } catch (error) {
-      console.error('💥 驗證過程發生錯誤:', error);
-      setError(error.message || '驗證時發生錯誤，請稍後再試');
+      console.error('💥 Error during verification process:', error);
+      setError(error.message || 'Error occurred during verification, please try again later');
       setIsLoading(false);
     }
   };
@@ -344,7 +360,7 @@ const Login = ({ onLogin }) => {
       
       const providerKey = provider.toLowerCase();
       if (!providers[providerKey] && !providers[provider]) {
-        setError(`${provider} 登入目前無法使用`);
+        setError(`${provider} login is currently unavailable`);
         return;
       }
 
@@ -360,7 +376,7 @@ const Login = ({ onLogin }) => {
       
     } catch (error) {
       console.error(`❌ ${provider} login error:`, error);
-      setError(`${provider} 登入失敗，請稍後再試`);
+      setError(`${provider} login failed, please try again later`);
     }
   };
 

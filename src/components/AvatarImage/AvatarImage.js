@@ -18,13 +18,25 @@ const AvatarImage = ({
   className = ''
 }) => {
   const navigate = useNavigate();
-  // 如果有傳入 src，預設就直接顯示，不用等待
   const [avatarUrl, setAvatarUrl] = useState(src || defaultAvatar);
-  const [loading, setLoading] = useState(!src && !!userId); // 如果有 src，就不需要 loading
+  const [loading, setLoading] = useState(!src && !!userId);
   const [error, setError] = useState(false);
   const [uploading, setUploading] = useState(false);
 
-  // 取得姓名縮寫 (Fallback)
+  // ✅ THÊM: Lấy user hiện tại từ localStorage
+  const getCurrentUserId = () => {
+    try {
+      const userStr = localStorage.getItem('user');
+      if (userStr) {
+        const user = JSON.parse(userStr);
+        return user.id || user.user_id || user.userId; // Tùy cấu trúc của bạn
+      }
+    } catch (error) {
+      console.error('Error getting current user:', error);
+    }
+    return null;
+  };
+
   const getInitials = () => {
     if (userName) return userName.charAt(0).toUpperCase();
     if (userId) return userId.charAt(0).toUpperCase();
@@ -32,42 +44,47 @@ const AvatarImage = ({
   };
 
   useEffect(() => {
-    // 1. 如果外部已經傳入 src (例如貼文列表)，直接顯示，不呼叫 API
+    console.log('🖼️ AvatarImage useEffect:', { userId, userName, src, hasProfileData: !!profileData });
+    
     if (src) {
-      setAvatarUrl(src);
+      const processedUrl = ApiService.processAvatarUrl(src);
+      console.log('✅ Using src prop:', src, '→', processedUrl);
+      setAvatarUrl(processedUrl);
       setLoading(false);
       return;
     }
 
-    // 2. 如果沒有 userId，無法查詢
     if (!userId) {
       setLoading(false);
       return;
     }
 
-    // 3. 沒有 src，必須自行查詢 (例如 UserHeader)
     let isMounted = true;
     const fetchAvatar = async () => {
       try {
         setLoading(true);
+        console.log('🔄 Fetching avatar for userId:', userId);
         
-        // 優先檢查 profileData
         if (profileData && profileData.avatar_url) {
+          const processedUrl = ApiService.processAvatarUrl(profileData.avatar_url);
+          console.log('✅ Using profileData.avatar_url:', profileData.avatar_url, '→', processedUrl);
           if (isMounted) {
-            setAvatarUrl(ApiService.processAvatarUrl(profileData.avatar_url));
+            setAvatarUrl(processedUrl);
             setLoading(false);
           }
           return;
         }
 
-        // 呼叫 API (這裡會依賴 api.js 的智慧判斷)
-        const result = await ApiService.getUserAvatar(userId);
+        const avatarUrl = await ApiService.getUserAvatar(userId);
+        console.log('📥 getUserAvatar result:', avatarUrl);
         
         if (isMounted) {
-          if (result.success && result.avatar_url) {
-            setAvatarUrl(result.avatar_url);
+          if (avatarUrl) {
+            console.log('✅ Setting avatar URL:', avatarUrl);
+            setAvatarUrl(avatarUrl);
           } else {
-            setAvatarUrl(null); // 沒頭貼，顯示縮寫
+            console.log('⚠️ No avatar URL, using fallback');
+            setAvatarUrl(null);
           }
         }
       } catch (err) {
@@ -81,7 +98,6 @@ const AvatarImage = ({
     return () => { isMounted = false; };
   }, [userId, src, profileData]);
 
-  // 處理上傳 (保持原有功能)
   const handleUpload = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -102,12 +118,11 @@ const AvatarImage = ({
       const result = await ApiService.uploadAvatar(userId, file);
 
       if (result.success) {
-        // 強制重新整理快取並顯示新圖片
         const newUrl = result.avatar_url 
           ? ApiService.processAvatarUrl(result.avatar_url) 
           : URL.createObjectURL(file);
         
-        setAvatarUrl(`${newUrl}?t=${Date.now()}`); // 加 timestamp 避免快取
+        setAvatarUrl(`${newUrl}?t=${Date.now()}`);
         
         if (onUploadSuccess) onUploadSuccess(newUrl);
         alert('✅ 頭像更新成功！');
@@ -127,6 +142,12 @@ const AvatarImage = ({
     if (uploading) return;
     if (e.target.closest('.avatar-upload-overlay')) return;
     
+    // 🔒 THÊM: Chỉ cho phép click vào avatar của chính mình
+    const currentUserId = getCurrentUserId();
+    if (userId && currentUserId && userId !== currentUserId) {
+      return; // ❌ Chặn click vào avatar người khác
+    }
+    
     if (onClick) {
       onClick(userId);
       return;
@@ -137,7 +158,6 @@ const AvatarImage = ({
     }
   };
 
-  // 渲染 Loading 狀態
   if (loading) {
     return (
       <div className={`avatar-image-container loading ${className}`} style={{ width: size, height: size }}>
@@ -146,9 +166,14 @@ const AvatarImage = ({
     );
   }
 
+  // ✅ THÊM: Kiểm tra xem có phải avatar của mình không
+  const currentUserId = getCurrentUserId();
+  const isOwnAvatar = userId === currentUserId;
+
   return (
     <div 
-      className={`avatar-image-container ${clickable ? 'avatar-clickable' : ''} ${className}`}
+      className={`avatar-image-container ${clickable && isOwnAvatar ? 'avatar-clickable' : ''} ${className}`}
+      // ☝️ Chỉ thêm class clickable nếu là avatar của mình
       style={{ width: size, height: size }}
       onClick={handleAvatarClick}
       title={userName || userId}
@@ -160,7 +185,7 @@ const AvatarImage = ({
           className={`avatar-image ${error ? 'error' : ''}`}
           style={{ width: size, height: size, objectFit: 'cover' }}
           onError={() => {
-            setAvatarUrl(null); // 載入失敗時切換回縮寫模式
+            setAvatarUrl(null);
             setError(true);
           }}
           loading="lazy"
@@ -173,7 +198,7 @@ const AvatarImage = ({
             height: size,
             fontSize: size * 0.4,
             lineHeight: `${size}px`,
-            backgroundColor: '#ccc', // 預設背景色
+            backgroundColor: '#ccc',
             color: '#fff'
           }}
         >

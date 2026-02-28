@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import ApiService from '../../services/api';
 import './FriendList.css';
 
-// 導入 CircleButton
+// Import CircleButton
 import CircleButton from '../CircleButton/CircleButton';
 
 import Home from '../../assets/icons/Homeicon.png';
@@ -19,8 +19,8 @@ const FriendList = ({ user, onLogout }) => {
   const [family, setFamily] = useState([]);
   const [loading, setLoading] = useState(true);
   
-  // ✅ 設定初始狀態為 Profile (對應 Search 圖示的位置)
-  const [activeTab, setActiveTab] = useState('Search');
+  // Set initial state to Profile (corresponding to Search icon position)
+  const [activeTab, setActiveTab] = useState(null);
   const [viewMode, setViewMode] = useState('friends');
   const [error, setError] = useState(null);
 
@@ -35,7 +35,7 @@ const FriendList = ({ user, onLogout }) => {
     try {
       const userId = user?.id || user?.userId || ApiService.getCurrentUserId();
       
-      // 即使沒有 userId，也嘗試載入 (可能 api 有 mock 數據)
+      // Try loading even without userId (api may have mock data)
       if (viewMode === 'friends') {
         const result = await ApiService.getFriends(userId);
         if (result.success) {
@@ -48,16 +48,14 @@ const FriendList = ({ user, onLogout }) => {
         }
       }
     } catch (error) {
-      console.error('💥 載入資料錯誤:', error);
+      console.error('💥 Data loading error:', error);
       setError(error.message);
     } finally {
       setLoading(false);
     }
   };
 
-  const handlePersonClick = (person) => {
-    alert(`查看 ${person.name} 的個人資料`);
-  };
+  // ❌ ĐÃ XÓA: handlePersonClick function
 
   const handleTabChange = (tab) => {
     setActiveTab(tab);
@@ -72,7 +70,7 @@ const FriendList = ({ user, onLogout }) => {
         navigate('/create-post');
         break;
       case 'Search':
-        // 已經在好友頁面，不動作
+        // Already on friends page, no action
         break;
       case 'Nova':
         if (onLogout) onLogout();
@@ -85,34 +83,31 @@ const FriendList = ({ user, onLogout }) => {
 
   const currentList = viewMode === 'friends' ? friends : family;
   const emptyMessage = viewMode === 'friends' 
-    ? '尚無好友，開始添加好友，建立您的禱告網絡！'
-    : '尚無家族成員，邀請您的家人加入！';
+    ? 'No friends yet, start adding friends to build your prayer network!'
+    : 'No family members yet, invite your family to join!';
 
   return (
     <div className="friend-list-page">
       <div className="fl-header">
-        <button className="fl-back-button" onClick={() => navigate('/main')}>
+        <button className="fl-back-button" onClick={() => navigate(-1)}>
           ← 
         </button>
         <h1 className="fl-page-title">
-          {viewMode === 'friends' ? '好友列表' : '家族列表'}
+          {viewMode === 'friends' ? 'Friends List' : 'Family List'}
         </h1>
       </div>
-
-      
 
       <div className="fl-container">
         {loading ? (
           <div className="fl-loading">
             <div className="fl-spinner"></div>
-            <p>載入中...</p>
+            <p>Loading...</p>
           </div>
         ) : error ? (
           <div className="fl-error">
             <div className="fl-error-icon">⚠️</div>
-            <h3>載入失敗</h3>
+            <h3>Loading Failed</h3>
             <p>{error}</p>
-            
           </div>
         ) : currentList.length > 0 ? (
           <div className="fl-grid">
@@ -120,7 +115,9 @@ const FriendList = ({ user, onLogout }) => {
               <div 
                 key={person.id} 
                 className="fl-card"
-                onClick={() => handlePersonClick(person)}
+                // ❌ ĐÃ XÓA: onClick handler
+                // ✅ THÊM: style để không có cursor pointer
+                style={{ cursor: 'default' }}
               >
                 <div className="fl-avatar">
                   <img 
@@ -143,14 +140,14 @@ const FriendList = ({ user, onLogout }) => {
               {viewMode === 'friends' ? '👥' : '👨‍👩‍👧‍👦'}
             </div>
             <h3>
-              {viewMode === 'friends' ? '尚無好友' : '尚無家族成員'}
+              {viewMode === 'friends' ? 'No Friends' : 'No Family Members'}
             </h3>
             <p>{emptyMessage}</p>
           </div>
         )}
       </div>
 
-      {/* ✅ 統一底部導航列：使用與 Context 相同的結構與 class */}
+      {/* Unified bottom navigation: Using same structure and classes as Context */}
       <div className="bottom-navigation">
         <CircleButton 
           provider="Home" 
@@ -158,7 +155,7 @@ const FriendList = ({ user, onLogout }) => {
           onClick={() => handleTabChange('Home')} 
           isActive={activeTab === 'Home'} 
           size="medium" 
-          ariaLabel="首頁" 
+          ariaLabel="Home" 
         />
         <CircleButton 
           provider="PrayerHub" 
@@ -174,7 +171,7 @@ const FriendList = ({ user, onLogout }) => {
           onClick={() => handleTabChange('Add')} 
           isActive={activeTab === 'Add'} 
           size="medium" 
-          ariaLabel="新增貼文" 
+          ariaLabel="Add Post" 
         />
         <CircleButton 
           provider="Search" 
@@ -182,7 +179,7 @@ const FriendList = ({ user, onLogout }) => {
           onClick={() => handleTabChange('Search')} 
           isActive={activeTab === 'Search'} 
           size="medium" 
-          ariaLabel="個人資料" 
+          ariaLabel="Profile" 
         />
         <CircleButton 
           provider="Nova" 
@@ -190,7 +187,7 @@ const FriendList = ({ user, onLogout }) => {
           onClick={() => handleTabChange('Nova')} 
           isActive={activeTab === 'Nova'} 
           size="medium" 
-          ariaLabel="nova小天使" 
+          ariaLabel="Nova Assistant" 
         />
       </div>
     </div>
