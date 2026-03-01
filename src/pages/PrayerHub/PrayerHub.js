@@ -1129,19 +1129,15 @@ const PrayerHub = ({ user, onLogout }) => {
 
     const fetchNotificationCount = async () => {
       try {
-        const response = await fetch(
-          'https://pray-api.yalinelena.church/api/notifications?limit=1&offset=0&unread_only=false'
-        );
-        if (!response.ok) {
-          throw new Error(`HTTP ${response.status}`);
-        }
-        const payload = await response.json();
-        const unread = payload?.data?.unread_count;
+        const result = await ApiService.getNotifications({ limit: 1, offset: 0, unread_only: false });
         if (isActive) {
-          setNotificationCount(typeof unread === 'number' ? unread : 0);
+          if (result.success) {
+            setNotificationCount(result.unread_count ?? 0);
+          } else {
+            setNotificationCount(0);
+          }
         }
       } catch (error) {
-        if (error.name === 'AbortError') return;
         console.error('❌ Failed to load notification count:', error);
         if (isActive) {
           setNotificationCount(0);
