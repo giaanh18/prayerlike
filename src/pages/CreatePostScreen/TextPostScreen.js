@@ -179,7 +179,7 @@ const TextPostScreen = ({ user }) => {
 
   const handleSearch = () => {
     setActiveTab('Search');
-    navigate('/tribe');
+    navigate('/prayer-hub');
   };
 
   const handleCreatePost = () => {
@@ -189,12 +189,12 @@ const TextPostScreen = ({ user }) => {
 
   const handleProfile = () => {
     setActiveTab('Profile');
-    navigate('/profile');
+    navigate('/addfriend');
   };
 
   const handleNova = () => {
     setActiveTab('Nova');
-    navigate('/notifications');
+    navigate('/nova');
   };
 
   // ✅ Block Tribe if user has no tribe

@@ -18,12 +18,6 @@ const isInApp = () =>
 
 function AudioPostScreen({ onClose = () => {}, onUploadSuccess = () => {} }) {
   const navigate = useNavigate();
-  // 🔴 Debug state: Display logs on screen
-  const [debugLogs, setDebugLogs] = useState([]);
-  const addLog = (msg) => {
-    console.log(msg);
-    setDebugLogs(prev => [...prev.slice(-10), `${new Date().toLocaleTimeString()} ${msg}`]);
-  };
 
   const [recordingState, setRecordingState] = useState('idle');
   const [audioBlob, setAudioBlob] = useState(null);
@@ -47,19 +41,13 @@ function AudioPostScreen({ onClose = () => {}, onUploadSuccess = () => {} }) {
   useEffect(() => {
     const inApp = isInApp();
     setIsAppEnvironment(inApp);
-    if (inApp) {
-      addLog('✅ APP environment detected');
-    } else {
-      addLog('🌐 Currently in WEB environment');
-    }
-  }, []);
+ }, []);
 
   // Setup callback to receive Flutter recordId
   useEffect(() => {
     window.receiveAudioId = (id) => {
       const recordId = String(id ?? "");
       setFlutterRecordId(recordId);
-      addLog(`📌 Received recordId from Flutter: ${recordId}`);
       
       if (recordId) {
         handleFlutterRecordId(recordId);
@@ -90,25 +78,7 @@ function AudioPostScreen({ onClose = () => {}, onUploadSuccess = () => {} }) {
   useEffect(() => {
     const onMessage = (event) => {
       let data = event?.data;
-      addLog(`📩 Received msg. Type: ${typeof data}`);
 
-      // 1. Try to parse JSON string format (fixes issue with some Apps returning strings causing no response)
-      if (typeof data === 'string') {
-        try {
-          data = JSON.parse(data);
-          addLog('✅ JSON parsing successful');
-        } catch (e) {
-          addLog(`⚠️ JSON parsing failed: ${e.message.slice(0, 20)}`);
-          // Not a JSON string, ignore and continue (some Apps may send strings that aren't JSON)
-        }
-      }
-
-      if (!data || typeof data !== 'object') {
-        addLog('⚠️ Invalid data/not an object');
-        return;
-      }
-      
-      if (data.type) addLog(`🔍 Type: ${data.type}`);
 
       // ✅ App returned recording complete
       if (data.type === 'AUDIO_RECORDING_READY') {
@@ -172,14 +142,12 @@ function AudioPostScreen({ onClose = () => {}, onUploadSuccess = () => {} }) {
 
   // Handle recordId returned from Flutter
   const handleFlutterRecordId = async (receivedRecordId) => {
-    addLog('🔄 Starting to process Flutter recordId');
     setRecordingState('uploading');
     setUploadMessage('Received recording ID, waiting for transcription result...');
     abortPollingRef.current = false;
 
     try {
       const transcriptData = await pollForTranscript(receivedRecordId);
-      addLog('✅ Transcription complete');
       
       const finalTranscript = transcriptData.transcript || '';
       const finalAudioUrl = transcriptData.audio_url || '';
@@ -219,27 +187,22 @@ function AudioPostScreen({ onClose = () => {}, onUploadSuccess = () => {} }) {
     try {
       // ✅ Check if in App environment
       if (isAppEnvironment) {
-        addLog('📱 App environment: Attempting to call Flutter showOverlay');
         
         if (typeof window.flutter_inappwebview?.callHandler === "function") {
           try {
             const res = await window.flutter_inappwebview.callHandler("showOverlay");
-            addLog(`✅ showOverlay successful: ${JSON.stringify(res)}`);
             setRecordingState('recording');
             setUploadMessage('Waiting for Flutter to return recording result...');
             return;
           } catch (e) {
-            addLog(`⚠️ showOverlay failed: ${e.message}, switching to Web recording`);
             console.error('Failed to call showOverlay', e);
             // If Flutter call fails, continue with Web recording
           }
         } else {
-          addLog('⚠️ No callHandler, switching to Web recording');
         }
       }
 
       // Use original recording logic when in Web environment or Flutter call fails
-      addLog('🌐 Using Web recording');
       window.AppBridge?.postMessage?.(JSON.stringify({ type: 'START_RECORDING' }));
 
       // UI state switch
@@ -248,7 +211,6 @@ function AudioPostScreen({ onClose = () => {}, onUploadSuccess = () => {} }) {
 
     } catch (error) {
       console.error('❌ Unable to start recording:', error);
-      addLog(`❌ Recording error: ${error.message}`);
       setRecordingState('error');
       setUploadMessage(`Processing failed: ${error.message}`);
       setActiveButton(null);
@@ -265,7 +227,6 @@ function AudioPostScreen({ onClose = () => {}, onUploadSuccess = () => {} }) {
     try {
       // ✅ Notify App to stop recording, App will return AUDIO_RECORDING_READY
       window.AppBridge?.postMessage?.(JSON.stringify({ type: 'STOP_RECORDING' }));
-      addLog('📤 Sent STOP_RECORDING');
     } catch (error) {
       console.error('❌ Unable to call App to stop recording:', error);
       setRecordingState('error');
@@ -394,10 +355,10 @@ function AudioPostScreen({ onClose = () => {}, onUploadSuccess = () => {} }) {
 
   // Navigation Handlers
   const handleHome = () => { setActiveTab('Home'); navigate('/main'); };
-  const handleSearch = () => { setActiveTab('Search'); navigate('/tribe'); };
+  const handleSearch = () => { setActiveTab('Search'); navigate('/prayer-hub'); };
   const handleCreatePost = () => { setActiveTab('Add'); navigate('/create-post'); };
-  const handleProfile = () => { setActiveTab('Profile'); navigate('/profile'); };
-  const handleNova = () => { setActiveTab('Nova'); navigate('/notifications'); };
+  const handleProfile = () => { setActiveTab('Profile'); navigate('/addfriend'); };
+  const handleNova = () => { setActiveTab('Nova'); navigate('/nova'); };
 
   const renderButtons = () => {
     if (recordingState === 'idle') {
@@ -556,19 +517,6 @@ function AudioPostScreen({ onClose = () => {}, onUploadSuccess = () => {} }) {
           <div className="card-buttons">
             {renderButtons()}
           </div>
-          
-          {/* 🔴 Debug window: Display latest Logs */}
-          <div style={{
-            position: 'absolute', bottom: 0, left: 0, right: 0,
-            background: 'rgba(0,0,0,0.8)', color: '#0f0', fontSize: '10px',
-            padding: '5px', maxHeight: '150px', overflowY: 'auto', zIndex: 9999
-          }}>
-            <div style={{fontWeight:'bold', borderBottom:'1px solid #333'}}>DEBUG LOGS:</div>
-            {debugLogs.map((log, i) => (
-              <div key={i}>{log}</div>
-            ))}
-          </div>
-
         </div>
       </div>
 
