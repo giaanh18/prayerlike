@@ -1082,7 +1082,7 @@ const Post = ({ post, allPosts, onLike, onComment, currentUserId, selectedCatego
 // ==================== MAIN PRAYER HUB COMPONENT ====================
 const PrayerHub = ({ user, onLogout }) => {
   const navigate = useNavigate();
-  const [notificationCount] = useState(0);
+  const [notificationCount, setNotificationCount] = useState(0);
   const [coinAmount, setCoinAmount] = useState(0);
   const [loadingBalance, setLoadingBalance] = useState(true);
   const [showTribeDetail, setShowTribeDetail] = useState(false);
@@ -1123,6 +1123,38 @@ const PrayerHub = ({ user, onLogout }) => {
       setCurrentTribeId(storedUser.tribe);
     }
   }, [user, currentTribeId]);
+
+  useEffect(() => {
+    let isActive = true;
+
+    const fetchNotificationCount = async () => {
+      try {
+        const response = await fetch(
+          'https://pray-api.yalinelena.church/api/notifications?limit=1&offset=0&unread_only=false'
+        );
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}`);
+        }
+        const payload = await response.json();
+        const unread = payload?.data?.unread_count;
+        if (isActive) {
+          setNotificationCount(typeof unread === 'number' ? unread : 0);
+        }
+      } catch (error) {
+        if (error.name === 'AbortError') return;
+        console.error('❌ Failed to load notification count:', error);
+        if (isActive) {
+          setNotificationCount(0);
+        }
+      }
+    };
+
+    fetchNotificationCount();
+
+    return () => {
+      isActive = false;
+    };
+  }, []);
 
   const userTribeId = currentTribeId;
   let tribeNameProp, tribeLogoProp;
@@ -1195,29 +1227,27 @@ const PrayerHub = ({ user, onLogout }) => {
 
     console.log('📡 Fetching posts with filters:', filters);
 
-    let result = await ApiService.getPosts(page, 100, true, filters);
+    // ✅ 1. Fetch posts (event=post) and comments (event=comment) in parallel
+    const [postsResult, commentsResult] = await Promise.all([
+      ApiService.getPosts(page, 100, true, filters),
+      ApiService.getCommentsPage(page, 100, filters)
+    ]);
 
-    if (result && result.success && result.posts && result.posts.length > 0) {
-      const commentsCountMap = {};
-      result.posts.forEach(p => {
-        if (p.parent_docid && p.event !== 'witness') {
-          commentsCountMap[p.parent_docid] = (commentsCountMap[p.parent_docid] || 0) + 1;
-        }
-      });
+    const rawPosts = postsResult?.success ? (postsResult.posts || []) : [];
+    const rawComments = commentsResult?.success ? (commentsResult.comments || []) : [];
 
-      const filteredPosts = result.posts.filter(post => !post.parent_docid && post.docid);
+    // ✅ 2. Build comment count map from comments response
+    const commentsCountMap = {};
+    rawComments.forEach(c => {
+      if (c.parent_docid) {
+        commentsCountMap[c.parent_docid] = (commentsCountMap[c.parent_docid] || 0) + 1;
+      }
+    });
 
-      console.log(`📊 Total filtered posts: ${filteredPosts.length}`);
+    console.log(`📊 Posts: ${rawPosts.length}, Comments: ${rawComments.length}`);
 
-      // ✅ MỚI: Phân trang ở frontend - Mỗi trang 100 posts
-      const postsPerPage = 100;
-      const startIndex = (page - 1) * postsPerPage;
-      const endIndex = startIndex + postsPerPage;
-      const paginatedPosts = filteredPosts.slice(startIndex, endIndex);
-
-      console.log(`📄 Page ${page}: Showing ${paginatedPosts.length}/${filteredPosts.length} posts (from index ${startIndex} to ${endIndex})`);
-
-      const transformedPosts = paginatedPosts.map(post => ({
+    if (rawPosts.length > 0) {
+      const transformedPosts = rawPosts.map(post => ({
         id: post.docid,
         sn: post.sn,
         userid: post.userid,
@@ -1234,25 +1264,22 @@ const PrayerHub = ({ user, onLogout }) => {
         audioRecordId: post.uuid || null,
         avatar_url: ApiService.processAvatarUrl(post.avatar_url)
       }));
-      
+
       console.log(`✅ Loaded ${transformedPosts.length} posts`);
       setPosts(transformedPosts);
-      setAllPosts(result.posts);
+      setAllPosts(rawPosts);
 
-      // ✅ MỚI: Kiểm tra có trang tiếp theo không
-      const totalPages = Math.ceil(filteredPosts.length / postsPerPage);
-      const hasNext = page < totalPages;
+      // ✅ 3. Use has_next from server pagination
+      const hasNext = postsResult.pagination?.has_next === true;
 
       console.log(`📊 Pagination info:`, {
         currentPage: page,
-        totalPages: totalPages,
-        postsOnThisPage: paginatedPosts.length,
-        totalFilteredPosts: filteredPosts.length,
-        hasNext: hasNext
+        hasNext: hasNext,
+        pageinfo: postsResult.pagination
       });
 
       setHasNextPage(hasNext);
-      
+
     } else {
       console.log('ℹ️ No posts found');
       setPosts([]);

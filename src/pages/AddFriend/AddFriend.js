@@ -22,10 +22,48 @@ const AddFriend = ({ user, onLogout }) => {
   const [loading, setLoading] = useState(false);
   const [searching, setSearching] = useState(false);
   const [searchError, setSearchError] = useState('');
+  const [pendingOutgoingIds, setPendingOutgoingIds] = useState(new Set());
+  const [existingFriendIds, setExistingFriendIds] = useState(new Set());
 
   useEffect(() => {
     loadFriendInvitations();
+    loadRelationshipSets();
   }, []);
+
+  const loadRelationshipSets = async () => {
+    try {
+      const [pendingResult, friendsResult] = await Promise.all([
+        fetch('https://pray-api.yalinelena.church/api/friends/pending', {
+          method: 'GET',
+          credentials: 'include',
+          headers: { 'accept': 'application/json' }
+        }).then(r => r.json()),
+        fetch('https://pray-api.yalinelena.church/api/friends', {
+          method: 'GET',
+          credentials: 'include',
+          headers: { 'accept': 'application/json' }
+        }).then(r => r.json())
+      ]);
+
+      if (pendingResult?.data?.outgoing) {
+        const outgoingIds = new Set(
+          pendingResult.data.outgoing.map(inv => inv.target_user_id)
+        );
+        setPendingOutgoingIds(outgoingIds);
+        console.log('📤 Pending outgoing IDs:', [...outgoingIds]);
+      }
+
+      if (friendsResult?.data?.friends) {
+        const friendIds = new Set(
+          friendsResult.data.friends.map(f => f.user_id)
+        );
+        setExistingFriendIds(friendIds);
+        console.log('👥 Existing friend IDs:', [...friendIds]);
+      }
+    } catch (error) {
+      console.error('❌ Error loading relationship sets:', error);
+    }
+  };
 
   const loadFriendInvitations = async () => {
     setLoading(true);
@@ -96,13 +134,7 @@ const AddFriend = ({ user, onLogout }) => {
       );
 
       if (result.success) {
-        setSearchResults(prev =>
-          prev.map(friend =>
-            friend.id === targetUserId
-              ? { ...friend, requestSent: true }
-              : friend
-          )
-        );
+        setPendingOutgoingIds(prev => new Set([...prev, targetUserId]));
         loadFriendInvitations();
         alert('✅ Friend invitation sent!');
       } else {
@@ -254,15 +286,15 @@ const AddFriend = ({ user, onLogout }) => {
                   <p className="af-user-email">{friend.email}</p>
                 )}
               </div>
-              {!friend.requestSent ? (
+              {(pendingOutgoingIds.has(friend.id) || existingFriendIds.has(friend.id)) ? (
+                <span className="af-sent-badge">sent</span>
+              ) : (
                 <button 
                   className="af-add-button"
                   onClick={() => handleAddFriend(friend.id)}
                 >
                   add friend
                 </button>
-              ) : (
-                <span className="af-sent-badge">sent</span>
               )}
             </div>
           ))}

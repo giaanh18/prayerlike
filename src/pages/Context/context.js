@@ -1950,7 +1950,7 @@ const MainApp = ({ user, onLogout }) => {
   const [allPosts, setAllPosts] = useState([]);
   const [privacyFilter, setPrivacyFilter] = useState('all');
   const [loading, setLoading] = useState(false);
-  const [notificationCount] = useState(0);
+  const [notificationCount, setNotificationCount] = useState(0);
 
   const [coinAmount, setCoinAmount] = useState(0);
   const [loadingBalance, setLoadingBalance] = useState(true);
@@ -2039,6 +2039,29 @@ const MainApp = ({ user, onLogout }) => {
       console.log('✅ Balance refreshed:', result.balance);
     }
   };
+
+  const fetchNotificationCount = useCallback(async () => {
+    try {
+      console.log('🔔 Fetching notification count...');
+      const result = await ApiService.getNotifications({ limit: 1, offset: 0, unread_only: false });
+
+      if (result.success) {
+        const count = result.unread_count ?? 0;
+        setNotificationCount(count);
+        console.log('🔔 Unread notifications:', count);
+      } else {
+        console.error('⚠️ Unable to load notification count:', result.message);
+        setNotificationCount(0);
+      }
+    } catch (error) {
+      console.error('❌ Error fetching notification count:', error);
+      setNotificationCount(0);
+    }
+  }, [user?.id]);
+
+  useEffect(() => {
+    fetchNotificationCount();
+  }, [fetchNotificationCount]);
 
   const handleTribeSelected = async (newTribeId) => {
     console.log(`✅ Tribe selected: ${newTribeId}`);

@@ -383,6 +383,7 @@ const ApiService = {
       const params = new URLSearchParams({
         page: page,
         limit: limit,
+        event: 'post',
         viewer_userid: currentUserId || '',
         ...filters
       });
@@ -431,6 +432,45 @@ const ApiService = {
     } catch (error) {
       console.error('❌ Lấy posts thất bại:', error);
       return { success: false, posts: [], message: error.message, error: error.message };
+    }
+  },
+
+  getCommentsPage: async (page = 1, limit = 100, filters = {}) => {
+    try {
+      const currentUserId = ApiService.getCurrentUserId();
+
+      const params = new URLSearchParams({
+        page: page,
+        limit: limit,
+        event: 'comment',
+        viewer_userid: currentUserId || '',
+        ...filters
+      });
+
+      const url = `${POSTS_API_URL}/page?${params.toString()}`;
+      console.log(`💬 Lấy comments (bulk) from: ${url}`);
+
+      const { data } = await ApiService.makeRequest(url, {
+        method: 'GET',
+        credentials: 'include',
+        maxRetries: 2
+      });
+
+      if (data && data.status === 'success' && data.data) {
+        const rawComments = data.data.posts || [];
+        return {
+          success: true,
+          comments: rawComments,
+          pagination: data.data.pageinfo || {},
+          message: data.message || 'Lấy comments thành công'
+        };
+      }
+
+      throw new ApiError(data?.message || 'Format response không hợp lệ', 500);
+
+    } catch (error) {
+      console.error('❌ Lấy bulk comments thất bại:', error);
+      return { success: false, comments: [], pagination: {}, message: error.message, error: error.message };
     }
   },
 
@@ -578,10 +618,10 @@ getComments: async (postDocid, page = 1, limit = 100) => {
 
     console.log(`💬 Lấy comments cho post ${postDocid} - Page ${page}`);
 
-    // ✅ SỬA: Dùng lại /api/page với filter parent_docid
     const params = new URLSearchParams({
       page: page.toString(),
       limit: limit.toString(),
+      event: 'comment',
       parent_docid: postDocid,
       viewer_userid: ApiService.getCurrentUserId() || ''
     });
@@ -599,27 +639,15 @@ getComments: async (postDocid, page = 1, limit = 100) => {
     console.log('📥 Raw API response:', data);
 
     if (data && data.status === 'success' && data.data) {
-      const rawPosts = data.data.posts || [];
+      const rawComments = data.data.posts || [];
       
-      console.log(`📦 Total posts returned: ${rawPosts.length}`);
-      
-      // ✅ Filter: Chỉ lấy posts có parent_docid = postDocid VÀ KHÔNG PHẢI witness
-      const comments = rawPosts.filter(p => {
-        const isComment = p.parent_docid === postDocid;
-        const isNotWitness = p.event !== 'witness';
-        
-        console.log(`  Post ${p.docid}: parent=${p.parent_docid}, event=${p.event}, isComment=${isComment}, isNotWitness=${isNotWitness}`);
-        
-        return isComment && isNotWitness;
-      });
-
-      console.log(`✅ Filtered ${comments.length} comments for post ${postDocid}`);
+      console.log(`✅ Got ${rawComments.length} comments for post ${postDocid}`);
 
       return {
         success: true,
-        comments: comments,
+        comments: rawComments,
         pagination: data.data.pageinfo || {},
-        message: `Lấy ${comments.length} comments thành công`
+        message: `Lấy ${rawComments.length} comments thành công`
       };
     }
 
