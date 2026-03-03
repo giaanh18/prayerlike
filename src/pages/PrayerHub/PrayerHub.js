@@ -1,4 +1,3 @@
-// src/pages/PrayerHub/PrayerHub.js
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import ApiService from '../../services/api';
@@ -76,15 +75,10 @@ const WitnessWall = ({ currentUserId, allPosts, privacyFilter, categoryFilter, r
   const [witnesses, setWitnesses] = useState([]);
   const [loading, setLoading] = useState(false);
 
-  // Helper to normalize media URLs returned from the API
   const getNormalizedImageUrl = (rawUrl) => {
     if (!rawUrl) return null;
-    if (ApiService.processMediaUrl) {
-      return ApiService.processMediaUrl(rawUrl);
-    }
-    if (ApiService.processAvatarUrl) {
-      return ApiService.processAvatarUrl(rawUrl);
-    }
+    if (ApiService.processMediaUrl) return ApiService.processMediaUrl(rawUrl);
+    if (ApiService.processAvatarUrl) return ApiService.processAvatarUrl(rawUrl);
     return rawUrl;
   };
 
@@ -103,9 +97,7 @@ const WitnessWall = ({ currentUserId, allPosts, privacyFilter, categoryFilter, r
           <span className="witness-media-label">{label}</span>
           <div className="witness-media-tags">
             {category && <span className="media-tag">{category}</span>}
-            {privacy && (
-              <span className="media-tag privacy">{formatPrivacyLabel(privacy)}</span>
-            )}
+            {privacy && <span className="media-tag privacy">{formatPrivacyLabel(privacy)}</span>}
           </div>
         </div>
       </div>
@@ -117,19 +109,12 @@ const WitnessWall = ({ currentUserId, allPosts, privacyFilter, categoryFilter, r
       setLoading(true);
       try {
         const filters = {};
-        
-        if (privacyFilter && privacyFilter !== 'Public') {
-          filters.privacy = privacyFilter.toLowerCase();
-        }
-        
-        if (categoryFilter) {
-          filters.category = categoryFilter;
-        }
+        if (privacyFilter && privacyFilter !== 'Public') filters.privacy = privacyFilter.toLowerCase();
+        if (categoryFilter) filters.category = categoryFilter;
 
         console.log('📡 Fetching witnesses with filters:', filters);
-        
         const result = await ApiService.getWitnessList(1, 100, filters);
-        
+
         if (result.success) {
           let filteredWitnesses = result.witnesses;
 
@@ -184,13 +169,8 @@ const WitnessWall = ({ currentUserId, allPosts, privacyFilter, categoryFilter, r
     <div className="witness-wall">
       <div className="witness-wall-grid">
         {witnesses.map(witness => {
-          const originalPost = witness.original_post || 
-            allPosts?.find(p => p.docid === witness.parent_docid);
-
-          const originalImageUrl = originalPost
-            ? getNormalizedImageUrl(originalPost.image || originalPost.image_url)
-            : null;
-
+          const originalPost = witness.original_post || allPosts?.find(p => p.docid === witness.parent_docid);
+          const originalImageUrl = originalPost ? getNormalizedImageUrl(originalPost.image || originalPost.image_url) : null;
           const witnessImageUrl = getNormalizedImageUrl(witness.image || witness.image_url);
 
           return (
@@ -199,7 +179,7 @@ const WitnessWall = ({ currentUserId, allPosts, privacyFilter, categoryFilter, r
                 <div className="witness-original-post-section">
                   <div className="post-header">
                     <div className="post-avatar">
-                      <AvatarImage 
+                      <AvatarImage
                         userId={originalPost.userid || originalPost.author}
                         userName={originalPost.userid || originalPost.author}
                         src={originalPost.avatar_url}
@@ -212,25 +192,18 @@ const WitnessWall = ({ currentUserId, allPosts, privacyFilter, categoryFilter, r
                       <div className="post-time">{originalPost.datetime || 'Just now'}</div>
                     </div>
                   </div>
-
                   <div className="post-content">
                     {originalPost.title && <h3>{originalPost.title}</h3>}
                     <p>{originalPost.content}</p>
                   </div>
-
-                  {renderMediaBlock(
-                    originalImageUrl,
-                    'Original Post Image',
-                    originalPost?.category,
-                    originalPost?.privacy
-                  )}
+                  {renderMediaBlock(originalImageUrl, 'Original Post Image', originalPost?.category, originalPost?.privacy)}
                 </div>
               )}
 
               <div className="witness-section">
                 <div className="witness-wall-header">
                   <div className="witness-wall-avatar">
-                    <AvatarImage 
+                    <AvatarImage
                       userId={witness.userid}
                       userName={witness.userid}
                       src={witness.avatar_url}
@@ -243,18 +216,11 @@ const WitnessWall = ({ currentUserId, allPosts, privacyFilter, categoryFilter, r
                     <div className="witness-wall-time">{witness.datetime || 'Just now'}</div>
                   </div>
                 </div>
-                
                 <div className="witness-wall-content">
                   {witness.title && <h4>{witness.title}</h4>}
                   <p>{witness.content}</p>
                 </div>
-
-                {renderMediaBlock(
-                  witnessImageUrl,
-                  'Witness Image',
-                  witness.category,
-                  witness.privacy
-                )}
+                {renderMediaBlock(witnessImageUrl, 'Witness Image', witness.category, witness.privacy)}
               </div>
             </div>
           );
@@ -285,33 +251,17 @@ const Comment = ({ comment, onReply, onEdit, onDelete, onLike, currentUserId, po
 
   const handleTranslate = async () => {
     if (isTranslating) return;
-
-    if (translatedContent) {
-      setTranslatedContent(null);
-      return;
-    }
+    if (translatedContent) { setTranslatedContent(null); return; }
 
     setIsTranslating(true);
     setTranslationError(null);
-
     try {
-      // ✅ THAY ĐỔI: Xóa "to Traditional Chinese"
-      console.log(`🌐 Translating comment ${comment.id} content...`);
-      
-      // ✅ ĐÃ ĐÚNG: 'en'
       const result = await ApiService.translate(comment.content, 'en');
-      
       if (result.success) {
         setTranslatedContent(result.translatedText);
-        // ✅ THAY ĐỔI: Xóa "to: 'zh-TW',"
-        console.log(`✅ Comment ${comment.id} translation completed:`, {
-          from: result.detectedSourceLanguage,
-          text: result.translatedText.substring(0, 50) + '...'
-        });
       } else {
         throw new Error(result.message || 'Translation failed');
       }
-
     } catch (error) {
       console.error(`❌ Comment ${comment.id} translation error:`, error);
       setTranslationError('Translation failed, please try again later');
@@ -322,14 +272,11 @@ const Comment = ({ comment, onReply, onEdit, onDelete, onLike, currentUserId, po
 
   const loadReplies = async () => {
     if (loadingReplies || comment.isReply) return;
-
     setLoadingReplies(true);
     try {
       const result = await ApiService.getComments(postDocid);
       if (result.success) {
-        const commentReplies = result.comments.filter(
-          c => c.parent_comment_id === comment.id
-        );
+        const commentReplies = result.comments.filter(c => c.parent_comment_id === comment.id);
         setReplies(commentReplies);
       }
     } catch (error) {
@@ -342,7 +289,6 @@ const Comment = ({ comment, onReply, onEdit, onDelete, onLike, currentUserId, po
   const handleReplySubmit = async (e) => {
     e.preventDefault();
     if (!replyText.trim() || isSubmitting) return;
-
     setIsSubmitting(true);
     try {
       const result = await ApiService.addComment({
@@ -350,9 +296,7 @@ const Comment = ({ comment, onReply, onEdit, onDelete, onLike, currentUserId, po
         content: replyText.trim(),
         docid: postDocid
       });
-
       if (result.success) {
-        console.log('✅ Reply successful:', result.comment);
         setReplyText('');
         setIsReplying(false);
         setShowReplies(true);
@@ -372,7 +316,7 @@ const Comment = ({ comment, onReply, onEdit, onDelete, onLike, currentUserId, po
     <div className={`comment ${comment.isReply ? 'comment-reply' : ''}`}>
       <div className="comment-header">
         <div className="comment-avatar">
-          <AvatarImage 
+          <AvatarImage
             userId={comment.userid || comment.author}
             userName={comment.author}
             src={comment.avatar_url}
@@ -388,7 +332,6 @@ const Comment = ({ comment, onReply, onEdit, onDelete, onLike, currentUserId, po
 
       <div className="comment-content">
         <p>{comment.content}</p>
-
         <button
           className={`comment-translate-button ${isTranslating ? 'translating' : ''} ${translatedContent ? 'active' : ''}`}
           onClick={handleTranslate}
@@ -397,18 +340,14 @@ const Comment = ({ comment, onReply, onEdit, onDelete, onLike, currentUserId, po
         >
           <TranslateIcon size={14} />
         </button>
-
         {translatedContent && (
           <div className="comment-translated-content">
             <span className="translate-label">🌐 Translation:</span>
             <p>{translatedContent}</p>
           </div>
         )}
-
         {translationError && (
-          <div className="comment-translation-error">
-            ⚠️ {translationError}
-          </div>
+          <div className="comment-translation-error">⚠️ {translationError}</div>
         )}
       </div>
 
@@ -437,9 +376,7 @@ const Comment = ({ comment, onReply, onEdit, onDelete, onLike, currentUserId, po
             className="comment-action-btn show-replies"
             onClick={() => {
               setShowReplies(!showReplies);
-              if (!showReplies && replies.length === 0) {
-                loadReplies();
-              }
+              if (!showReplies && replies.length === 0) loadReplies();
             }}
             title={showReplies ? 'Hide replies' : 'Show replies'}
           >
@@ -458,21 +395,10 @@ const Comment = ({ comment, onReply, onEdit, onDelete, onLike, currentUserId, po
             maxLength="300"
           />
           <div className="comment-reply-actions">
-            <button
-              type="submit"
-              disabled={!replyText.trim() || isSubmitting}
-              className="comment-reply-submit"
-            >
+            <button type="submit" disabled={!replyText.trim() || isSubmitting} className="comment-reply-submit">
               {isSubmitting ? 'Replying...' : 'Reply'}
             </button>
-            <button
-              type="button"
-              onClick={() => {
-                setIsReplying(false);
-                setReplyText('');
-              }}
-              className="comment-reply-cancel"
-            >
+            <button type="button" onClick={() => { setIsReplying(false); setReplyText(''); }} className="comment-reply-cancel">
               Cancel
             </button>
           </div>
@@ -511,7 +437,6 @@ const Post = ({ post, allPosts, onLike, onComment, currentUserId, selectedCatego
   const [commentPage, setCommentPage] = useState(1);
   const [hasMoreComments, setHasMoreComments] = useState(false);
   const [loadingComments, setLoadingComments] = useState(false);
-
   const [commentStates, setCommentStates] = useState({});
 
   const isLikingRef = useRef(false);
@@ -519,7 +444,6 @@ const Post = ({ post, allPosts, onLike, onComment, currentUserId, selectedCatego
   const [likeCount, setLikeCount] = useState(post.likes || 0);
   const [isLiked, setIsLiked] = useState(post.isLiked || false);
   const [isLiking, setIsLiking] = useState(false);
-
   const [showCommentForm, setShowCommentForm] = useState(false);
 
   const [isTranslating, setIsTranslating] = useState(false);
@@ -539,33 +463,17 @@ const Post = ({ post, allPosts, onLike, onComment, currentUserId, selectedCatego
 
   const handleTranslate = async () => {
     if (isTranslating) return;
-
-    if (translatedContent) {
-      setTranslatedContent(null);
-      return;
-    }
+    if (translatedContent) { setTranslatedContent(null); return; }
 
     setIsTranslating(true);
     setTranslationError(null);
-
     try {
-      // ✅ THAY ĐỔI: Xóa "to Traditional Chinese"
-      console.log(`🌐 Translating post ${post.id} content...`);
-      
-      // ✅ ĐÃ ĐÚNG: 'en'
       const result = await ApiService.translate(post.content, 'en');
-      
       if (result.success) {
         setTranslatedContent(result.translatedText);
-        // ✅ THAY ĐỔI: Xóa "to: 'zh-TW',"
-        console.log(`✅ Post ${post.id} translation completed:`, {
-          from: result.detectedSourceLanguage,
-          text: result.translatedText.substring(0, 50) + '...'
-        });
       } else {
         throw new Error(result.message || 'Translation failed');
       }
-
     } catch (error) {
       console.error(`❌ Post ${post.id} translation error:`, error);
       setTranslationError('Translation failed, please try again later');
@@ -574,15 +482,9 @@ const Post = ({ post, allPosts, onLike, onComment, currentUserId, selectedCatego
     }
   };
 
-  const [transcriptData, setTranscriptData] = useState(null);
-  const [isLoadingTranscript, setIsLoadingTranscript] = useState(false);
-  const [isDeletingRecord, setIsDeletingRecord] = useState(false);
-  const [showTranscriptPanel, setShowTranscriptPanel] = useState(false);
-
   const loadComments = (page = 1, append = false) => {
     if (loadingComments) return;
     setLoadingComments(true);
-
     try {
       const allReplies = allPosts.filter(p => p.parent_docid === post.id && p.event !== 'witness');
       const pageSize = 10;
@@ -613,15 +515,10 @@ const Post = ({ post, allPosts, onLike, onComment, currentUserId, selectedCatego
       if (!append) {
         setCommentStates(newCommentStates);
       } else {
-        setCommentStates(prev => ({
-          ...prev,
-          ...newCommentStates
-        }));
+        setCommentStates(prev => ({ ...prev, ...newCommentStates }));
       }
 
-      setComments(prevComments =>
-        append ? [...prevComments, ...formattedComments] : formattedComments
-      );
+      setComments(prevComments => append ? [...prevComments, ...formattedComments] : formattedComments);
       setHasMoreComments(allReplies.length > page * pageSize);
     } catch (error) {
       console.error('Error loading comments:', error);
@@ -633,7 +530,6 @@ const Post = ({ post, allPosts, onLike, onComment, currentUserId, selectedCatego
   const handleToggleCommentForm = () => {
     const newShowState = !showCommentForm;
     setShowCommentForm(newShowState);
-
     if (newShowState && comments.length === 0) {
       loadComments(1, false);
       setCommentPage(1);
@@ -646,87 +542,6 @@ const Post = ({ post, allPosts, onLike, onComment, currentUserId, selectedCatego
     loadComments(nextPage, true);
   };
 
-  const handleGetTranscript = async () => {
-    if (!post.audioRecordId || isLoadingTranscript) return;
-
-    setIsLoadingTranscript(true);
-    try {
-      console.log(`🔍 Querying transcript: ${post.audioRecordId}`);
-      const result = await TRANSCRIPT_API.getTranscript(post.audioRecordId);
-
-      if (result.success) {
-        setTranscriptData(result);
-        setShowTranscriptPanel(true);
-      } else {
-        alert(`Failed to query transcript: ${result.error}`);
-      }
-    } catch (error) {
-      console.error('💥 Error querying transcript:', error);
-    } finally {
-      setIsLoadingTranscript(false);
-    }
-  };
-
-  const handleDeleteRecord = async () => {
-    if (!post.audioRecordId || isDeletingRecord) return;
-
-    const confirmDelete = window.confirm(
-      `Are you sure you want to delete this recording?\n\nRecording ID: ${post.audioRecordId}\n\nThis action cannot be undone!`
-    );
-    if (!confirmDelete) return;
-
-    setIsDeletingRecord(true);
-    try {
-      const result = await TRANSCRIPT_API.deleteRecord(post.audioRecordId);
-      if (result.success) {
-        alert(`Recording deleted successfully!\nDuration: ${result.performance}`);
-        setTranscriptData(null);
-        setShowTranscriptPanel(false);
-      } else {
-        alert(`Failed to delete recording: ${result.error}`);
-      }
-    } catch (error) {
-      console.error('💥 Error deleting recording:', error);
-      alert(`Error deleting recording: ${error.message}`);
-    } finally {
-      setIsDeletingRecord(false);
-    }
-  };
-
-  const TranscriptPanel = () => (
-    <div className="transcript-panel">
-      <div className="transcript-header">
-        <h4>🎵 Audio Transcript</h4>
-        <button
-          className="close-transcript-button"
-          onClick={() => setShowTranscriptPanel(false)}
-        >
-          ✕
-        </button>
-      </div>
-      <div className="transcript-content">
-        <div className="transcript-info">
-          <p><strong>Recording ID:</strong> {transcriptData?.recordId}</p>
-          <p><strong>Status:</strong> {transcriptData?.status}</p>
-        </div>
-        {transcriptData?.transcript && (
-          <div className="transcript-text">
-            <h5>📝 Transcript:</h5>
-            <div className="transcript-content-text">
-              {transcriptData.transcript}
-            </div>
-          </div>
-        )}
-        {transcriptData?.audio_url && (
-          <div className="transcript-audio">
-            <h5>🎧 Audio Playback:</h5>
-            <audio controls src={transcriptData.audio_url}>Your browser does not support audio playback</audio>
-          </div>
-        )}
-      </div>
-    </div>
-  );
-
   const handleLike = async () => {
     if (isLikingRef.current) return;
     isLikingRef.current = true;
@@ -734,7 +549,6 @@ const Post = ({ post, allPosts, onLike, onComment, currentUserId, selectedCatego
 
     const prevCount = likeCount;
     const prevLiked = isLiked;
-    
     const newLiked = !prevLiked;
     const newCount = newLiked ? prevCount + 1 : Math.max(0, prevCount - 1);
 
@@ -743,23 +557,13 @@ const Post = ({ post, allPosts, onLike, onComment, currentUserId, selectedCatego
 
     try {
       const result = await ApiService.likePost(post.id, currentUserId);
-
       if (result.success) {
         const finalCount = result.data?.amen_count !== undefined ? result.data.amen_count : newCount;
         const finalLiked = result.data?.amened !== undefined ? result.data.amened : newLiked;
-
         setLikeCount(finalCount);
         setIsLiked(finalLiked);
-
-        if (onLike) {
-          onLike(post.id, finalLiked, finalCount);
-        }
-
-        if (refreshBalance) {
-          await refreshBalance();
-        }
-
-        console.log(`✅ Amen ${newLiked ? 'added' : 'removed'} for post ${post.id}:`, finalCount);
+        if (onLike) onLike(post.id, finalLiked, finalCount);
+        if (refreshBalance) await refreshBalance();
       } else {
         throw new Error(result.message || 'API Error');
       }
@@ -779,42 +583,24 @@ const Post = ({ post, allPosts, onLike, onComment, currentUserId, selectedCatego
 
     const prevCount = currentState.likeCount;
     const prevLiked = currentState.isLiked || false;
-    
     const newLiked = !prevLiked;
     const newCount = newLiked ? prevCount + 1 : Math.max(0, prevCount - 1);
 
     setCommentStates(prev => ({
       ...prev,
-      [commentId]: {
-        ...prev[commentId],
-        isLiked: newLiked,
-        likeCount: newCount,
-        isLiking: true
-      }
+      [commentId]: { ...prev[commentId], isLiked: newLiked, likeCount: newCount, isLiking: true }
     }));
 
     try {
       const result = await ApiService.likePost(commentId, currentUserId);
-
       if (result.success) {
         const finalCount = result.data?.amen_count !== undefined ? result.data.amen_count : newCount;
         const finalLiked = result.data?.amened !== undefined ? result.data.amened : newLiked;
-
         setCommentStates(prev => ({
           ...prev,
-          [commentId]: {
-            ...prev[commentId],
-            likeCount: finalCount,
-            isLiked: finalLiked,
-            isLiking: false
-          }
+          [commentId]: { ...prev[commentId], likeCount: finalCount, isLiked: finalLiked, isLiking: false }
         }));
-
-        console.log(`✅ Comment amen ${newLiked ? 'added' : 'removed'} ${commentId}:`, finalCount);
-
-        if (refreshBalance) {
-          await refreshBalance();
-        }
+        if (refreshBalance) await refreshBalance();
       } else {
         throw new Error(result.message || 'API Error');
       }
@@ -822,12 +608,7 @@ const Post = ({ post, allPosts, onLike, onComment, currentUserId, selectedCatego
       console.error('❌ Like comment error:', error);
       setCommentStates(prev => ({
         ...prev,
-        [commentId]: {
-          ...prev[commentId],
-          isLiked: prevLiked,
-          likeCount: prevCount,
-          isLiking: false
-        }
+        [commentId]: { ...prev[commentId], isLiked: prevLiked, likeCount: prevCount, isLiking: false }
       }));
     }
   };
@@ -835,38 +616,24 @@ const Post = ({ post, allPosts, onLike, onComment, currentUserId, selectedCatego
   const handleCommentSubmit = async (e) => {
     e.preventDefault();
     if (!commentText.trim() || isCommenting) return;
-
     setIsCommenting(true);
     try {
-      console.log(`💬 Adding comment to post docid=${post.id}:`, commentText.trim());
       const result = await ApiService.addComment({
         userid: currentUserId,
         content: commentText.trim(),
         docid: post.id,
         sn: post.sn
       });
-
       if (result.success) {
-        console.log('✅ Comment added successfully:', result.comment);
-
         const newCommentId = result.comment?.docid || `temp-${Date.now()}`;
-
         setCommentStates(prev => ({
           ...prev,
-          [newCommentId]: {
-            likeCount: 0,
-            isLiked: false,
-            isLiking: false
-          }
+          [newCommentId]: { likeCount: 0, isLiked: false, isLiking: false }
         }));
-
         setCommentText('');
         loadComments(1, false);
         if (onComment) onComment(post.id, commentText.trim());
-
-        if (refreshBalance) {
-          await refreshBalance();
-        }
+        if (refreshBalance) await refreshBalance();
       } else {
         alert(`Comment failed: ${result.message}`);
       }
@@ -886,7 +653,7 @@ const Post = ({ post, allPosts, onLike, onComment, currentUserId, selectedCatego
     <div className="post-card">
       <div className="post-header">
         <div className="post-avatar">
-          <AvatarImage 
+          <AvatarImage
             userId={post.userid || post.author}
             userName={post.author}
             src={post.avatar_url}
@@ -906,7 +673,6 @@ const Post = ({ post, allPosts, onLike, onComment, currentUserId, selectedCatego
             {post.privacy === 'tribe' && <span>Tribe</span>}
             {(post.privacy === 'individual' || post.privacy === 'private') && <span>Individual</span>}
           </div>
-
           <div className="post-category-badge">
             {post.category === 'Personal & Family' && <span>Personal & Family</span>}
             {post.category === 'Church & Ministry' && <span>Church & Ministry</span>}
@@ -938,9 +704,7 @@ const Post = ({ post, allPosts, onLike, onComment, currentUserId, selectedCatego
         )}
 
         {translationError && (
-          <div className="post-translation-error">
-            ⚠️ {translationError}
-          </div>
+          <div className="post-translation-error">⚠️ {translationError}</div>
         )}
 
         {post.image && (
@@ -948,32 +712,7 @@ const Post = ({ post, allPosts, onLike, onComment, currentUserId, selectedCatego
             <img src={post.image} alt="Post image" />
           </div>
         )}
-        {post.audioRecordId && (
-          <div className="post-audio-info">
-            <p>🎵 Attached audio file (UUID: {post.audioRecordId})</p>
-            <div className="audio-management-buttons">
-              <button
-                className={`audio-action-button ${isLoadingTranscript ? 'loading' : ''}`}
-                onClick={handleGetTranscript}
-                disabled={isLoadingTranscript || isDeletingRecord}
-              >
-                {isLoadingTranscript ? 'Querying...' : '📝 Query Transcript'}
-              </button>
-              <button
-                className={`audio-action-button delete-button ${isDeletingRecord ? 'loading' : ''}`}
-                onClick={handleDeleteRecord}
-                disabled={isDeletingRecord || isLoadingTranscript}
-              >
-                {isDeletingRecord ? 'Deleting...' : '🗑️ Delete Recording'}
-              </button>
-            </div>
-          </div>
-        )}
       </div>
-
-      {showTranscriptPanel && transcriptData && (
-        <TranscriptPanel />
-      )}
 
       <div className="post-actions">
         <button
@@ -1004,14 +743,12 @@ const Post = ({ post, allPosts, onLike, onComment, currentUserId, selectedCatego
                 rows="3"
                 maxLength="500"
               />
-
               <VoiceRecordButton
                 onTranscriptComplete={(transcript) => {
                   setCommentText(prev => prev + (prev ? ' ' : '') + transcript);
                 }}
               />
             </div>
-
             <div className="form-actions">
               <button
                 type="submit"
@@ -1022,10 +759,7 @@ const Post = ({ post, allPosts, onLike, onComment, currentUserId, selectedCatego
               </button>
               <button
                 type="button"
-                onClick={() => {
-                  setShowCommentForm(false);
-                  setCommentText('');
-                }}
+                onClick={() => { setShowCommentForm(false); setCommentText(''); }}
                 className="cancel-btn"
               >
                 Cancel
@@ -1038,7 +772,6 @@ const Post = ({ post, allPosts, onLike, onComment, currentUserId, selectedCatego
               <h4>💬 Prayers({comments.length})</h4>
               {loadingComments && <span className="loading-indicator">Loading...</span>}
             </div>
-
             <div className="comments-list">
               {comments.length > 0 ? (
                 comments.map(comment => (
@@ -1060,14 +793,9 @@ const Post = ({ post, allPosts, onLike, onComment, currentUserId, selectedCatego
                 </div>
               )}
             </div>
-
             {hasMoreComments && (
               <div className="load-more-comments">
-                <button
-                  onClick={handleLoadMoreComments}
-                  disabled={loadingComments}
-                  className="load-more-btn"
-                >
+                <button onClick={handleLoadMoreComments} disabled={loadingComments} className="load-more-btn">
                   {loadingComments ? 'Loading...' : 'Load More Comments'}
                 </button>
               </div>
@@ -1117,39 +845,26 @@ const PrayerHub = ({ user, onLogout }) => {
 
   useEffect(() => {
     const storedUser = JSON.parse(localStorage.getItem('userData') || '{}');
-    
     if (storedUser.tribe !== undefined && storedUser.tribe !== currentTribeId) {
-      console.log(`🔄 Syncing tribe from localStorage: ${storedUser.tribe}`);
       setCurrentTribeId(storedUser.tribe);
     }
   }, [user, currentTribeId]);
 
   useEffect(() => {
     let isActive = true;
-
     const fetchNotificationCount = async () => {
       try {
         const result = await ApiService.getNotifications({ limit: 1, offset: 0, unread_only: false });
         if (isActive) {
-          if (result.success) {
-            setNotificationCount(result.unread_count ?? 0);
-          } else {
-            setNotificationCount(0);
-          }
+          setNotificationCount(result.success ? (result.unread_count ?? 0) : 0);
         }
       } catch (error) {
         console.error('❌ Failed to load notification count:', error);
-        if (isActive) {
-          setNotificationCount(0);
-        }
+        if (isActive) setNotificationCount(0);
       }
     };
-
     fetchNotificationCount();
-
-    return () => {
-      isActive = false;
-    };
+    return () => { isActive = false; };
   }, []);
 
   const userTribeId = currentTribeId;
@@ -1167,131 +882,87 @@ const PrayerHub = ({ user, onLogout }) => {
   useEffect(() => {
     const fetchBalance = async () => {
       const userId = user?.id || user?.userId || ApiService.getCurrentUserId();
-      if (!userId) {
-        setLoadingBalance(false);
-        return;
-      }
-
+      if (!userId) { setLoadingBalance(false); return; }
       const result = await ApiService.getUserBalance(userId);
-      
-      if (result.success) {
-        setCoinAmount(result.balance);
-      } else {
-        setCoinAmount(0);
-      }
-      
+      setCoinAmount(result.success ? result.balance : 0);
       setLoadingBalance(false);
     };
-
     fetchBalance();
   }, [user]);
 
   const refreshBalance = async () => {
     const userId = user?.id || user?.userId || ApiService.getCurrentUserId();
     if (!userId) return;
-
     const result = await ApiService.getUserBalance(userId);
-    
-    if (result.success) {
-      setCoinAmount(result.balance);
-    }
+    if (result.success) setCoinAmount(result.balance);
   };
 
   const fetchPosts = useCallback(async (page = 1) => {
-  if (selectedPrayerCategory === 'Tribe Prayer' && !hasTribe) {
-    alert('⚠️ Cannot load Tribe Prayer: You haven\'t selected a tribe!');
-    setSelectedPrayerCategory(null);
-    return;
-  }
-
-  setCurrentPage(page);
-  setLoading(true);
-  try {
-    const currentUserId = user?.id || user?.userId || ApiService.getCurrentUserId();
-    
-    const filters = {
-      viewer_userid: currentUserId
-    };
-
-    if (selectedPrivacy && selectedPrivacy !== 'Public') {
-      filters.privacy = selectedPrivacy.toLowerCase();
+    if (selectedPrayerCategory === 'Tribe Prayer' && !hasTribe) {
+      alert('⚠️ Cannot load Tribe Prayer: You haven\'t selected a tribe!');
+      setSelectedPrayerCategory(null);
+      return;
     }
 
-    if (selectedPrayerCategory) {
-      filters.category = selectedPrayerCategory;
-    }
+    setCurrentPage(page);
+    setLoading(true);
+    try {
+      const currentUserId = user?.id || user?.userId || ApiService.getCurrentUserId();
+      const filters = { viewer_userid: currentUserId };
 
-    console.log('📡 Fetching posts with filters:', filters);
+      if (selectedPrivacy && selectedPrivacy !== 'Public') filters.privacy = selectedPrivacy.toLowerCase();
+      if (selectedPrayerCategory) filters.category = selectedPrayerCategory;
 
-    // ✅ 1. Fetch posts (event=post) and comments (event=comment) in parallel
-    const [postsResult, commentsResult] = await Promise.all([
-      ApiService.getPosts(page, 100, true, filters),
-      ApiService.getCommentsPage(page, 100, filters)
-    ]);
+      const [postsResult, commentsResult] = await Promise.all([
+        ApiService.getPosts(page, 100, true, filters),
+        ApiService.getCommentsPage(page, 100, filters)
+      ]);
 
-    const rawPosts = postsResult?.success ? (postsResult.posts || []) : [];
-    const rawComments = commentsResult?.success ? (commentsResult.comments || []) : [];
+      const rawPosts = postsResult?.success ? (postsResult.posts || []) : [];
+      const rawComments = commentsResult?.success ? (commentsResult.comments || []) : [];
 
-    // ✅ 2. Build comment count map from comments response
-    const commentsCountMap = {};
-    rawComments.forEach(c => {
-      if (c.parent_docid) {
-        commentsCountMap[c.parent_docid] = (commentsCountMap[c.parent_docid] || 0) + 1;
-      }
-    });
-
-    console.log(`📊 Posts: ${rawPosts.length}, Comments: ${rawComments.length}`);
-
-    if (rawPosts.length > 0) {
-      const transformedPosts = rawPosts.map(post => ({
-        id: post.docid,
-        sn: post.sn,
-        userid: post.userid,
-        likes: post.amen_count !== undefined ? post.amen_count : 0,
-        isLiked: (post.amened === true || post.amened === 1 || post.amened === 'true'),
-        calculatedComments: commentsCountMap[post.docid] || 0,
-        title: post.title || '',
-        content: post.content || '',
-        privacy: post.privacy ? post.privacy.toLowerCase() : 'public',
-        category: post.category || 'General',
-        author: post.author || post.userid || user?.name || 'Anonymous User',
-        time: post.datetime || 'Just now',
-        image: post.image || null,
-        audioRecordId: post.uuid || null,
-        avatar_url: ApiService.processAvatarUrl(post.avatar_url)
-      }));
-
-      console.log(`✅ Loaded ${transformedPosts.length} posts`);
-      setPosts(transformedPosts);
-      setAllPosts(rawPosts);
-
-      // ✅ 3. Use has_next from server pagination
-      const hasNext = postsResult.pagination?.has_next === true;
-
-      console.log(`📊 Pagination info:`, {
-        currentPage: page,
-        hasNext: hasNext,
-        pageinfo: postsResult.pagination
+      const commentsCountMap = {};
+      rawComments.forEach(c => {
+        if (c.parent_docid) {
+          commentsCountMap[c.parent_docid] = (commentsCountMap[c.parent_docid] || 0) + 1;
+        }
       });
 
-      setHasNextPage(hasNext);
+      if (rawPosts.length > 0) {
+        const transformedPosts = rawPosts.map(post => ({
+          id: post.docid,
+          sn: post.sn,
+          userid: post.userid,
+          likes: post.amen_count !== undefined ? post.amen_count : 0,
+          isLiked: (post.amened === true || post.amened === 1 || post.amened === 'true'),
+          calculatedComments: commentsCountMap[post.docid] || 0,
+          title: post.title || '',
+          content: post.content || '',
+          privacy: post.privacy ? post.privacy.toLowerCase() : 'public',
+          category: post.category || 'General',
+          author: post.author || post.userid || user?.name || 'Anonymous User',
+          time: post.datetime || 'Just now',
+          image: post.image || null,
+          avatar_url: ApiService.processAvatarUrl(post.avatar_url)
+        }));
 
-    } else {
-      console.log('ℹ️ No posts found');
+        setPosts(transformedPosts);
+        setAllPosts([...rawPosts, ...rawComments]);
+        setHasNextPage(postsResult.pagination?.has_next === true);
+      } else {
+        setPosts([]);
+        setAllPosts([]);
+        setHasNextPage(false);
+      }
+    } catch (error) {
+      console.error('💥 Error fetching posts:', error);
       setPosts([]);
       setAllPosts([]);
       setHasNextPage(false);
+    } finally {
+      setLoading(false);
     }
-  } catch (error) {
-    console.error('💥 Error fetching posts:', error);
-    setPosts([]);
-    setAllPosts([]);
-    setHasNextPage(false);
-  } finally {
-    setLoading(false);
-  }
-}, [user, selectedPrivacy, selectedPrayerCategory, hasTribe]);
-
+  }, [user, selectedPrivacy, selectedPrayerCategory, hasTribe]);
 
   useEffect(() => {
     setCurrentPage(1);
@@ -1316,52 +987,31 @@ const PrayerHub = ({ user, onLogout }) => {
 
   useEffect(() => {
     const handleClickOutside = (event) => {
-      if (privacyRef.current && !privacyRef.current.contains(event.target)) {
-        setIsPrivacyOpen(false);
-      }
-      if (prayerCategoryRef.current && !prayerCategoryRef.current.contains(event.target)) {
-        setIsPrayerCategoryOpen(false);
-      }
+      if (privacyRef.current && !privacyRef.current.contains(event.target)) setIsPrivacyOpen(false);
+      if (prayerCategoryRef.current && !prayerCategoryRef.current.contains(event.target)) setIsPrayerCategoryOpen(false);
     };
-
     document.addEventListener('mousedown', handleClickOutside);
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
+    return () => { document.removeEventListener('mousedown', handleClickOutside); };
   }, []);
 
   const handleTribeLogoClick = () => setShowTribeDetail(true);
   const handleCloseTribeDetail = () => setShowTribeDetail(false);
 
   const handleTribeSelected = async (newTribeId) => {
-    console.log(`✅ Tribe selected: ${newTribeId}`);
-    
     setCurrentTribeId(newTribeId);
-    
-    if (user) {
-      user.tribe = newTribeId;
-    }
-    
+    if (user) user.tribe = newTribeId;
     try {
       const storedUser = JSON.parse(localStorage.getItem('userData') || '{}');
       storedUser.tribe = newTribeId;
       localStorage.setItem('userData', JSON.stringify(storedUser));
-      console.log('💾 Tribe saved to localStorage');
     } catch (error) {
       console.error('❌ Error saving tribe to localStorage:', error);
     }
-    
     setShowTribeDetail(false);
-    
-    setTimeout(() => {
-      alert('Tribe selected successfully! Your tribe has been updated.');
-    }, 100);
+    setTimeout(() => { alert('Tribe selected successfully! Your tribe has been updated.'); }, 100);
   };
 
-  const handleCoinClick = () => {
-    console.log('💰 Coin clicked - navigating to YB History');
-    navigate('/yb-history');
-  };
+  const handleCoinClick = () => navigate('/yb-history');
 
   const handleBack = () => {
     if (navigatingRef.current) return;
@@ -1386,42 +1036,22 @@ const PrayerHub = ({ user, onLogout }) => {
   };
 
   const handleNotificationClick = useCallback(() => {
-    if (navigatingRef.current) {
-      console.log('⚠️ Navigation already in progress, ignoring...');
-      return;
-    }
-
-    console.log('🔔 Navigate to Notifications');
+    if (navigatingRef.current) return;
     navigatingRef.current = true;
-    
-    setTimeout(() => {
-      navigatingRef.current = false;
-    }, 1000);
-    
+    setTimeout(() => { navigatingRef.current = false; }, 1000);
     navigate('/notifications');
   }, [navigate]);
 
   const handleTabChange = (tab) => {
     if (navigatingRef.current) return;
     navigatingRef.current = true;
-
     switch (tab) {
-      case 'Home':
-        navigate('/main');
-        break;
-      case 'Add':
-        navigate('/create-post');
-        break;
-      case 'AddFriend':
-        navigate('/addfriend');
-        break;
-      case 'Nova':
-        navigate('/nova');
-        break;
-      default:
-        break;
+      case 'Home': navigate('/main'); break;
+      case 'Add': navigate('/create-post'); break;
+      case 'AddFriend': navigate('/addfriend'); break;
+      case 'Nova': navigate('/nova'); break;
+      default: break;
     }
-    
     setTimeout(() => { navigatingRef.current = false; }, 1000);
   };
 
@@ -1447,30 +1077,20 @@ const PrayerHub = ({ user, onLogout }) => {
     }
   };
 
-  const getFilteredPosts = () => {
-    return posts;
-  };
+  const getFilteredPosts = () => posts;
 
   const handleLikePost = async (postId, newLikedStatus, newCount) => {
     setPosts(prevPosts =>
       prevPosts.map(post =>
         post.id === postId
-          ? {
-            ...post,
-            likes: newCount,
-            isLiked: newLikedStatus,
-            amen_count: newCount,
-            amened: newLikedStatus
-          }
+          ? { ...post, likes: newCount, isLiked: newLikedStatus, amen_count: newCount, amened: newLikedStatus }
           : post
       )
     );
-
     await refreshBalance();
   };
 
   const handleCommentPost = async (postId, commentText) => {
-    console.log(`💬 New comment on post ${postId}:`, commentText);
     await fetchPosts();
     await refreshBalance();
   };
@@ -1478,7 +1098,7 @@ const PrayerHub = ({ user, onLogout }) => {
   if (showTribeDetail) {
     if (userTribeId === null || userTribeId === undefined) {
       return (
-        <NoTribeDetail 
+        <NoTribeDetail
           onBack={handleCloseTribeDetail}
           onTribeSelected={handleTribeSelected}
           user={user}
@@ -1498,11 +1118,9 @@ const PrayerHub = ({ user, onLogout }) => {
   }
 
   const filteredPosts = getFilteredPosts();
-  
-  const prayerCategoryOptions = hasTribe 
+  const prayerCategoryOptions = hasTribe
     ? ['Personal & Family', 'Church & Ministry', 'Kingdom Prayer', 'Tribe Prayer']
     : ['Personal & Family', 'Church & Ministry', 'Kingdom Prayer'];
-
   const privacyOptions = ['Public', 'Family', 'Tribe', 'Individual'];
 
   return (
@@ -1525,16 +1143,8 @@ const PrayerHub = ({ user, onLogout }) => {
         />
 
         <div className="top-action-bar">
-          <NotificationBell 
-            count={notificationCount} 
-            size="medium"
-            onClick={handleNotificationClick}
-          />
-          <CoinDisplay 
-            amount={loadingBalance ? '...' : coinAmount} 
-            size="medium"
-            onClick={handleCoinClick}
-          />
+          <NotificationBell count={notificationCount} size="medium" onClick={handleNotificationClick} />
+          <CoinDisplay amount={loadingBalance ? '...' : coinAmount} size="medium" onClick={handleCoinClick} />
         </div>
 
         <hr className="divider-line" />
@@ -1548,22 +1158,14 @@ const PrayerHub = ({ user, onLogout }) => {
               active={privacyFilterActive}
               onClick={() => handleCategoryClick('Privacy Choices')}
             />
-            <CategoryLabel
-              text={selectedPrivacy || 'Privacy Choices'}
-              isActive={privacyFilterActive}
-            />
-
+            <CategoryLabel text={selectedPrivacy || 'Privacy Choices'} isActive={privacyFilterActive} />
             {privacyFilterActive && isPrivacyOpen && (
               <div className="category-dropdown-menu">
                 {privacyOptions.map((option) => (
                   <div
                     key={option}
                     className={`category-dropdown-item ${selectedPrivacy === option ? 'selected' : ''}`}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setSelectedPrivacy(option);
-                      setIsPrivacyOpen(false);
-                    }}
+                    onClick={(e) => { e.stopPropagation(); setSelectedPrivacy(option); setIsPrivacyOpen(false); }}
                   >
                     {option}
                   </div>
@@ -1580,11 +1182,7 @@ const PrayerHub = ({ user, onLogout }) => {
               active={categoryFilterActive}
               onClick={() => handleCategoryClick('Prayer Category')}
             />
-            <CategoryLabel
-              text={selectedPrayerCategory || 'Prayer Category'}
-              isActive={categoryFilterActive}
-            />
-
+            <CategoryLabel text={selectedPrayerCategory || 'Prayer Category'} isActive={categoryFilterActive} />
             {categoryFilterActive && isPrayerCategoryOpen && (
               <div className="category-dropdown-menu">
                 {prayerCategoryOptions.map((option) => (
@@ -1593,12 +1191,10 @@ const PrayerHub = ({ user, onLogout }) => {
                     className={`category-dropdown-item ${selectedPrayerCategory === option ? 'selected' : ''}`}
                     onClick={(e) => {
                       e.stopPropagation();
-                      
                       if (option === 'Tribe Prayer' && !hasTribe) {
                         alert('⚠️ You haven\'t selected a tribe!\nPlease select your tribe first to use the Tribe Prayer feature.');
                         return;
                       }
-                      
                       setSelectedPrayerCategory(option);
                       setIsPrayerCategoryOpen(false);
                     }}
@@ -1612,16 +1208,8 @@ const PrayerHub = ({ user, onLogout }) => {
           </div>
 
           <div className="category-item" onClick={() => handleCategoryClick('Witness Wall')}>
-            <RectButton
-              image={kingdom}
-              imageAlt="Witness Wall"
-              size="medium"
-              active={witnessWallActive}
-            />
-            <CategoryLabel
-              text="Witness Wall"
-              isActive={witnessWallActive}
-            />
+            <RectButton image={kingdom} imageAlt="Witness Wall" size="medium" active={witnessWallActive} />
+            <CategoryLabel text="Witness Wall" isActive={witnessWallActive} />
           </div>
         </div>
 
@@ -1658,35 +1246,27 @@ const PrayerHub = ({ user, onLogout }) => {
                 ))}
 
                 <div className="pagination-controls" style={{ display: 'flex', justifyContent: 'center', gap: '20px', padding: '20px 0' }}>
-                  <button 
-                    onClick={handlePrevPage} 
+                  <button
+                    onClick={handlePrevPage}
                     disabled={currentPage === 1 || loading}
                     className="pagination-btn"
                     style={{
-                      padding: '8px 16px',
-                      borderRadius: '20px',
-                      border: 'none',
+                      padding: '8px 16px', borderRadius: '20px', border: 'none',
                       backgroundColor: currentPage === 1 ? '#ccc' : '#4CAF50',
-                      color: 'white',
-                      cursor: currentPage === 1 ? 'not-allowed' : 'pointer'
+                      color: 'white', cursor: currentPage === 1 ? 'not-allowed' : 'pointer'
                     }}
                   >
                     ← Previous
                   </button>
-                  
                   <span style={{ color: 'white', alignSelf: 'center' }}>Page {currentPage}</span>
-
-                  <button 
-                    onClick={handleNextPage} 
+                  <button
+                    onClick={handleNextPage}
                     disabled={!hasNextPage || loading}
                     className="pagination-btn"
                     style={{
-                      padding: '8px 16px',
-                      borderRadius: '20px',
-                      border: 'none',
+                      padding: '8px 16px', borderRadius: '20px', border: 'none',
                       backgroundColor: !hasNextPage ? '#ccc' : '#4CAF50',
-                      color: 'white',
-                      cursor: !hasNextPage ? 'not-allowed' : 'pointer'
+                      color: 'white', cursor: !hasNextPage ? 'not-allowed' : 'pointer'
                     }}
                   >
                     Next →
@@ -1704,50 +1284,11 @@ const PrayerHub = ({ user, onLogout }) => {
         </div>
 
         <div className="bottom-navigation">
-          <CircleButton 
-            provider="Home" 
-            iconSrc={Home} 
-            onClick={() => handleTabChange('Home')} 
-            isActive={false} 
-            size="medium" 
-            ariaLabel="Home"
-          />
-          
-          <CircleButton 
-            provider="PrayerHub" 
-            iconSrc={Search} 
-            onClick={() => {}} 
-            isActive={true} 
-            size="medium" 
-            ariaLabel="Prayer Hub"
-          />
-          
-          <CircleButton 
-            provider="Add" 
-            iconSrc={Add} 
-            onClick={() => handleTabChange('Add')} 
-            isActive={false} 
-            size="medium"
-            ariaLabel="Add Post"
-          />
-          
-          <CircleButton 
-            provider="AddFriend" 
-            iconSrc={Profile} 
-            onClick={() => handleTabChange('AddFriend')} 
-            isActive={false} 
-            size="medium" 
-            ariaLabel="Add Friend"
-          />
-          
-          <CircleButton 
-            provider="Nova"
-            iconSrc={Nova} 
-            onClick={() => handleTabChange('Nova')} 
-            isActive={false} 
-            size="medium" 
-            ariaLabel="Nova Assistant"
-          />
+          <CircleButton provider="Home" iconSrc={Home} onClick={() => handleTabChange('Home')} isActive={false} size="medium" ariaLabel="Home" />
+          <CircleButton provider="PrayerHub" iconSrc={Search} onClick={() => {}} isActive={true} size="medium" ariaLabel="Prayer Hub" />
+          <CircleButton provider="Add" iconSrc={Add} onClick={() => handleTabChange('Add')} isActive={false} size="medium" ariaLabel="Add Post" />
+          <CircleButton provider="AddFriend" iconSrc={Profile} onClick={() => handleTabChange('AddFriend')} isActive={false} size="medium" ariaLabel="Add Friend" />
+          <CircleButton provider="Nova" iconSrc={Nova} onClick={() => handleTabChange('Nova')} isActive={false} size="medium" ariaLabel="Nova Assistant" />
         </div>
       </div>
     </AppBackground>
@@ -1755,4 +1296,3 @@ const PrayerHub = ({ user, onLogout }) => {
 };
 
 export default PrayerHub;
-

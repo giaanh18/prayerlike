@@ -66,25 +66,39 @@ const AddFriend = ({ user, onLogout }) => {
   };
 
   const loadFriendInvitations = async () => {
-    setLoading(true);
-    try {
-      const result = await ApiService.getFriendInvitations();
+  setLoading(true);
+  try {
+    const result = await ApiService.getFriendInvitations();
+    
+    if (result.success) {
+      const incoming = result.incoming || [];
       
-      if (result.success) {
-        console.log('✅ Loaded invitations:', result);
-        console.log('📸 First invitation avatar:', result.incoming?.[0]?.requester_avatar);
-        
-        // ✅ KHÔNG CẦN XỬ LÝ LẠI - API đã xử lý rồi
-        setIncomingInvitations(result.incoming || []);
-      } else {
-        console.error('❌ Load invitations failed:', result.message);
-      }
-    } catch (error) {
-      console.error('❌ Error loading invitations:', error);
-    } finally {
-      setLoading(false);
+      // ✅ Fetch avatar cho từng requester bằng searchUsers
+      const enrichedIncoming = await Promise.all(
+        incoming.map(async (inv) => {
+          try {
+            const searchResult = await ApiService.searchUsers(inv.requester_user_id);
+            const foundUser = searchResult.users?.[0];
+            return {
+              ...inv,
+              requester_avatar: foundUser?.avatar || inv.requester_avatar || null,
+              requester_name: foundUser?.name || inv.requester_user_id
+            };
+          } catch {
+            return inv;
+          }
+        })
+      );
+      
+      setIncomingInvitations(enrichedIncoming);
     }
-  };
+  } catch (error) {
+    console.error('❌ Error loading invitations:', error);
+  } finally {
+    setLoading(false);
+  }
+};
+
 
   const handleSearchUsers = async () => {
     if (!searchQuery.trim()) {

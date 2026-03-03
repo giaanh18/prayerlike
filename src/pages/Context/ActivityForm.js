@@ -1,4 +1,3 @@
-// export default ActivityForm;
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import AppBackground from '../../components/AppBackground/AppBackground';
@@ -7,7 +6,7 @@ import './ActivityForm.css';
 
 const ActivityForm = ({ user, onBack }) => {
   const navigate = useNavigate();
-  
+
   const [formData, setFormData] = useState({
     eventName: '',
     eventLocation: '',
@@ -17,7 +16,6 @@ const ActivityForm = ({ user, onBack }) => {
     description: ''
   });
 
-  // ✅ State for file uploads
   const [coverImage, setCoverImage] = useState(null);
   const [coverImagePreview, setCoverImagePreview] = useState(null);
   const [images, setImages] = useState([]);
@@ -25,7 +23,6 @@ const ActivityForm = ({ user, onBack }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [uploadProgress, setUploadProgress] = useState('');
 
-  // ✅ Cleanup URLs when component unmounts
   useEffect(() => {
     return () => {
       if (coverImagePreview) {
@@ -45,7 +42,6 @@ const ActivityForm = ({ user, onBack }) => {
     }));
   };
 
-  // ✅ Handle cover image upload
   const handleCoverImageChange = (e) => {
     const file = e.target.files[0];
     if (file) {
@@ -59,22 +55,20 @@ const ActivityForm = ({ user, onBack }) => {
         e.target.value = '';
         return;
       }
-      
-      // Cleanup old preview
+
       if (coverImagePreview) {
         URL.revokeObjectURL(coverImagePreview);
       }
-      
+
       setCoverImage(file);
       setCoverImagePreview(URL.createObjectURL(file));
       console.log('✅ Cover image selected:', file.name);
     }
   };
 
-  // ✅ Handle multiple images upload
   const handleImagesChange = (e) => {
     const files = Array.from(e.target.files);
-    
+
     if (files.length === 0) return;
 
     const validFiles = files.filter(file => {
@@ -94,7 +88,6 @@ const ActivityForm = ({ user, onBack }) => {
       return;
     }
 
-    // Cleanup old previews
     imagesPreview.forEach(url => {
       URL.revokeObjectURL(url);
     });
@@ -104,7 +97,6 @@ const ActivityForm = ({ user, onBack }) => {
     console.log(`✅ ${validFiles.length} images selected`);
   };
 
-  // ✅ Remove cover image
   const removeCoverImage = () => {
     if (coverImagePreview) {
       URL.revokeObjectURL(coverImagePreview);
@@ -115,34 +107,29 @@ const ActivityForm = ({ user, onBack }) => {
     if (fileInput) fileInput.value = '';
   };
 
-  // ✅ Remove specific image
   const removeImage = (index) => {
     if (imagesPreview[index]) {
       URL.revokeObjectURL(imagesPreview[index]);
     }
     setImages(prev => prev.filter((_, i) => i !== index));
     setImagesPreview(prev => prev.filter((_, i) => i !== index));
-    
-    // Reset file input if no images left
+
     if (images.length === 1) {
       const fileInput = document.getElementById('activityImagesInput');
       if (fileInput) fileInput.value = '';
     }
   };
 
-  // ✅ Parse date
   const parseEventDate = (dateString) => {
     try {
       if (!dateString) {
         return new Date().toISOString().split('T')[0];
       }
 
-      // Already in YYYY-MM-DD format
       if (/^\d{4}-\d{2}-\d{2}$/.test(dateString)) {
         return dateString;
       }
 
-      // Parse "Month DD, YYYY" format
       const match = dateString.match(/(\w+)\s+(\d+),?\s+(\d{4})/);
       if (match) {
         const [, month, day, year] = match;
@@ -156,7 +143,6 @@ const ActivityForm = ({ user, onBack }) => {
         return `${year}-${monthNum}-${dayNum}`;
       }
 
-      // Try to parse as Date object
       const date = new Date(dateString);
       if (!isNaN(date.getTime())) {
         return date.toISOString().split('T')[0];
@@ -169,11 +155,10 @@ const ActivityForm = ({ user, onBack }) => {
     }
   };
 
-  // ✅ Parse time
   const parseActivityTime = (timeString) => {
     try {
       if (!timeString) return '';
-      
+
       const match = timeString.match(/(\d{1,2}):(\d{2})/);
       if (match) {
         const [, hour, minute] = match;
@@ -215,7 +200,7 @@ const ActivityForm = ({ user, onBack }) => {
       }
 
       const currentUser = user || ApiService.getCurrentUser();
-      
+
       if (!currentUser || !currentUser.id) {
         alert('Please log in first!');
         setIsSubmitting(false);
@@ -224,7 +209,7 @@ const ActivityForm = ({ user, onBack }) => {
         return;
       }
 
-      // ✅ CHECK TRIBE
+      // ✅ Check tribe
       if (!currentUser.tribe) {
         alert('⚠️ You have not selected a tribe yet!\nPlease select your tribe first to create an activity.');
         setIsSubmitting(false);
@@ -242,36 +227,32 @@ const ActivityForm = ({ user, onBack }) => {
 
       setUploadProgress('Creating activity...');
 
-      // ✅ Build description
-      let description = formData.description?.trim() || '';
-      if (formData.activityTime) {
-        description += (description ? '\n' : '') + `Activity time: ${formData.activityTime}`;
-      }
-      if (formData.maxParticipants) {
-        description += (description ? '\n' : '') + `Max participants: ${formData.maxParticipants}`;
-      }
+      // ✅ FIX: description sạch, không nhồi thêm gì
+      const description = formData.description?.trim() || '';
 
-      // ✅ Build activity data - SEND FILE OBJECTS + TRIBE
+      // ✅ FIX: event_time và max_participants là field riêng
       const activityData = {
         title: formData.eventName.trim(),
         location: formData.eventLocation.trim(),
         event_date: parsedDate,
-        event_time: parsedTime || '00:00-23:59',
-        description: description.trim() || '',
-        // ✅ ADD TRIBE (IMPORTANT!)
+        event_time: parsedTime || '00:00',
+        description: description,
+        max_participants: formData.maxParticipants
+          ? parseInt(formData.maxParticipants, 10)
+          : null,
         tribe: currentUser.tribe,
-        // ✅ SEND FILE OBJECTS DIRECTLY
         coverImageFile: coverImage || null,
         imageFiles: images.length > 0 ? images : []
       };
 
-      console.log('📤 Submitting activity with data:', {
+      console.log('📤 Submitting activity:', {
         title: activityData.title,
         location: activityData.location,
         event_date: activityData.event_date,
         event_time: activityData.event_time,
         description: activityData.description,
-        tribe: activityData.tribe, // ✅ LOG TRIBE
+        max_participants: activityData.max_participants,
+        tribe: activityData.tribe,
         coverImageFile: activityData.coverImageFile?.name || 'none',
         imageFiles: activityData.imageFiles.map(f => f.name)
       });
@@ -281,13 +262,13 @@ const ActivityForm = ({ user, onBack }) => {
 
       if (result.success) {
         console.log('✅ Activity created successfully:', result.activity);
-        
+
         alert('Activity created successfully!');
-        
+
         // ✅ Cleanup URLs
         if (coverImagePreview) URL.revokeObjectURL(coverImagePreview);
         imagesPreview.forEach(url => URL.revokeObjectURL(url));
-        
+
         // ✅ Reset form
         setFormData({
           eventName: '',
@@ -302,28 +283,28 @@ const ActivityForm = ({ user, onBack }) => {
         setImages([]);
         setImagesPreview([]);
         setUploadProgress('');
-        
+
         const fileInputs = document.querySelectorAll('input[type="file"]');
         fileInputs.forEach(input => input.value = '');
-        
+
         // ✅ Navigate back
         if (onBack) {
           onBack();
         } else {
-          navigate('/context', { 
-            state: { 
+          navigate('/context', {
+            state: {
               category: 'Tribe Prayer',
               viewMode: 'activity',
               refresh: true
-            } 
+            }
           });
         }
+
       } else {
-        // ✅ HANDLE ERROR MESSAGE
         console.error('❌ Create failed:', result);
-        
+
         let errorMessage = 'Creation failed';
-        
+
         if (result.message) {
           if (typeof result.message === 'string') {
             errorMessage = `Creation failed: ${result.message}`;
@@ -331,14 +312,14 @@ const ActivityForm = ({ user, onBack }) => {
             errorMessage = `Creation failed:\n${JSON.stringify(result.message, null, 2)}`;
           }
         }
-        
+
         if (result.error && result.error !== result.message) {
           errorMessage += `\n\nError: ${result.error}`;
         }
-        
+
         if (result.details) {
           console.error('📋 Error details:', result.details);
-          
+
           if (result.details.detail && Array.isArray(result.details.detail)) {
             errorMessage += '\n\nValidation errors:';
             result.details.detail.forEach((err, index) => {
@@ -352,32 +333,32 @@ const ActivityForm = ({ user, onBack }) => {
             errorMessage += `\n\nDetails:\n${JSON.stringify(result.details, null, 2)}`;
           }
         }
-        
+
         if (result.statusCode) {
           errorMessage += `\n\nHTTP Status: ${result.statusCode}`;
         }
-        
+
         alert(errorMessage);
       }
 
     } catch (error) {
       console.error('💥 Submit error:', error);
-      
+
       let errorMessage = 'An error occurred';
-      
+
       if (error.message) {
         errorMessage = `An error occurred: ${error.message}`;
       }
-      
+
       if (error.response) {
         console.error('Error response:', error.response);
         errorMessage += `\n\nServer response: ${JSON.stringify(error.response.data || error.response, null, 2)}`;
       }
-      
+
       if (error.stack) {
         console.error('Stack trace:', error.stack);
       }
-      
+
       alert(errorMessage);
     } finally {
       setIsSubmitting(false);
@@ -386,19 +367,17 @@ const ActivityForm = ({ user, onBack }) => {
   };
 
   const handleCancel = () => {
-    // ✅ Confirm if form has data
-    const hasData = formData.eventName || formData.eventLocation || formData.eventDate || 
-                    formData.description || coverImage || images.length > 0;
-    
+    const hasData = formData.eventName || formData.eventLocation || formData.eventDate ||
+      formData.description || coverImage || images.length > 0;
+
     if (hasData && !isSubmitting) {
       const confirmLeave = window.confirm('Are you sure you want to leave? Unsaved data will be lost.');
       if (!confirmLeave) return;
     }
-    
-    // ✅ Cleanup URLs
+
     if (coverImagePreview) URL.revokeObjectURL(coverImagePreview);
     imagesPreview.forEach(url => URL.revokeObjectURL(url));
-    
+
     if (onBack) {
       onBack();
     } else {
@@ -410,9 +389,9 @@ const ActivityForm = ({ user, onBack }) => {
     <AppBackground backgroundColor="#2D3656">
       <div className="activity-form-container">
         <div className="activity-form-header">
-          <button 
-            className="back-button" 
-            onClick={handleCancel} 
+          <button
+            className="back-button"
+            onClick={handleCancel}
             disabled={isSubmitting}
             aria-label="Back"
           >
@@ -422,6 +401,7 @@ const ActivityForm = ({ user, onBack }) => {
         </div>
 
         <form className="activity-form" onSubmit={handleSubmit}>
+
           {/* Event Name */}
           <div className="form-group">
             <label htmlFor="eventName">Event name *</label>
@@ -498,7 +478,22 @@ const ActivityForm = ({ user, onBack }) => {
             />
           </div>
 
-          {/* ✅ Cover Image Upload */}
+          {/* Description */}
+          <div className="form-group">
+            <label htmlFor="description">Description</label>
+            <textarea
+              id="description"
+              name="description"
+              value={formData.description}
+              onChange={handleChange}
+              placeholder="Activity description..."
+              disabled={isSubmitting}
+              rows={4}
+              maxLength={1000}
+            />
+          </div>
+
+          {/* Cover Image */}
           <div className="form-group">
             <label>Cover Image</label>
             <input
@@ -509,10 +504,10 @@ const ActivityForm = ({ user, onBack }) => {
               style={{ display: 'none' }}
               disabled={isSubmitting}
             />
-            <label 
-              htmlFor="coverImageInput" 
+            <label
+              htmlFor="coverImageInput"
               className={`file-upload-label ${isSubmitting ? 'disabled' : ''}`}
-              style={{ 
+              style={{
                 cursor: isSubmitting ? 'not-allowed' : 'pointer',
                 opacity: isSubmitting ? 0.6 : 1
               }}
@@ -520,12 +515,12 @@ const ActivityForm = ({ user, onBack }) => {
               📸 Choose cover image
             </label>
             <small className="file-hint">Max 5MB, JPG/PNG/GIF</small>
-            
+
             {coverImagePreview && (
               <div className="image-preview-container">
-                <img 
-                  src={coverImagePreview} 
-                  alt="Cover Preview" 
+                <img
+                  src={coverImagePreview}
+                  alt="Cover Preview"
                   className="image-preview"
                 />
                 <button
@@ -542,7 +537,7 @@ const ActivityForm = ({ user, onBack }) => {
             )}
           </div>
 
-          {/* ✅ Multiple Images Upload */}
+          {/* Multiple Images */}
           <div className="form-group">
             <label>Activity Images (multiple)</label>
             <input
@@ -554,10 +549,10 @@ const ActivityForm = ({ user, onBack }) => {
               style={{ display: 'none' }}
               disabled={isSubmitting}
             />
-            <label 
-              htmlFor="activityImagesInput" 
+            <label
+              htmlFor="activityImagesInput"
               className={`file-upload-label ${isSubmitting ? 'disabled' : ''}`}
-              style={{ 
+              style={{
                 cursor: isSubmitting ? 'not-allowed' : 'pointer',
                 opacity: isSubmitting ? 0.6 : 1
               }}
@@ -565,15 +560,17 @@ const ActivityForm = ({ user, onBack }) => {
               🖼️ Choose activity images
             </label>
             <small className="file-hint">Max 5MB each, JPG/PNG/GIF</small>
-            
+
             {imagesPreview.length > 0 && (
               <div className="images-preview-container">
-                <p className="images-count">Selected {imagesPreview.length} image{imagesPreview.length > 1 ? 's' : ''}</p>
+                <p className="images-count">
+                  Selected {imagesPreview.length} image{imagesPreview.length > 1 ? 's' : ''}
+                </p>
                 <div className="images-grid">
                   {imagesPreview.map((preview, index) => (
                     <div key={index} className="image-preview-item">
-                      <img 
-                        src={preview} 
+                      <img
+                        src={preview}
                         alt={`Preview ${index + 1}`}
                         className="image-preview-small"
                       />
@@ -594,7 +591,7 @@ const ActivityForm = ({ user, onBack }) => {
             )}
           </div>
 
-          {/* ✅ Upload Progress */}
+          {/* Upload Progress */}
           {uploadProgress && (
             <div className="upload-progress">
               <div className="progress-spinner"></div>
@@ -603,13 +600,14 @@ const ActivityForm = ({ user, onBack }) => {
           )}
 
           {/* Submit Button */}
-          <button 
-            type="submit" 
+          <button
+            type="submit"
             className="post-button"
             disabled={isSubmitting}
           >
             {isSubmitting ? (uploadProgress || 'Creating...') : 'Post'}
           </button>
+
         </form>
       </div>
     </AppBackground>
