@@ -88,6 +88,11 @@ const WitnessWall = ({ selectedCategory, currentUserId, allPosts, refreshBalance
   const [postStates, setPostStates] = useState({});
   const [commentStates, setCommentStates] = useState({});
   const [translationStates, setTranslationStates] = useState({});
+  const [myWitnessedPostIds, setMyWitnessedPostIds] = useState(new Set());
+  const [witnessFormStates, setWitnessFormStates] = useState({});
+
+  // ✅ Fix 1: tránh gọi API 2 lần khi mount
+  const isFirstMount = useRef(true);
 
   const handleTranslateOriginalPost = async (postId, content) => {
     const currentState = translationStates[postId];
@@ -112,6 +117,17 @@ const WitnessWall = ({ selectedCategory, currentUserId, allPosts, refreshBalance
     try {
       const result = await ApiService.getWitnessList(page, 100);
       if (result.success) {
+
+        // ✅ Fix 3: Merge Set từ API với optimistic update local — tránh nút bị reset về xám
+        setMyWitnessedPostIds(prev => {
+          const fromApi = new Set(
+            result.witnesses
+              .filter(w => w.userid === currentUserId)
+              .map(w => w.parent_docid)
+          );
+          return new Set([...fromApi, ...prev]);
+        });
+
         const filteredWitnesses = result.witnesses.filter(witness => {
           const originalPost = witness.original_post || allPosts?.find(p => p.docid === witness.parent_docid);
           if (!originalPost) return false;
@@ -140,28 +156,52 @@ const WitnessWall = ({ selectedCategory, currentUserId, allPosts, refreshBalance
 
         const initialStates = {};
         const initialTranslationStates = {};
+        const initialWitnessFormStates = {};
+
         paginatedWitnesses.forEach(witness => {
           const originalPost = witness.original_post || allPosts?.find(p => p.docid === witness.parent_docid);
           if (originalPost) {
-            // ✅ Tính commentCount từ allPosts (giống PrayerHub)
             const commentCount = allPosts.filter(
               p => p.parent_docid === originalPost.docid && p.event !== 'witness'
             ).length;
+            // ✅ CODE MỚI — thêm isLiked vào initial state
             initialStates[originalPost.docid] = {
               likeCount: originalPost.amen_count || 0,
-              hasLiked: false, isLiking: false,
+              hasLiked: false,
+              isLiked: false,   // ← thêm dòng này
+              isLiking: false,
               commentCount,
               showCommentForm: false,
               commentText: '', isCommenting: false,
               comments: [], loadingComments: false
             };
+
             initialTranslationStates[originalPost.docid] = {
               isTranslating: false, translatedContent: null, translationError: null
             };
+            initialWitnessFormStates[originalPost.docid] = {
+              showWitnessForm: false,
+              witnessText: '',
+              witnessImage: null,
+              isSubmitting: false
+            };
           }
         });
+
         setPostStates(initialStates);
         setTranslationStates(initialTranslationStates);
+
+        // ✅ Fix 2: Merge witnessFormStates — giữ nguyên form đang mở
+        setWitnessFormStates(prev => {
+          const merged = { ...initialWitnessFormStates };
+          Object.keys(prev).forEach(postId => {
+            if (prev[postId]?.showWitnessForm) {
+              merged[postId] = prev[postId];
+            }
+          });
+          return merged;
+        });
+
       } else {
         setWitnesses([]);
       }
@@ -173,8 +213,17 @@ const WitnessWall = ({ selectedCategory, currentUserId, allPosts, refreshBalance
     }
   };
 
-  useEffect(() => { loadWitnesses(currentPage); }, [currentPage]);
-  useEffect(() => { setCurrentPage(1); loadWitnesses(1); }, [selectedCategory, viewScope]);
+  // ✅ Fix 1: selectedCategory / viewScope thay đổi → reset page + load lại
+  useEffect(() => {
+    setCurrentPage(1);
+    loadWitnesses(1);
+  }, [selectedCategory, viewScope]);
+
+  // ✅ Fix 1: currentPage thay đổi (bấm Next/Prev) → load trang mới, bỏ qua lần mount đầu
+  useEffect(() => {
+    if (isFirstMount.current) { isFirstMount.current = false; return; }
+    loadWitnesses(currentPage);
+  }, [currentPage]);
 
   const handleNextPage = () => {
     if (pagination.has_next) { setCurrentPage(prev => prev + 1); window.scrollTo({ top: 0, behavior: 'smooth' }); }
@@ -183,32 +232,49 @@ const WitnessWall = ({ selectedCategory, currentUserId, allPosts, refreshBalance
     if (pagination.has_prev) { setCurrentPage(prev => Math.max(1, prev - 1)); window.scrollTo({ top: 0, behavior: 'smooth' }); }
   };
 
+  // ✅ CODE MỚI
   const handleLikeOriginalPost = async (postId) => {
     const currentState = postStates[postId];
     if (!currentState || currentState.isLiking) return;
     const prevCount = currentState.likeCount;
+    const prevIsLiked = currentState.isLiked || false;
     const newCount = prevCount + 1;
-    setPostStates(prev => ({ ...prev, [postId]: { ...prev[postId], hasLiked: true, likeCount: newCount, isLiking: true } }));
+
+    // Set hasLiked (flash 300ms) + isLiked (persistent)
+    setPostStates(prev => ({
+      ...prev,
+      [postId]: { ...prev[postId], hasLiked: true, isLiked: true, likeCount: newCount, isLiking: true }
+    }));
+
     try {
       const result = await ApiService.likePost(postId, currentUserId);
       if (result.success) {
         const finalCount = result.data?.amen_count !== undefined ? result.data.amen_count : newCount;
         setTimeout(() => {
-          setPostStates(prev => ({ ...prev, [postId]: { ...prev[postId], likeCount: finalCount, hasLiked: false, isLiking: false } }));
+          setPostStates(prev => ({
+            ...prev,
+            [postId]: { ...prev[postId], likeCount: finalCount, hasLiked: false, isLiking: false }
+            // isLiked giữ nguyên true — không reset
+          }));
         }, 300);
         if (refreshBalance) await refreshBalance();
       } else throw new Error(result.message || 'API Error');
     } catch (error) {
-      setPostStates(prev => ({ ...prev, [postId]: { ...prev[postId], hasLiked: false, likeCount: prevCount, isLiking: false } }));
+      // Rollback cả isLiked khi lỗi
+      setPostStates(prev => ({
+        ...prev,
+        [postId]: { ...prev[postId], hasLiked: false, isLiked: prevIsLiked, likeCount: prevCount, isLiking: false }
+      }));
     }
   };
+
 
   const handleLikeComment = async (commentId) => {
     const currentState = commentStates[commentId];
     if (!currentState || currentState.isLiking) return;
     const prevCount = currentState.likeCount;
     const newCount = prevCount + 1;
-    setCommentStates(prev => ({ ...prev, [commentId]: { ...prev[commentId], hasLiked: true, likeCount: newCount, isLiking: true } }));
+    setCommentStates(prev => ({ ...prev, [commentId]: { ...prev[commentId], isLiked: true, likeCount: newCount, isLiking: true } }));
     try {
       const result = await ApiService.likeComment(commentId, currentUserId);
       if (result.success) {
@@ -219,11 +285,10 @@ const WitnessWall = ({ selectedCategory, currentUserId, allPosts, refreshBalance
         if (refreshBalance) await refreshBalance();
       } else throw new Error(result.message || 'API Error');
     } catch (error) {
-      setCommentStates(prev => ({ ...prev, [commentId]: { ...prev[commentId], hasLiked: false, likeCount: prevCount, isLiking: false } }));
+      setCommentStates(prev => ({ ...prev, [commentId]: { ...prev[commentId], isLiked: false, likeCount: prevCount, isLiking: false } }));
     }
   };
 
-  // ✅ Đã sửa: Gọi API trực tiếp để lấy comment cho WitnessWall
   const loadComments = async (postId) => {
     setPostStates(prev => ({ ...prev, [postId]: { ...prev[postId], loadingComments: true } }));
     try {
@@ -233,7 +298,6 @@ const WitnessWall = ({ selectedCategory, currentUserId, allPosts, refreshBalance
         allReplies = result.comments.filter(c => c.parent_docid === postId && c.event !== 'witness');
       }
       console.log(`💬 WitnessWall Post ${postId}: Found ${allReplies.length} comments from API`);
-      
       const formattedComments = allReplies.map(c => ({
         id: c.docid, author: c.userid, content: c.content,
         time: c.datetime || 'Just now', likes: c.amen_count || 0,
@@ -241,7 +305,7 @@ const WitnessWall = ({ selectedCategory, currentUserId, allPosts, refreshBalance
       }));
       const newCommentStates = {};
       formattedComments.forEach(comment => {
-        newCommentStates[comment.id] = { likeCount: comment.likes || 0, hasLiked: false, isLiking: false };
+        newCommentStates[comment.id] = { likeCount: comment.likes || 0, isLiked: false, isLiking: false };
       });
       setCommentStates(prev => ({ ...prev, ...newCommentStates }));
       setPostStates(prev => ({ ...prev, [postId]: { ...prev[postId], comments: formattedComments, loadingComments: false } }));
@@ -280,7 +344,7 @@ const WitnessWall = ({ selectedCategory, currentUserId, allPosts, refreshBalance
           time: 'Just now', likes: 0, isReply: true,
           userid: currentUserId, avatar_url: result.comment?.avatar_url
         };
-        setCommentStates(prev => ({ ...prev, [newCommentId]: { likeCount: 0, hasLiked: false, isLiking: false } }));
+        setCommentStates(prev => ({ ...prev, [newCommentId]: { likeCount: 0, isLiked: false, isLiking: false } }));
         setPostStates(prev => ({
           ...prev,
           [postId]: {
@@ -298,6 +362,60 @@ const WitnessWall = ({ selectedCategory, currentUserId, allPosts, refreshBalance
     } catch (error) {
       alert(`Error occurred while commenting: ${error.message}`);
       setPostStates(prev => ({ ...prev, [postId]: { ...prev[postId], isCommenting: false } }));
+    }
+  };
+
+  const handleToggleWitnessForm = (postId) => {
+    if (myWitnessedPostIds.has(postId)) return;
+    setWitnessFormStates(prev => ({
+      ...prev,
+      [postId]: {
+        ...prev[postId],
+        showWitnessForm: !prev[postId]?.showWitnessForm,
+        witnessText: '',
+        witnessImage: null
+      }
+    }));
+  };
+
+  const handleWitnessSubmit = async (e, postId) => {
+    e.preventDefault();
+    const formState = witnessFormStates[postId];
+    if (!formState?.witnessText?.trim() || formState?.isSubmitting) return;
+
+    setWitnessFormStates(prev => ({ ...prev, [postId]: { ...prev[postId], isSubmitting: true } }));
+    try {
+      const result = await ApiService.createWitness(
+        currentUserId, formState.witnessText.trim(), postId, formState.witnessImage
+      );
+      if (result.success) {
+        // ✅ Optimistic update ngay lập tức — nút đổi vàng liền
+        setMyWitnessedPostIds(prev => new Set([...prev, postId]));
+
+        setWitnessFormStates(prev => ({
+          ...prev,
+          [postId]: { showWitnessForm: false, witnessText: '', witnessImage: null, isSubmitting: false }
+        }));
+
+        // ✅ Sync lại với backend (Fix 3 đảm bảo Set không bị reset)
+        await loadWitnesses(currentPage);
+        if (refreshBalance) await refreshBalance();
+      } else {
+        const msg = result.message || '';
+        if (msg.includes('already') || msg.toLowerCase().includes('witness')) {
+          setMyWitnessedPostIds(prev => new Set([...prev, postId]));
+          setWitnessFormStates(prev => ({
+            ...prev,
+            [postId]: { showWitnessForm: false, witnessText: '', witnessImage: null, isSubmitting: false }
+          }));
+        } else {
+          alert(`Failed to add testimony: ${msg}`);
+          setWitnessFormStates(prev => ({ ...prev, [postId]: { ...prev[postId], isSubmitting: false } }));
+        }
+      }
+    } catch (error) {
+      alert(`Error occurred while adding testimony: ${error.message}`);
+      setWitnessFormStates(prev => ({ ...prev, [postId]: { ...prev[postId], isSubmitting: false } }));
     }
   };
 
@@ -325,14 +443,17 @@ const WitnessWall = ({ selectedCategory, currentUserId, allPosts, refreshBalance
       <div className="witness-wall-grid">
         {witnesses.map(witness => {
           const originalPost = witness.original_post || allPosts?.find(p => p.docid === witness.parent_docid);
+          const hasWitnessed = myWitnessedPostIds.has(originalPost?.docid);
           const postState = postStates[originalPost?.docid] || {
             likeCount: originalPost?.amen_count || 0, hasLiked: false, isLiking: false,
-            // ✅ Ưu tiên đếm comment từ DB trả về
             commentCount: originalPost?.comment_count || allPosts.filter(p => p.parent_docid === originalPost?.docid && p.event !== 'witness').length,
             showCommentForm: false, commentText: '', isCommenting: false, comments: [], loadingComments: false
           };
           const translationState = translationStates[originalPost?.docid] || {
             isTranslating: false, translatedContent: null, translationError: null
+          };
+          const witnessFormState = witnessFormStates[originalPost?.docid] || {
+            showWitnessForm: false, witnessText: '', witnessImage: null, isSubmitting: false
           };
 
           return (
@@ -379,21 +500,118 @@ const WitnessWall = ({ selectedCategory, currentUserId, allPosts, refreshBalance
                     )}
                   </div>
 
-                  <div className="post-actions">
-                    <button className={`action-button action-amen ${postState.hasLiked ? 'active-amen' : ''}`} onClick={() => handleLikeOriginalPost(originalPost.docid)} disabled={postState.isLiking}>
-                      {postState.isLiking ? 'Processing...' : (postState.hasLiked ? `AMENED (${postState.likeCount})` : `AMEN (${postState.likeCount})`)}
+                                    <div className="post-actions">
+                    <button
+                      className={`action-button action-amen ${(postState.hasLiked || postState.isLiked) ? 'active-amen' : ''}`}
+                      onClick={() => handleLikeOriginalPost(originalPost.docid)}
+                      disabled={postState.isLiking}
+                    >
+                      {postState.isLiking
+                        ? 'Processing...'
+                        : ((postState.hasLiked || postState.isLiked)
+                          ? `AMENED (${postState.likeCount})`
+                          : `AMEN (${postState.likeCount})`)}
                     </button>
-                    <button className={`action-button action-comment ${postState.showCommentForm ? 'active-comment' : ''}`} onClick={() => handleToggleCommentForm(originalPost.docid)}>
+
+
+                    <button
+                      className={`action-button action-comment ${postState.showCommentForm ? 'active-comment' : ''}`}
+                      onClick={() => handleToggleCommentForm(originalPost.docid)}
+                    >
                       PRAY FOR ME ({postState.commentCount || 0})
                     </button>
+
+                    <button
+                      className={`action-button action-witness ${hasWitnessed ? 'witnessed-done' : (witnessFormState.showWitnessForm ? 'active-witness' : '')}`}
+                      onClick={() => handleToggleWitnessForm(originalPost.docid)}
+                      disabled={hasWitnessed}
+                      title={hasWitnessed ? 'You have already witnessed this post' : 'Add your testimony'}
+                      style={{
+                        backgroundColor: hasWitnessed ? '#FFD700' : undefined,
+                        cursor: hasWitnessed ? 'not-allowed' : 'pointer'
+                      }}
+                    >
+                      {hasWitnessed ? `✨ WITNESSED` : `WITNESS`}
+                    </button>
                   </div>
+
+                  {witnessFormState.showWitnessForm && !hasWitnessed && (
+                    <div className="form-container witness-form-wrapper">
+                      <form className="witness-form" onSubmit={(e) => handleWitnessSubmit(e, originalPost.docid)}>
+                        <textarea
+                          value={witnessFormState.witnessText}
+                          onChange={(e) => setWitnessFormStates(prev => ({
+                            ...prev,
+                            [originalPost.docid]: { ...prev[originalPost.docid], witnessText: e.target.value }
+                          }))}
+                          placeholder="Share your testimony..."
+                          rows="4"
+                          maxLength="1000"
+                        />
+                        <div className="witness-image-picker" style={{ marginTop: '8px' }}>
+                          <label
+                            htmlFor={`witness-image-wall-${originalPost.docid}`}
+                            style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', cursor: 'pointer', padding: '6px 12px', borderRadius: '8px', border: '1px dashed #aaa', fontSize: '13px', color: '#555', backgroundColor: '#f9f9f9' }}
+                          >
+                            📷 {witnessFormState.witnessImage ? witnessFormState.witnessImage.name : 'Add photo (optional)'}
+                          </label>
+                          <input
+                            id={`witness-image-wall-${originalPost.docid}`}
+                            type="file" accept="image/*"
+                            style={{ display: 'none' }}
+                            onChange={(e) => setWitnessFormStates(prev => ({
+                              ...prev,
+                              [originalPost.docid]: { ...prev[originalPost.docid], witnessImage: e.target.files[0] || null }
+                            }))}
+                          />
+                          {witnessFormState.witnessImage && (
+                            <button
+                              type="button"
+                              onClick={() => setWitnessFormStates(prev => ({
+                                ...prev,
+                                [originalPost.docid]: { ...prev[originalPost.docid], witnessImage: null }
+                              }))}
+                              style={{ marginLeft: '8px', background: 'none', border: 'none', color: '#e53935', cursor: 'pointer', fontSize: '13px' }}
+                            >
+                              ✕ Remove
+                            </button>
+                          )}
+                        </div>
+                        <div className="form-actions">
+                          <button
+                            type="submit"
+                            disabled={!witnessFormState.witnessText?.trim() || witnessFormState.isSubmitting}
+                            className="submit-btn witness-submit-btn"
+                          >
+                            {witnessFormState.isSubmitting ? 'Submitting...' : '✨ Submit Testimony'}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setWitnessFormStates(prev => ({
+                              ...prev,
+                              [originalPost.docid]: { showWitnessForm: false, witnessText: '', witnessImage: null, isSubmitting: false }
+                            }))}
+                            className="cancel-btn"
+                          >
+                            Cancel
+                          </button>
+                        </div>
+                      </form>
+                    </div>
+                  )}
 
                   {postState.showCommentForm && (
                     <div className="form-container comment-form-wrapper">
                       <form className="comment-form" onSubmit={(e) => handleCommentSubmit(e, originalPost.docid, originalPost.sn)}>
                         <div className="comment-input-container">
-                          <textarea value={postState.commentText} onChange={(e) => handleCommentTextChange(originalPost.docid, e.target.value)} placeholder="Write your comment..." rows="3" maxLength="500" />
-                          <VoiceRecordButton onTranscriptComplete={(transcript) => { handleCommentTextChange(originalPost.docid, postState.commentText + (postState.commentText ? ' ' : '') + transcript); }} />
+                          <textarea
+                            value={postState.commentText}
+                            onChange={(e) => handleCommentTextChange(originalPost.docid, e.target.value)}
+                            placeholder="Write your comment..." rows="3" maxLength="500"
+                          />
+                          <VoiceRecordButton onTranscriptComplete={(transcript) => {
+                            handleCommentTextChange(originalPost.docid, postState.commentText + (postState.commentText ? ' ' : '') + transcript);
+                          }} />
                         </div>
                         <div className="form-info"><span className="char-count">{postState.commentText.length}/500</span></div>
                         <div className="form-actions">
@@ -411,7 +629,7 @@ const WitnessWall = ({ selectedCategory, currentUserId, allPosts, refreshBalance
                         <div className="comments-list">
                           {postState.comments.length > 0 ? (
                             postState.comments.map(comment => {
-                              const commentState = commentStates[comment.id] || { likeCount: comment.likes || 0, hasLiked: false, isLiking: false };
+                              const commentState = commentStates[comment.id] || { likeCount: comment.likes || 0, isLiked: false, isLiking: false };
                               return (
                                 <div key={comment.id} className="comment comment-reply">
                                   <div className="comment-header">
@@ -425,8 +643,12 @@ const WitnessWall = ({ selectedCategory, currentUserId, allPosts, refreshBalance
                                   </div>
                                   <div className="comment-content"><p>{comment.content}</p></div>
                                   <div className="comment-actions">
-                                    <button className={`comment-like-btn ${commentState.hasLiked ? 'active-amen' : ''}`} onClick={() => handleLikeComment(comment.id)} disabled={commentState.isLiking}>
-                                      {commentState.isLiking ? 'Processing...' : (commentState.hasLiked ? `AMENED (${commentState.likeCount})` : `AMEN (${commentState.likeCount})`)}
+                                    <button
+                                      className={`comment-action-btn like ${commentState.isLiked ? 'active-amen' : ''}`}
+                                      onClick={() => handleLikeComment(comment.id)}
+                                      disabled={commentState.isLiking}
+                                    >
+                                      {commentState.isLiking ? 'Processing...' : (commentState.isLiked ? `AMENED (${commentState.likeCount})` : `AMEN (${commentState.likeCount})`)}
                                     </button>
                                   </div>
                                 </div>
@@ -484,6 +706,8 @@ const WitnessWall = ({ selectedCategory, currentUserId, allPosts, refreshBalance
     </div>
   );
 };
+
+
 
 // ==================== PRIVACY DROPDOWN ====================
 const PrivacyDropdown = ({ onChange, initialValue = 'public' }) => {
@@ -624,36 +848,10 @@ const Comment = ({ comment, onReply, onEdit, onDelete, onLike, currentUserId, po
         )}
       </div>
       <div className="comment-actions">
-        <button className={`comment-action-btn like ${commentState?.hasLiked ? 'active-amen' : ''}`} onClick={() => onLike(comment.id)} disabled={commentState?.isLiking}>
-          {commentState?.isLiking ? 'Processing...' : (commentState?.hasLiked ? `AMENED (${commentState?.likeCount || 0})` : `AMEN (${commentState?.likeCount || 0})`)}
+        <button className={`comment-action-btn like ${commentState?.isLiked ? 'active-amen' : ''}`} onClick={() => onLike(comment.id)} disabled={commentState?.isLiking}>
+          {commentState?.isLiking ? 'Processing...' : (commentState?.isLiked ? `AMENED (${commentState?.likeCount || 0})` : `AMEN (${commentState?.likeCount || 0})`)}
         </button>
-        {!comment.isReply && (
-          <button className="comment-action-btn reply" onClick={() => setIsReplying(!isReplying)}>💬 Reply</button>
-        )}
-        {!comment.isReply && replies.length > 0 && (
-          <button className="comment-action-btn show-replies" onClick={() => { setShowReplies(!showReplies); if (!showReplies && replies.length === 0) loadReplies(); }}>
-            {showReplies ? 'Hide' : 'Show'} {replies.length} replies
-          </button>
-        )}
       </div>
-      {isReplying && (
-        <form onSubmit={handleReplySubmit} className="comment-reply-form">
-          <textarea value={replyText} onChange={(e) => setReplyText(e.target.value)} placeholder="Write your reply..." rows="2" maxLength="300" />
-          <div className="comment-reply-actions">
-            <button type="submit" disabled={!replyText.trim() || isSubmitting} className="comment-reply-submit">{isSubmitting ? 'Replying...' : 'Reply'}</button>
-            <button type="button" onClick={() => { setIsReplying(false); setReplyText(''); }} className="comment-reply-cancel">Cancel</button>
-          </div>
-        </form>
-      )}
-      {showReplies && (
-        <div className="comment-replies">
-          {loadingReplies ? <div className="loading-replies">Loading replies...</div> : (
-            replies.map(reply => (
-              <Comment key={reply.id} comment={reply} onEdit={onEdit} onDelete={onDelete} onLike={onLike} currentUserId={currentUserId} postDocid={postDocid} commentState={commentState} />
-            ))
-          )}
-        </div>
-      )}
     </div>
   );
 };
@@ -673,21 +871,40 @@ const Post = ({ post, allPosts, onLike, onComment, onWitnessCreated, currentUser
   const [isSubmittingWitness, setIsSubmittingWitness] = useState(false);
   const [witnessCount, setWitnessCount] = useState(0);
   const [activeForm, setActiveForm] = useState(null);
-  const [hasWitnessed, setHasWitnessed] = useState(false);
+  // ✅ Đọc từ localStorage trước, sau đó check allPosts
+  const WITNESSED_KEY = `witnessed_${currentUserId}`;
+
+  const getWitnessedSet = () => {
+    try {
+      return new Set(JSON.parse(localStorage.getItem(WITNESSED_KEY) || '[]'));
+    } catch { return new Set(); }
+  };
+
+  const [hasWitnessed, setHasWitnessed] = useState(() => getWitnessedSet().has(post.id));
+
+  // Sync từ allPosts (trường hợp data từ API có witness)
+
+
   const [isTranslating, setIsTranslating] = useState(false);
   const [translatedContent, setTranslatedContent] = useState(null);
   const [translationError, setTranslationError] = useState(null);
 
-  // ✅ Sync likes từ props (giống PrayerHub)
   useEffect(() => {
-    setLikeCount(post.likes || 0);
-    setIsLiked(post.isLiked || false);
-  }, [post.likes, post.isLiked]);
+    const witnessed = allPosts.some(
+      p => p.parent_docid === post.id && p.event === 'witness' && p.userid === currentUserId
+    );
+    if (witnessed) {
+      setHasWitnessed(true);
+      // ✅ Lưu localStorage luôn khi API confirm đã witnessed
+      try {
+        const set = new Set(JSON.parse(localStorage.getItem(WITNESSED_KEY) || '[]'));
+        set.add(post.id);
+        localStorage.setItem(WITNESSED_KEY, JSON.stringify([...set]));
+      } catch { }
+    }
+  }, [post.id]);
 
-  useEffect(() => {
-    const witnessed = allPosts.some(p => p.parent_docid === post.id && p.event === 'witness' && p.userid === currentUserId);
-    setHasWitnessed(witnessed);
-  }, [allPosts, post.id, currentUserId]);
+
 
   useEffect(() => {
     setIsTranslating(false); setTranslatedContent(null); setTranslationError(null);
@@ -716,7 +933,7 @@ const Post = ({ post, allPosts, onLike, onComment, onWitnessCreated, currentUser
       });
       return next;
     });
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [allPosts, post.id]);
 
   const handleTranslate = async () => {
@@ -745,12 +962,29 @@ const Post = ({ post, allPosts, onLike, onComment, onWitnessCreated, currentUser
       const result = await ApiService.createWitness(currentUserId, witnessText.trim(), post.id, witnessImage);
       if (result.success) {
         setWitnessText(''); setWitnessImage(null); setActiveForm(null); setHasWitnessed(true);
+
+        // ✅ Lưu localStorage
+        try {
+          const set = new Set(JSON.parse(localStorage.getItem(WITNESSED_KEY) || '[]'));
+          set.add(post.id);
+          localStorage.setItem(WITNESSED_KEY, JSON.stringify([...set]));
+        } catch { }
+
         if (refreshBalance) await refreshBalance();
         if (onWitnessCreated && typeof onWitnessCreated === 'function') onWitnessCreated(post.id);
+
       } else {
         const msg = result.message || '';
         if (msg.includes('已為此貼文建立過見證') || msg.includes('already') || msg.toLowerCase().includes('witness')) {
           setHasWitnessed(true); setActiveForm(null); setWitnessText(''); setWitnessImage(null);
+
+          // ✅ Lưu localStorage
+          try {
+            const set = new Set(JSON.parse(localStorage.getItem(WITNESSED_KEY) || '[]'));
+            set.add(post.id);
+            localStorage.setItem(WITNESSED_KEY, JSON.stringify([...set]));
+          } catch { }
+
         } else {
           alert(`Failed to add testimony: ${msg}`);
         }
@@ -797,28 +1031,28 @@ const Post = ({ post, allPosts, onLike, onComment, onWitnessCreated, currentUser
     } finally { isLikingRef.current = false; setIsLiking(false); }
   };
 
-  const handleLikeComment = async (commentId) => {
+    const handleLikeComment = async (commentId) => {
     const currentState = commentStates[commentId];
     if (!currentState || currentState.isLiking) return;
     const prevCount = currentState.likeCount;
-    const prevLiked = currentState.isLiked || false;
-    const newLiked = !prevLiked;
-    const newCount = newLiked ? prevCount + 1 : Math.max(0, prevCount - 1);
-    setCommentStates(prev => ({ ...prev, [commentId]: { ...prev[commentId], isLiked: newLiked, likeCount: newCount, isLiking: true } }));
+    const prevIsLiked = currentState.isLiked || false;
+    const newCount = prevCount + 1;
+    setCommentStates(prev => ({ ...prev, [commentId]: { ...prev[commentId], isLiked: true, likeCount: newCount, isLiking: true } }));
     try {
       const result = await ApiService.likeComment(commentId, currentUserId);
       if (result.success) {
         const finalCount = result.data?.amen_count !== undefined ? result.data.amen_count : newCount;
-        const finalLiked = result.data?.amened !== undefined ? result.data.amened : newLiked;
         setTimeout(() => {
-          setCommentStates(prev => ({ ...prev, [commentId]: { ...prev[commentId], likeCount: finalCount, isLiked: finalLiked, isLiking: false } }));
+          setCommentStates(prev => ({ ...prev, [commentId]: { ...prev[commentId], likeCount: finalCount, isLiking: false } }));
+          // isLiked giữ nguyên true — không reset
         }, 300);
         if (refreshBalance) await refreshBalance();
       } else throw new Error(result.message || 'API Error');
     } catch (error) {
-      setCommentStates(prev => ({ ...prev, [commentId]: { ...prev[commentId], isLiked: prevLiked, likeCount: prevCount, isLiking: false } }));
+      setCommentStates(prev => ({ ...prev, [commentId]: { ...prev[commentId], isLiked: prevIsLiked, likeCount: prevCount, isLiking: false } }));
     }
   };
+
 
   const handleCommentSubmit = async (e) => {
     e.preventDefault();
@@ -977,6 +1211,7 @@ const MainApp = ({ user, onLogout }) => {
   const [viewScope, setViewScope] = useState('my');
   const [showActivityForm, setShowActivityForm] = useState(false);
   const [activities, setActivities] = useState([]);
+  const [newlyWitnessedPostId, setNewlyWitnessedPostId] = useState(null);
   const navigatingRef = useRef(false);
   const hasTribe = currentTribeId !== null && currentTribeId !== undefined;
 
@@ -1022,7 +1257,7 @@ const MainApp = ({ user, onLogout }) => {
 
   useEffect(() => { fetchNotificationCount(); }, [fetchNotificationCount]);
 
-    const handleTribeSelected = async (newTribeId) => {
+  const handleTribeSelected = async (newTribeId) => {
     setCurrentTribeId(newTribeId);
     if (user) user.tribe = newTribeId;
     try {
@@ -1132,19 +1367,18 @@ const MainApp = ({ user, onLogout }) => {
     await fetchPosts(selectedCategory, currentPage);
   };
 
+  // ✅ Sau khi witness: ở lại Original Post, chỉ refresh data
   const handleWitnessCreated = async (postId) => {
     try {
-      const witnessedPost = posts.find(p => p.id === postId) || allPosts.find(p => p.docid === postId);
-      if (!witnessedPost) return;
-      const postCategory = witnessedPost.category || selectedCategory;
-      if (postCategory !== selectedCategory) setSelectedCategory(postCategory);
-      setViewMode('witness');
       ApiService.clearCache();
-      await fetchPosts(postCategory, 1);
+      await fetchPosts(selectedCategory, currentPage);
       await refreshBalance();
-      setTimeout(() => window.scrollTo({ top: 0, behavior: 'smooth' }), 100);
-    } catch (error) { console.error('❌ Error switching view:', error); }
+      // ✅ Chuyển sang Witness Wall
+      setViewMode('witness');
+      setNewlyWitnessedPostId(postId);
+    } catch (error) { console.error('❌ Error after witness:', error); }
   };
+
 
   const mapCategoryToPrivacy = useCallback((category) => {
     if (!category) return 'public';
@@ -1229,7 +1463,7 @@ const MainApp = ({ user, onLogout }) => {
 
       if (rawPosts.length > 0) {
         const filteredPosts = rawPosts.filter(post => !post.parent_docid && post.docid);
-        
+
         const transformedPosts = filteredPosts.map(post => {
           // Khai báo 2 biến đếm ở đây để không bị lỗi undefined
           const serverCount = post.comment_count !== undefined ? post.comment_count : 0;
@@ -1242,10 +1476,10 @@ const MainApp = ({ user, onLogout }) => {
             avatar_url: post.avatar_url,
             likes: post.amen_count !== undefined ? post.amen_count : 0,
             isLiked: (post.amened === true || post.amened === 1 || post.amened === 'true'),
-            
+
             // Sử dụng 2 biến vừa khai báo
             calculatedComments: Math.max(serverCount, localCount),
-            
+
             title: post.title || '',
             content: post.content || '',
             privacy: post.privacy ? post.privacy.toLowerCase() : mapCategoryToPrivacy(post.category),
@@ -1264,8 +1498,8 @@ const MainApp = ({ user, onLogout }) => {
         console.log(`✅ allPosts: ${rawPosts.length} posts + ${rawComments.length} comments`);
         setHasNextPage(postsResult.pagination?.has_next === true);
       } else {
-        setPosts([]); 
-        setAllPosts([]); 
+        setPosts([]);
+        setAllPosts([]);
         setHasNextPage(false);
       }
     } catch (error) {
@@ -1426,7 +1660,10 @@ const MainApp = ({ user, onLogout }) => {
                 allPosts={allPosts}
                 refreshBalance={refreshBalance}
                 viewScope={viewScope}
+                newlyWitnessedPostId={newlyWitnessedPostId}
+                onScrollDone={() => setNewlyWitnessedPostId(null)}
               />
+
             ) : !loading && filteredPosts.length > 0 ? (
               <div className="posts-feed">
                 {filteredPosts.map(post => (
