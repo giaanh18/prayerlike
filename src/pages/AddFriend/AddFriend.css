@@ -5,7 +5,7 @@
   padding-bottom: 80px;
 }
 
-/* Header - Compact, không có background riêng */
+/* Header */
 .af-header {
   display: flex;
   align-items: center;
@@ -36,7 +36,7 @@
   margin: 0;
 }
 
-/* Search Container - Không có khung, kéo sát lên */
+/* Search Container */
 .af-search-container {
   display: flex;
   gap: 10px;
@@ -77,6 +77,16 @@
   transform: scale(1.1);
 }
 
+.af-search-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.af-search-input:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
 /* Search Results */
 .af-search-results {
   padding: 0 20px;
@@ -94,7 +104,7 @@
   margin-bottom: 15px;
 }
 
-/* User Cards */
+/* ✅ User Cards — FIX TRÀN */
 .af-user-card,
 .af-invitation-card {
   display: flex;
@@ -105,15 +115,19 @@
   padding: 15px;
   margin-bottom: 12px;
   color: #2D3656;
+  flex-wrap: nowrap;   /* ✅ */
+  overflow: hidden;    /* ✅ */
 }
 
+/* ✅ Avatar — không bị co */
 .af-user-avatar {
   width: 50px;
   height: 50px;
   border-radius: 50%;
   overflow: hidden;
   background: #4A5F8C;
-  flex-shrink: 0;
+  flex-shrink: 0;      /* ✅ */
+  min-width: 50px;     /* ✅ */
 }
 
 .af-user-avatar img {
@@ -122,26 +136,37 @@
   object-fit: cover;
 }
 
+/* ✅ Info — cho phép text truncate */
 .af-user-info,
 .af-invitation-info {
   flex: 1;
+  min-width: 0;        /* ✅ */
+  overflow: hidden;    /* ✅ */
 }
 
+/* ✅ Tên — hiện "..." khi quá dài */
 .af-user-info h3,
 .af-invitation-info h3 {
   font-size: 16px;
   font-weight: 600;
   margin: 0 0 4px 0;
+  white-space: nowrap;       /* ✅ */
+  overflow: hidden;          /* ✅ */
+  text-overflow: ellipsis;   /* ✅ */
 }
 
+/* ✅ Email — hiện "..." khi quá dài */
 .af-user-info p,
 .af-invitation-info p {
   font-size: 14px;
   color: #666;
   margin: 0 0 8px 0;
+  white-space: nowrap;       /* ✅ */
+  overflow: hidden;          /* ✅ */
+  text-overflow: ellipsis;   /* ✅ */
 }
 
-/* Buttons */
+/* ✅ Add Button — không bị co */
 .af-add-button {
   padding: 8px 20px;
   border-radius: 20px;
@@ -152,6 +177,9 @@
   cursor: pointer;
   font-size: 12px;
   transition: all 0.3s;
+  flex-shrink: 0;      /* ✅ */
+  white-space: nowrap; /* ✅ */
+  min-width: 80px;     /* ✅ */
 }
 
 .af-add-button:hover {
@@ -159,15 +187,20 @@
   transform: scale(1.05);
 }
 
+/* ✅ Sent Badge — không bị co */
 .af-sent-badge {
-  padding: 8px 20px;
+  background: #4A5F8C;
+  color: white;
+  padding: 8px 16px;
   border-radius: 20px;
-  border: 1px solid #666;
-  background: transparent;
-  color: #666;
-  font-size: 12px;
+  font-size: 14px;
+  font-weight: 500;
+  text-transform: lowercase;
+  flex-shrink: 0;      /* ✅ */
+  white-space: nowrap; /* ✅ */
 }
 
+/* Invitation Actions */
 .af-invitation-actions {
   display: flex;
   gap: 10px;
@@ -201,6 +234,27 @@
   background: #E0E0E0;
 }
 
+/* Loading State */
+.af-loading {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 40px 20px;
+  color: #8B9DC3;
+  font-size: 14px;
+}
+
+/* Empty State */
+.af-empty-state {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 60px 20px;
+  text-align: center;
+  color: #8B9DC3;
+  font-size: 14px;
+}
+
 /* Bottom Navigation */
 .add-friend-page .bottom-navigation {
   position: fixed;
@@ -215,46 +269,3 @@
   border-top: 1px solid #4A5F8C;
   z-index: 100;
 }
-/* ✅ Loading State - MINIMAL STYLE */
-.af-loading {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  padding: 40px 20px;
-  color: #8B9DC3;
-  font-size: 14px;
-}
-
-/* ✅ Empty State - MINIMAL STYLE */
-.af-empty-state {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  padding: 60px 20px;
-  text-align: center;
-  color: #8B9DC3;
-  font-size: 14px;
-}
-
-/* ✅ Sent Badge - GIỐNG STYLE CŨ */
-.af-sent-badge {
-  background: #4A5F8C;
-  color: white;
-  padding: 8px 16px;
-  border-radius: 20px;
-  font-size: 14px;
-  font-weight: 500;
-  text-transform: lowercase;
-}
-
-/* ✅ Disabled Search Button */
-.af-search-button:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-.af-search-input:disabled {
-  opacity: 0.7;
-  cursor: not-allowed;
-}
-

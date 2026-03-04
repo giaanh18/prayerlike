@@ -500,7 +500,7 @@ const WitnessWall = ({ selectedCategory, currentUserId, allPosts, refreshBalance
                     )}
                   </div>
 
-                                    <div className="post-actions">
+                  <div className="post-actions">
                     <button
                       className={`action-button action-amen ${(postState.hasLiked || postState.isLiked) ? 'active-amen' : ''}`}
                       onClick={() => handleLikeOriginalPost(originalPost.docid)}
@@ -630,6 +630,7 @@ const WitnessWall = ({ selectedCategory, currentUserId, allPosts, refreshBalance
                           {postState.comments.length > 0 ? (
                             postState.comments.map(comment => {
                               const commentState = commentStates[comment.id] || { likeCount: comment.likes || 0, isLiked: false, isLiking: false };
+                              const commentTransState = translationStates[comment.id] || { isTranslating: false, translatedContent: null, translationError: null };
                               return (
                                 <div key={comment.id} className="comment comment-reply">
                                   <div className="comment-header">
@@ -641,7 +642,26 @@ const WitnessWall = ({ selectedCategory, currentUserId, allPosts, refreshBalance
                                       <div className="comment-time">{comment.time}</div>
                                     </div>
                                   </div>
-                                  <div className="comment-content"><p>{comment.content}</p></div>
+                                  <div className="comment-content">
+                                    <p>{comment.content}</p>
+                                    <button
+                                      className={`comment-translate-button ${commentTransState.isTranslating ? 'translating' : ''} ${commentTransState.translatedContent ? 'active' : ''}`}
+                                      onClick={() => handleTranslateOriginalPost(comment.id, comment.content)}
+                                      disabled={commentTransState.isTranslating}
+                                    >
+                                      <TranslateIcon size={14} />
+                                    </button>
+                                    {commentTransState.translatedContent && (
+                                      <div className="comment-translated-content">
+                                        <span className="translate-label">🌐 Translation:</span>
+                                        <p>{commentTransState.translatedContent}</p>
+                                      </div>
+                                    )}
+                                    {commentTransState.translationError && (
+                                      <div className="comment-translation-error">⚠️ {commentTransState.translationError}</div>
+                                    )}
+                                  </div>
+
                                   <div className="comment-actions">
                                     <button
                                       className={`comment-action-btn like ${commentState.isLiked ? 'active-amen' : ''}`}
@@ -654,6 +674,7 @@ const WitnessWall = ({ selectedCategory, currentUserId, allPosts, refreshBalance
                                 </div>
                               );
                             })
+
                           ) : (
                             <div className="no-comments"><p>No comments yet. Be the first to leave a message!</p></div>
                           )}
@@ -1031,7 +1052,7 @@ const Post = ({ post, allPosts, onLike, onComment, onWitnessCreated, currentUser
     } finally { isLikingRef.current = false; setIsLiking(false); }
   };
 
-    const handleLikeComment = async (commentId) => {
+  const handleLikeComment = async (commentId) => {
     const currentState = commentStates[commentId];
     if (!currentState || currentState.isLiking) return;
     const prevCount = currentState.likeCount;

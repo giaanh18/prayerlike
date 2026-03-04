@@ -2637,73 +2637,6 @@ select:focus-visible {
   }
 }
 
-.witness-original-post-section .post-content {
-  position: relative;
-  padding: 12px 45px 12px 12px;
-}
-
-.witness-original-post-section .post-translate-button {
-  position: absolute;
-  top: 12px;
-  right: 12px;
-  width: 32px;
-  height: 32px;
-  background: #6B4E2E;
-  border: none;
-  border-radius: 6px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  z-index: 10;
-  padding: 6px;
-  box-shadow: 0 2px 4px rgba(107, 78, 46, 0.3);
-}
-
-.witness-original-post-section .post-translate-button:hover {
-  background: #8B6E4E;
-  transform: scale(1.05);
-  box-shadow: 0 4px 8px rgba(107, 78, 46, 0.4);
-}
-
-.witness-original-post-section .post-translate-button svg {
-  fill: white;
-}
-
-.witness-wall .comment-content {
-  position: relative;
-  padding: 8px 35px 8px 8px;
-}
-
-.witness-wall .comment-translate-button {
-  position: absolute;
-  top: 8px;
-  right: 8px;
-  width: 24px;
-  height: 24px;
-  background: #6B4E2E;
-  border: none;
-  border-radius: 4px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  z-index: 5;
-  padding: 4px;
-  box-shadow: 0 1px 3px rgba(107, 78, 46, 0.3);
-}
-
-.witness-wall .comment-translate-button:hover {
-  background: #8B6E4E;
-  transform: scale(1.05);
-}
-
-.witness-wall .comment-translate-button svg {
-  fill: white;
-}
-
 .post-translate-button,
 .comment-translate-button {
   will-change: transform, background-color;
@@ -4312,10 +4245,9 @@ select:focus-visible {
 /* ==================== 🔧 FIX POST CONTENT OVERLAY ==================== */
 
 .post-content {
-  position: relative;
-  padding: 12px 45px 12px 12px;
   background: transparent !important;
 }
+
 
 /* ✅ XÓA MỌI PSEUDO-ELEMENTS CÓ THỂ CHE */
 .post-content::before,
@@ -4327,10 +4259,9 @@ select:focus-visible {
 /* ==================== 🔧 FIX COMMENT CONTENT OVERLAY ==================== */
 
 .comment-content {
-  position: relative;
-  padding: 8px 35px 8px 8px;
   background: transparent !important;
 }
+
 
 .comment-content::before,
 .comment-content::after {
