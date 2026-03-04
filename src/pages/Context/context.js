@@ -664,6 +664,7 @@ const Post = ({ post, allPosts, onLike, onComment, onWitnessCreated, currentUser
   const [isCommenting, setIsCommenting] = useState(false);
   const [commentText, setCommentText] = useState('');
   const [comments, setComments] = useState([]);
+  const [commentCount, setCommentCount] = useState(post.calculatedComments || 0);
   const [commentPage, setCommentPage] = useState(1);
   const [hasMoreComments, setHasMoreComments] = useState(false);
   const [loadingComments, setLoadingComments] = useState(false);
@@ -695,6 +696,31 @@ const Post = ({ post, allPosts, onLike, onComment, onWitnessCreated, currentUser
 
   useEffect(() => {
     setIsTranslating(false); setTranslatedContent(null); setTranslationError(null);
+  }, [post.id]);
+
+  // ✅ Sync commentCount từ props khi fetchPosts cập nhật
+  useEffect(() => {
+    if (post.calculatedComments !== undefined) setCommentCount(post.calculatedComments);
+  }, [post.calculatedComments]);
+
+  // ✅ 初始掛載時靜默抓取精確留言數，避免顯示 0
+  useEffect(() => {
+    let cancelled = false;
+    const fetchCount = async () => {
+      try {
+        // 取足夠多頁讓過濾後的數量準確，total_items 為全局數值不可信
+        const result = await ApiService.getComments(post.id, 1, 100);
+        if (cancelled) return;
+        if (result.success && Array.isArray(result.comments)) {
+          const count = result.comments.filter(
+            c => c.parent_docid === post.id && c.event !== 'witness'
+          ).length;
+          setCommentCount(count);
+        }
+      } catch (_) { /* 靜默失敗，不影響畫面 */ }
+    };
+    fetchCount();
+    return () => { cancelled = true; };
   }, [post.id]);
 
   const handleTranslate = async () => {
@@ -780,6 +806,12 @@ const Post = ({ post, allPosts, onLike, onComment, onWitnessCreated, currentUser
       
       setComments(prev => append ? [...prev, ...formattedComments] : formattedComments);
       setHasMoreComments(result.pagination?.has_next === true);
+      // ✅ 使用過濾後的實際筆數（total_items 為全局值，不可直接使用）
+      if (!append) {
+        setCommentCount(formattedComments.length);
+      } else {
+        setCommentCount(prev => prev + formattedComments.length);
+      }
     } catch (error) { 
       console.error('Error loading comments:', error); 
     } finally { 
@@ -858,6 +890,7 @@ const Post = ({ post, allPosts, onLike, onComment, onWitnessCreated, currentUser
         const newCommentId = result.comment?.docid || `temp-${Date.now()}`;
         setCommentStates(prev => ({ ...prev, [newCommentId]: { likeCount: 0, isLiked: false, isLiking: false } }));
         setCommentText('');
+        setCommentCount(prev => prev + 1); // ✅ Tăng ngay khi submit thành công
         // ✅ Đợi fetchPosts xong rồi mới loadComments
         if (onComment) await onComment(post.id, commentText.trim());
         loadComments(1, false);
@@ -912,7 +945,7 @@ const Post = ({ post, allPosts, onLike, onComment, onWitnessCreated, currentUser
           {isLiking ? 'Processing...' : (isLiked ? `AMENED (${likeCount})` : `AMEN (${likeCount})`)}
         </button>
         <button className={`action-button action-comment ${activeForm === 'comment' ? 'active-comment' : ''}`} onClick={handleToggleCommentForm}>
-          PRAY FOR ME ({comments.length || 0})
+          PRAY FOR ME ({commentCount})
         </button>
         <button
           className={`action-button action-witness ${hasWitnessed ? 'witnessed-done' : (activeForm === 'witness' ? 'active-witness' : '')}`}
