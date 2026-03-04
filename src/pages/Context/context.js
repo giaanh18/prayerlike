@@ -230,7 +230,7 @@ const WitnessWall = ({ selectedCategory, currentUserId, allPosts, refreshBalance
       const result = await ApiService.getComments(postId, 1, 50);
       let allReplies = [];
       if (result.success && result.comments) {
-        allReplies = result.comments.filter(c => c.event !== 'witness');
+        allReplies = result.comments.filter(c => c.parent_docid === postId && c.event !== 'witness');
       }
       console.log(`💬 WitnessWall Post ${postId}: Found ${allReplies.length} comments from API`);
       
