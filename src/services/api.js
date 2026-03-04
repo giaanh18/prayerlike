@@ -378,13 +378,10 @@ const ApiService = {
     }
 
     try {
-      const currentUserId = ApiService.getCurrentUserId();
-
       const params = new URLSearchParams({
         page: page,
         limit: limit,
         event: 'post',
-        viewer_userid: currentUserId || '',
         ...filters
       });
 
@@ -437,13 +434,10 @@ const ApiService = {
 
   getCommentsPage: async (page = 1, limit = 100, filters = {}) => {
     try {
-      const currentUserId = ApiService.getCurrentUserId();
-
       const params = new URLSearchParams({
         page: page,
         limit: limit,
         event: 'comment',
-        viewer_userid: currentUserId || '',
         ...filters
       });
 
@@ -618,12 +612,12 @@ const ApiService = {
 
       console.log(`💬 Lấy comments cho post ${postDocid} - Page ${page}`);
 
+      // API 只接受 userid/event/category/privacy，parent_docid 為無效參數
+      // 取回全部 comment 後由前端以 parent_docid 過濾
       const params = new URLSearchParams({
         page: page.toString(),
         limit: limit.toString(),
-        event: 'comment',
-        parent_docid: postDocid,
-        viewer_userid: ApiService.getCurrentUserId() || ''
+        event: 'comment'
       });
 
       const url = `${POSTS_API_URL}/page?${params.toString()}`;

@@ -663,11 +663,6 @@ const Post = ({ post, allPosts, onLike, onComment, onWitnessCreated, currentUser
   const [isLiking, setIsLiking] = useState(false);
   const [isCommenting, setIsCommenting] = useState(false);
   const [commentText, setCommentText] = useState('');
-  const [comments, setComments] = useState([]);
-  const [commentCount, setCommentCount] = useState(post.calculatedComments || 0);
-  const [commentPage, setCommentPage] = useState(1);
-  const [hasMoreComments, setHasMoreComments] = useState(false);
-  const [loadingComments, setLoadingComments] = useState(false);
   const [commentStates, setCommentStates] = useState({});
   const isLikingRef = useRef(false);
   const [likeCount, setLikeCount] = useState(post.likes || 0);
@@ -698,30 +693,31 @@ const Post = ({ post, allPosts, onLike, onComment, onWitnessCreated, currentUser
     setIsTranslating(false); setTranslatedContent(null); setTranslationError(null);
   }, [post.id]);
 
-  // ✅ Sync commentCount từ props khi fetchPosts cập nhật
-  useEffect(() => {
-    if (post.calculatedComments !== undefined) setCommentCount(post.calculatedComments);
-  }, [post.calculatedComments]);
+  // ✅ 從 allPosts 推導該貼文的留言（fetchPosts 已批次拉取，不需額外 API）
+  const postComments = allPosts
+    .filter(c => c.parent_docid === post.id && c.event !== 'witness')
+    .map(c => ({
+      id: c.docid,
+      author: c.userid,
+      content: c.content,
+      time: c.datetime || 'Just now',
+      likes: c.amen_count || 0,
+      isLiked: c.amened || false,
+      userid: c.userid,
+      avatar_url: c.avatar_url
+    }));
 
-  // ✅ 初始掛載時靜默抓取精確留言數，避免顯示 0
+  // ✅ allPosts 更新時同步 commentStates
   useEffect(() => {
-    let cancelled = false;
-    const fetchCount = async () => {
-      try {
-        // 取足夠多頁讓過濾後的數量準確，total_items 為全局數值不可信
-        const result = await ApiService.getComments(post.id, 1, 100);
-        if (cancelled) return;
-        if (result.success && Array.isArray(result.comments)) {
-          const count = result.comments.filter(
-            c => c.parent_docid === post.id && c.event !== 'witness'
-          ).length;
-          setCommentCount(count);
-        }
-      } catch (_) { /* 靜默失敗，不影響畫面 */ }
-    };
-    fetchCount();
-    return () => { cancelled = true; };
-  }, [post.id]);
+    setCommentStates(prev => {
+      const next = {};
+      postComments.forEach(c => {
+        next[c.id] = prev[c.id] || { likeCount: c.likes || 0, isLiked: c.isLiked || false, isLiking: false };
+      });
+      return next;
+    });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [allPosts, post.id]);
 
   const handleTranslate = async () => {
     if (isTranslating) return;
@@ -766,71 +762,15 @@ const Post = ({ post, allPosts, onLike, onComment, onWitnessCreated, currentUser
   const handleToggleWitnessForm = () => {
     if (hasWitnessed) return;
     if (activeForm === 'witness') { setActiveForm(null); setWitnessText(''); }
-    else { setActiveForm('witness'); setCommentText(''); setComments([]); }
+    else { setActiveForm('witness'); setCommentText(''); }
   };
-
-    // ✅ Đã sửa: Lọc chính xác bình luận cho từng bài viết để không bị dồn
-  const loadComments = async (page = 1, append = false) => {
-    if (loadingComments) return;
-    setLoadingComments(true);
-    try {
-      // Gọi API lấy danh sách comment
-      const result = await ApiService.getComments(post.id, page, 10);
-      
-      let allReplies = [];
-      if (result.success && result.comments) {
-        // 🛠️ CHỖ QUAN TRỌNG: Chỉ giữ lại comment của bài viết này
-        allReplies = result.comments.filter(c => 
-          c.parent_docid === post.id && c.event !== 'witness'
-        );
-      }
-      
-      const formattedComments = allReplies.map(c => ({
-        id: c.docid, author: c.userid, content: c.content,
-        time: c.datetime || 'Just now', likes: c.amen_count || 0,
-        isLiked: c.amened || false, isReply: true,
-        userid: c.userid, avatar_url: c.avatar_url
-      }));
-
-      const newCommentStates = {};
-      formattedComments.forEach(comment => {
-        newCommentStates[comment.id] = { 
-          likeCount: comment.likes || 0, 
-          isLiked: comment.isLiked || false, 
-          isLiking: false 
-        };
-      });
-
-      if (!append) setCommentStates(newCommentStates);
-      else setCommentStates(prev => ({ ...prev, ...newCommentStates }));
-      
-      setComments(prev => append ? [...prev, ...formattedComments] : formattedComments);
-      setHasMoreComments(result.pagination?.has_next === true);
-      // ✅ 使用過濾後的實際筆數（total_items 為全局值，不可直接使用）
-      if (!append) {
-        setCommentCount(formattedComments.length);
-      } else {
-        setCommentCount(prev => prev + formattedComments.length);
-      }
-    } catch (error) { 
-      console.error('Error loading comments:', error); 
-    } finally { 
-      setLoadingComments(false); 
-    }
-  };
-
 
   const handleToggleCommentForm = () => {
     if (activeForm === 'comment') {
-      setActiveForm(null); setCommentText(''); setComments([]); setCommentPage(1); setHasMoreComments(false);
+      setActiveForm(null); setCommentText('');
     } else {
       setActiveForm('comment'); setWitnessText('');
-      if (comments.length === 0) { loadComments(1, false); setCommentPage(1); }
     }
-  };
-
-  const handleLoadMoreComments = () => {
-    const nextPage = commentPage + 1; setCommentPage(nextPage); loadComments(nextPage, true);
   };
 
   const handleLike = async () => {
@@ -887,13 +827,9 @@ const Post = ({ post, allPosts, onLike, onComment, onWitnessCreated, currentUser
     try {
       const result = await ApiService.addComment({ userid: currentUserId, content: commentText.trim(), docid: post.id, sn: post.sn });
       if (result.success) {
-        const newCommentId = result.comment?.docid || `temp-${Date.now()}`;
-        setCommentStates(prev => ({ ...prev, [newCommentId]: { likeCount: 0, isLiked: false, isLiking: false } }));
         setCommentText('');
-        setCommentCount(prev => prev + 1); // ✅ Tăng ngay khi submit thành công
-        // ✅ Đợi fetchPosts xong rồi mới loadComments
+        // ✅ 呼叫 fetchPosts 更新 allPosts，allPosts 更新後 postComments 自動包含新留言
         if (onComment) await onComment(post.id, commentText.trim());
-        loadComments(1, false);
         if (refreshBalance) await refreshBalance();
       } else alert(`Comment failed: ${result.message}`);
     } catch (error) { alert(`Error occurred while commenting: ${error.message}`); }
@@ -945,7 +881,7 @@ const Post = ({ post, allPosts, onLike, onComment, onWitnessCreated, currentUser
           {isLiking ? 'Processing...' : (isLiked ? `AMENED (${likeCount})` : `AMEN (${likeCount})`)}
         </button>
         <button className={`action-button action-comment ${activeForm === 'comment' ? 'active-comment' : ''}`} onClick={handleToggleCommentForm}>
-          PRAY FOR ME ({commentCount})
+          PRAY FOR ME ({postComments.length})
         </button>
         <button
           className={`action-button action-witness ${hasWitnessed ? 'witnessed-done' : (activeForm === 'witness' ? 'active-witness' : '')}`}
@@ -997,25 +933,17 @@ const Post = ({ post, allPosts, onLike, onComment, onWitnessCreated, currentUser
           </form>
           <div className="comments-section">
             <div className="comments-header">
-              <h4>💬 Prayers ({comments.length})</h4>
-              {loadingComments && <span className="loading-indicator">Loading...</span>}
+              <h4>💬 Prayers ({postComments.length})</h4>
             </div>
             <div className="comments-list">
-              {comments.length > 0 ? (
-                comments.map(comment => (
+              {postComments.length > 0 ? (
+                postComments.map(comment => (
                   <Comment key={comment.id} comment={comment} onReply={handleCommentReply} onLike={handleLikeComment} currentUserId={currentUserId} postDocid={post.id} commentState={commentStates[comment.id]} />
                 ))
               ) : (
                 <div className="no-comments"><p>No comments yet. Be the first to leave a message!</p></div>
               )}
             </div>
-            {hasMoreComments && (
-              <div className="load-more-comments">
-                <button onClick={handleLoadMoreComments} disabled={loadingComments} className="load-more-btn">
-                  {loadingComments ? 'Loading...' : 'Load more comments'}
-                </button>
-              </div>
-            )}
           </div>
         </div>
       )}
@@ -1273,17 +1201,17 @@ const MainApp = ({ user, onLogout }) => {
       const categoryToFetch = categoryOverride !== undefined ? categoryOverride : selectedCategory;
       const currentUserId = user?.id || user?.userId || ApiService.getCurrentUserId();
 
-      // ✅ Posts: chỉ lấy bài của chính mình
-      const postFilters = { viewer_userid: currentUserId };
+      // Posts: 只傳有效參數 userid + category
+      const postFilters = {};
       if (categoryToFetch) postFilters.category = categoryToFetch;
       if (viewScope === 'my') postFilters.userid = currentUserId;
 
-      // ✅ Comments: KHÔNG filter userid → lấy tất cả comments của mọi người
-      const commentFilters = { viewer_userid: currentUserId };
+      // Comments: 只傳 event=comment，不傳 userid，取所有人的留言
+      const commentFilters = {};
 
       const [postsResult, commentsResult] = await Promise.all([
         ApiService.getPosts(page, 50, true, postFilters),
-        ApiService.getCommentsPage(1, 200, commentFilters)
+        ApiService.getCommentsPage(1, 100, commentFilters)
       ]);
 
       const rawPosts = postsResult?.success ? (postsResult.posts || []) : [];
