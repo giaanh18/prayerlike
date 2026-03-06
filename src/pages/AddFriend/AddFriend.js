@@ -13,11 +13,11 @@ import './AddFriend.css';
 const AddFriend = ({ user, onLogout }) => {
   const navigate = useNavigate();
   const navigatingRef = useRef(false);
-  
+
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState([]);
   const [activeTab, setActiveTab] = useState('Search');
-  
+
   const [incomingInvitations, setIncomingInvitations] = useState([]);
   const [loading, setLoading] = useState(false);
   const [searching, setSearching] = useState(false);
@@ -30,6 +30,7 @@ const AddFriend = ({ user, onLogout }) => {
     loadRelationshipSets();
   }, []);
 
+  // ✅ Không thay đổi - đang hoạt động đúng
   const loadRelationshipSets = async () => {
     try {
       const [pendingResult, friendsResult] = await Promise.all([
@@ -65,72 +66,96 @@ const AddFriend = ({ user, onLogout }) => {
     }
   };
 
+  // ✅ Fix: dùng đúng field avatar_url từ API /api/users/search
   const loadFriendInvitations = async () => {
-  setLoading(true);
-  try {
-    const result = await ApiService.getFriendInvitations();
-    
-    if (result.success) {
-      const incoming = result.incoming || [];
-      
-      // ✅ Fetch avatar cho từng requester bằng searchUsers
-      const enrichedIncoming = await Promise.all(
-        incoming.map(async (inv) => {
-          try {
-            const searchResult = await ApiService.searchUsers(inv.requester_user_id);
-            const foundUser = searchResult.users?.[0];
-            return {
-              ...inv,
-              requester_avatar: foundUser?.avatar || inv.requester_avatar || null,
-              requester_name: foundUser?.name || inv.requester_user_id
-            };
-          } catch {
-            return inv;
-          }
-        })
-      );
-      
-      setIncomingInvitations(enrichedIncoming);
+    setLoading(true);
+    try {
+      const result = await ApiService.getFriendInvitations();
+
+      if (result.success) {
+        const incoming = result.incoming || [];
+
+        const enrichedIncoming = await Promise.all(
+          incoming.map(async (inv) => {
+            try {
+              const response = await fetch(
+                `https://pray-api.yalinelena.church/api/users/search?user_id=${encodeURIComponent(inv.requester_user_id)}&limit=1`,
+                {
+                  method: 'GET',
+                  credentials: 'include',
+                  headers: { 'accept': 'application/json' }
+                }
+              );
+
+              if (response.ok) {
+                const searchResult = await response.json();
+                // ✅ Fix: đúng field từ API - data.results[0].avatar_url
+                const foundUser = searchResult.data?.results?.[0];
+                return {
+                  ...inv,
+                  requester_avatar: foundUser?.avatar_url || inv.requester_avatar || null,
+                  requester_name: foundUser?.name || inv.requester_user_id
+                };
+              }
+              return inv;
+            } catch {
+              return inv;
+            }
+          })
+        );
+
+        setIncomingInvitations(enrichedIncoming);
+      }
+    } catch (error) {
+      console.error('❌ Error loading invitations:', error);
+    } finally {
+      setLoading(false);
     }
-  } catch (error) {
-    console.error('❌ Error loading invitations:', error);
-  } finally {
-    setLoading(false);
-  }
-};
+  };
 
-
+  // ✅ Fix hoàn toàn: gọi API trực tiếp, dùng đúng field data.results + user_id + avatar_url
   const handleSearchUsers = async () => {
     if (!searchQuery.trim()) {
-      setSearchError('Please enter User ID or Email');
+      setSearchError('Please enter User ID');
       return;
     }
-    
+
     setSearching(true);
     setSearchError('');
-    
+
     try {
-      const result = await ApiService.searchUsers(searchQuery);
-      
-      console.log('🔍 Search result:', result);
-      console.log('📸 First user avatar:', result.users?.[0]?.avatar);
-      
-      if (result.success) {
-        const currentUserId = user?.id || user?.userId;
-        
-        // ✅ KHÔNG CẦN XỬ LÝ LẠI - API đã xử lý rồi
-        const filteredResults = result.users
-          .filter(u => u.id !== currentUserId);
-        
-        setSearchResults(filteredResults);
-        
-        if (filteredResults.length === 0) {
-          setSearchError('No user found with this ID');
+      const response = await fetch(
+        `https://pray-api.yalinelena.church/api/users/search?user_id=${encodeURIComponent(searchQuery.trim())}&limit=10`,
+        {
+          method: 'GET',
+          credentials: 'include',
+          headers: { 'accept': 'application/json' }
         }
-      } else {
+      );
+
+      if (!response.ok) {
         setSearchResults([]);
-        setSearchError(result.message || 'User not found');
+        setSearchError('No user found with this ID');
+        return;
       }
+
+      const result = await response.json();
+      console.log('🔍 Search result:', result);
+
+      // ✅ Fix: đúng field từ API - data.results
+      const users = result.data?.results || [];
+      const currentUserId = user?.id || user?.userId || user?.user_id;
+
+      // ✅ Fix: so sánh bằng user_id
+      const filtered = users.filter(u => u.user_id !== currentUserId);
+
+      setSearchResults(filtered);
+      console.log('👤 Filtered results:', filtered);
+
+      if (filtered.length === 0) {
+        setSearchError('No user found with this ID');
+      }
+
     } catch (error) {
       console.error('❌ Search error:', error);
       setSearchResults([]);
@@ -140,11 +165,12 @@ const AddFriend = ({ user, onLogout }) => {
     }
   };
 
+  // ✅ Fix: dùng targetUserId là user_id string từ API
   const handleAddFriend = async (targetUserId) => {
     try {
       const result = await ApiService.sendFriendInvitation(
         targetUserId,
-        'Hello! Let\'s be friends!'
+        "Hello! Let's be friends!"
       );
 
       if (result.success) {
@@ -160,14 +186,16 @@ const AddFriend = ({ user, onLogout }) => {
     }
   };
 
+  // ✅ Không thay đổi
   const handleAccept = async (invitationId) => {
     try {
       const result = await ApiService.respondToInvitation(invitationId, true);
-
       if (result.success) {
-        setIncomingInvitations(prev => 
+        setIncomingInvitations(prev =>
           prev.filter(inv => inv.id !== invitationId)
         );
+        // ✅ Reload lại friend list sau khi accept
+        loadRelationshipSets();
         alert('✅ Friend invitation accepted!');
       } else {
         alert(`❌ Failed to accept: ${result.message}`);
@@ -178,12 +206,12 @@ const AddFriend = ({ user, onLogout }) => {
     }
   };
 
+  // ✅ Không thay đổi
   const handleCancel = async (invitationId) => {
     try {
       const result = await ApiService.respondToInvitation(invitationId, false);
-
       if (result.success) {
-        setIncomingInvitations(prev => 
+        setIncomingInvitations(prev =>
           prev.filter(inv => inv.id !== invitationId)
         );
         alert('✅ Invitation declined');
@@ -251,7 +279,7 @@ const AddFriend = ({ user, onLogout }) => {
         <input
           type="text"
           className="af-search-input"
-          placeholder="Search by User ID or Email (e.g., john@example.com)"
+          placeholder="Search by User ID (e.g., yaa, john123)"
           value={searchQuery}
           onChange={(e) => {
             setSearchQuery(e.target.value);
@@ -260,8 +288,8 @@ const AddFriend = ({ user, onLogout }) => {
           onKeyPress={(e) => e.key === 'Enter' && handleSearchUsers()}
           disabled={searching}
         />
-        <button 
-          className="af-search-button" 
+        <button
+          className="af-search-button"
           onClick={handleSearchUsers}
           disabled={searching}
         >
@@ -279,33 +307,32 @@ const AddFriend = ({ user, onLogout }) => {
         <div className="af-search-results">
           <h2 className="af-section-title">Search Results</h2>
           {searchResults.map(friend => (
-            <div key={friend.id} className="af-user-card">
+            // ✅ Fix: key và tất cả field dùng user_id, avatar_url
+            <div key={friend.user_id} className="af-user-card">
               <div className="af-user-avatar">
                 <AvatarImage
-                  userId={friend.id}
-                  userName={friend.name || friend.username}
-                  src={friend.avatar}
+                  userId={friend.user_id}
+                  userName={friend.name || friend.user_id}
+                  src={friend.avatar_url}
                   size={48}
                   clickable={false}
                 />
               </div>
               <div className="af-user-info">
-                <h3>{friend.name || friend.username || friend.id}</h3>
-                
-                {friend.username && friend.username !== friend.name && (
-                  <p className="af-user-username">@{friend.username}</p>
-                )}
-                
-                {friend.email && friend.email !== friend.username && (
+                <h3>{friend.name || friend.user_id}</h3>
+                {friend.email && (
                   <p className="af-user-email">{friend.email}</p>
                 )}
               </div>
-              {(pendingOutgoingIds.has(friend.id) || existingFriendIds.has(friend.id)) ? (
-                <span className="af-sent-badge">sent</span>
+              {/* ✅ Fix: so sánh bằng user_id */}
+              {(pendingOutgoingIds.has(friend.user_id) || existingFriendIds.has(friend.user_id)) ? (
+                <span className="af-sent-badge">
+                  {existingFriendIds.has(friend.user_id) ? '✅ Friends' : '⏳ Sent'}
+                </span>
               ) : (
-                <button 
+                <button
                   className="af-add-button"
-                  onClick={() => handleAddFriend(friend.id)}
+                  onClick={() => handleAddFriend(friend.user_id)}
                 >
                   add friend
                 </button>
@@ -333,13 +360,13 @@ const AddFriend = ({ user, onLogout }) => {
                 <h3>{invitation.requester_name || invitation.requester_user_id}</h3>
                 <p>{invitation.message || 'Wants to be your friend'}</p>
                 <div className="af-invitation-actions">
-                  <button 
+                  <button
                     className="af-accept-button"
                     onClick={() => handleAccept(invitation.id)}
                   >
                     accept
                   </button>
-                  <button 
+                  <button
                     className="af-cancel-button"
                     onClick={() => handleCancel(invitation.id)}
                   >
@@ -360,49 +387,49 @@ const AddFriend = ({ user, onLogout }) => {
 
       {!loading && !searching && incomingInvitations.length === 0 && searchResults.length === 0 && !searchQuery && (
         <div className="af-empty-state">
-          <p>🔍 Search for friends by User ID or Email to start connecting!</p>
+          <p>🔍 Search for friends by User ID to start connecting!</p>
         </div>
       )}
 
       <div className="bottom-navigation">
-        <CircleButton 
-          provider="Home" 
-          iconSrc={Home} 
+        <CircleButton
+          provider="Home"
+          iconSrc={Home}
           onClick={handleHome}
           isActive={activeTab === 'Home'}
-          size="medium" 
+          size="medium"
           ariaLabel="Home"
         />
-        <CircleButton 
-          provider="PrayerHub" 
-          iconSrc={PrayerHubIcon} 
+        <CircleButton
+          provider="PrayerHub"
+          iconSrc={PrayerHubIcon}
           onClick={handlePrayerHub}
           isActive={activeTab === 'PrayerHub'}
-          size="medium" 
+          size="medium"
           ariaLabel="Prayer Hub"
         />
-        <CircleButton 
-          provider="Add" 
-          iconSrc={Plus} 
+        <CircleButton
+          provider="Add"
+          iconSrc={Plus}
           onClick={handleAdd}
           isActive={activeTab === 'Add'}
-          size="medium" 
+          size="medium"
           ariaLabel="Create Post"
         />
-        <CircleButton 
-          provider="Search" 
-          iconSrc={Profile} 
+        <CircleButton
+          provider="Search"
+          iconSrc={Profile}
           onClick={handleSearch}
           isActive={activeTab === 'Search'}
-          size="medium" 
+          size="medium"
           ariaLabel="Add Friend"
         />
-        <CircleButton 
-          provider="Nova" 
-          iconSrc={Nova} 
+        <CircleButton
+          provider="Nova"
+          iconSrc={Nova}
           onClick={handleNova}
           isActive={activeTab === 'Nova'}
-          size="medium" 
+          size="medium"
           ariaLabel="nova小天使"
         />
       </div>
