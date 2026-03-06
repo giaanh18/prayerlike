@@ -2480,7 +2480,7 @@ const WitnessWall = ({ selectedCategory, currentUserId, allPosts, refreshBalance
       {pagination.total_items > 0 && (
         <div className="witness-wall-pagination">
           <button className="pagination-btn" onClick={handlePrevPage} disabled={!pagination.has_prev || loading}>← Previous</button>
-          <span className="pagination-info">Page {pagination.current_page} / {pagination.total_pages} )</span>
+          <span className="pagination-info">Page {pagination.current_page} / {pagination.total_pages} </span>
           <button className="pagination-btn" onClick={handleNextPage} disabled={!pagination.has_next || loading}>Next →</button>
         </div>
       )}

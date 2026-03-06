@@ -1517,31 +1517,36 @@ const WitnessWall = ({ currentUserId, allPosts, privacyFilter, categoryFilter, r
   };
 
   const loadWitnesses = async (page = 1) => {
-    setLoading(true);
-    try {
-      const filters = {};
-      if (privacyFilter && privacyFilter !== 'Public') filters.privacy = privacyFilter.toLowerCase();
-      if (categoryFilter) filters.category = categoryFilter;
+  setLoading(true);
+  try {
+    const filters = {};
+    // ✅ Gửi privacy lên server nếu có (kể cả 'public')
+    if (privacyFilter) filters.privacy = privacyFilter.toLowerCase();
+    if (categoryFilter) filters.category = categoryFilter;
 
-      console.log(`📡 Fetching witnesses — page ${page}, filters:`, filters);
-      const result = await ApiService.getWitnessList(page, ITEMS_PER_PAGE, filters);
+    console.log(`📡 Fetching witnesses — page ${page}, filters:`, filters);
+    const result = await ApiService.getWitnessList(page, ITEMS_PER_PAGE, filters);
 
-      if (result.success) {
-        let fetchedWitnesses = result.witnesses || [];
+    if (result.success) {
+      let fetchedWitnesses = result.witnesses || [];
 
-        // Client-side fallback filter (nếu API chưa hỗ trợ filter server-side)
-        if (privacyFilter && privacyFilter !== 'Public') {
-          fetchedWitnesses = fetchedWitnesses.filter(w => {
-            const originalPost = w.original_post || allPosts?.find(p => p.docid === w.parent_docid);
-            return originalPost?.privacy?.toLowerCase() === privacyFilter.toLowerCase();
-          });
-        }
-        if (categoryFilter) {
-          fetchedWitnesses = fetchedWitnesses.filter(w => {
-            const originalPost = w.original_post || allPosts?.find(p => p.docid === w.parent_docid);
-            return originalPost?.category === categoryFilter;
-          });
-        }
+      // ✅ Client-side fallback: filter theo privacy của original_post
+      if (privacyFilter) {
+        fetchedWitnesses = fetchedWitnesses.filter(w => {
+          const originalPost = w.original_post || allPosts?.find(p => p.docid === w.parent_docid);
+          const postPrivacy = (originalPost?.privacy || 'public').toLowerCase();
+          return postPrivacy === privacyFilter.toLowerCase();
+        });
+      }
+
+      // ✅ Client-side fallback: filter theo category của original_post
+      if (categoryFilter) {
+        fetchedWitnesses = fetchedWitnesses.filter(w => {
+          const originalPost = w.original_post || allPosts?.find(p => p.docid === w.parent_docid);
+          return originalPost?.category === categoryFilter;
+        });
+      }
+
 
         // Tính total từ API nếu có, fallback về length
         const total = result.pagination?.total_items
@@ -2419,7 +2424,7 @@ const PrayerHub = ({ user, onLogout }) => {
       const currentUserId = user?.id || user?.userId || ApiService.getCurrentUserId();
       const filters = { viewer_userid: currentUserId };
 
-      if (selectedPrivacy && selectedPrivacy !== 'Public') filters.privacy = selectedPrivacy.toLowerCase();
+      if (selectedPrivacy) filters.privacy = selectedPrivacy.toLowerCase();
       if (selectedPrayerCategory) filters.category = selectedPrayerCategory;
 
       const [postsResult, commentsResult] = await Promise.all([
