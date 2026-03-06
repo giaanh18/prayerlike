@@ -882,6 +882,9 @@
 //   const [commentText, setCommentText] = useState('');
 //   const [commentStates, setCommentStates] = useState({});
 //   const isLikingRef = useRef(false);
+//   const commentsEndRef = useRef(null);
+//   const commentFormRef = useRef(null);
+//   const [localComments, setLocalComments] = useState([]);
 //   const [likeCount, setLikeCount] = useState(post.likes || 0);
 //   const [isLiked, setIsLiked] = useState(post.isLiked || false);
 //   const [hasLiked, setHasLiked] = useState(false);
@@ -920,13 +923,19 @@
 //     setIsTranslating(false); setTranslatedContent(null); setTranslationError(null);
 //   }, [post.id]);
 
-//   const postComments = allPosts
+//   // ✅ Merge allPosts + localComments, tránh duplicate
+//   const serverComments = allPosts
 //     .filter(c => c.parent_docid === post.id && c.event !== 'witness')
 //     .map(c => ({
 //       id: c.docid, author: c.userid, content: c.content,
 //       time: c.datetime || 'Just now', likes: c.amen_count || 0,
 //       isLiked: c.amened || false, userid: c.userid, avatar_url: c.avatar_url
 //     }));
+
+//   const serverCommentIds = new Set(serverComments.map(c => c.id));
+//   const filteredLocal = localComments.filter(c => !serverCommentIds.has(c.id));
+//   const postComments = [...filteredLocal, ...serverComments];
+
 
 //   useEffect(() => {
 //     setCommentStates(prev => {
@@ -1043,19 +1052,55 @@
 //   };
 
 //   const handleCommentSubmit = async (e) => {
-//     e.preventDefault();
-//     if (!commentText.trim() || isCommenting) return;
-//     setIsCommenting(true);
-//     try {
-//       const result = await ApiService.addComment({ userid: currentUserId, content: commentText.trim(), docid: post.id, sn: post.sn });
-//       if (result.success) {
-//         setCommentText('');
-//         if (onComment) await onComment(post.id, commentText.trim());
-//         if (refreshBalance) await refreshBalance();
-//       } else alert(`Comment failed: ${result.message}`);
-//     } catch (error) { alert(`Error occurred while commenting: ${error.message}`); }
-//     finally { setIsCommenting(false); }
-//   };
+//   e.preventDefault();
+//   if (!commentText.trim() || isCommenting) return;
+//   setIsCommenting(true);
+
+//   // ✅ THÊM: lưu text vào biến tạm TRƯỚC KHI clear
+//   const submittedText = commentText.trim();
+
+//   try {
+//     const result = await ApiService.addComment({
+//       userid: currentUserId,
+//       content: submittedText,   // ✅ dùng biến tạm
+//       docid: post.id,
+//       sn: post.sn
+//     });
+//     if (result.success) {
+//       setCommentText('');
+
+//       const newComment = {
+//         id: result.comment?.docid || `temp-${Date.now()}`,
+//         author: currentUserId,
+//         content: submittedText,  // ✅ dùng biến tạm
+//         time: 'Just now',
+//         likes: 0,
+//         isLiked: false,
+//         userid: currentUserId,
+//         avatar_url: null
+//       };
+//       setLocalComments(prev => [newComment, ...prev]);
+//       setCommentStates(prev => ({
+//         ...prev,
+//         [newComment.id]: { likeCount: 0, isLiked: false, isLiking: false }
+//       }));
+
+//       if (onComment) await onComment(post.id);
+//       if (refreshBalance) await refreshBalance();
+
+//       setTimeout(() => {
+//         commentsEndRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+//       }, 100);
+//     } else {
+//       alert(`Comment failed: ${result.message}`);
+//     }
+//   } catch (error) {
+//     alert(`Error occurred while commenting: ${error.message}`);
+//   } finally {
+//     setIsCommenting(false);
+//   }
+// };
+
 
 //   const handleCommentReply = (commentId, reply) => { console.log(`💬 Reply to comment ${commentId}:`, reply); };
 
@@ -1107,7 +1152,7 @@
 //           onClick={handleToggleWitnessForm} disabled={hasWitnessed}
 //           title={hasWitnessed ? 'You have already witnessed this post' : 'Add your testimony'}
 //         >
-//           {hasWitnessed ? `✨ WITNESSED (${witnessCount})` : `WITNESS (${witnessCount})`}
+//           {hasWitnessed ? `✨ WITNESSED` : `WITNESS`}
 //         </button>
 //       </div>
 //       {activeForm === 'witness' && (
@@ -1136,7 +1181,7 @@
 //       )}
 
 //       {activeForm === 'comment' && (
-//         <div className="form-container comment-form-wrapper">
+//         <div className="form-container comment-form-wrapper" ref={commentFormRef}>
 //           <form className="comment-form" onSubmit={handleCommentSubmit}>
 //             <div className="comment-input-container">
 //               <textarea value={commentText} onChange={(e) => setCommentText(e.target.value)} placeholder="Write your comment..." rows="3" maxLength="500" />
@@ -1158,13 +1203,19 @@
 //                 postComments.map(comment => (
 //                   <Comment key={comment.id} comment={comment} onReply={handleCommentReply} onLike={handleLikeComment} currentUserId={currentUserId} postDocid={post.id} commentState={commentStates[comment.id]} />
 //                 ))
+//                 // ✅ THAY BẰNG
 //               ) : (
-//                 <div className="no-comments"><p>No comments yet. Be the first to leave a message!</p></div>
+//                 <div className="no-comments">
+//                   <p>No comments yet. Be the first to leave a message!</p>
+//                 </div>
 //               )}
+//               {/* ✅ THÊM DÒNG NÀY */}
+//               <div ref={commentsEndRef} />
 //             </div>
 //           </div>
 //         </div>
 //       )}
+
 //     </div>
 //   );
 // };
@@ -1346,9 +1397,18 @@
 //     await refreshBalance();
 //   };
 
-//   const handleCommentPost = async (postId, commentText) => {
-//     await fetchPosts(selectedCategory, currentPage);
+//   // ✅ THAY BẰNG đoạn này
+//   const handleCommentPost = async (postId) => {
+//     setPosts(prevPosts =>
+//       prevPosts.map(post =>
+//         post.id === postId
+//           ? { ...post, calculatedComments: (post.calculatedComments || 0) + 1 }
+//           : post
+//       )
+//     );
+//     await refreshBalance();
 //   };
+
 
 //   const handleWitnessCreated = async (postId) => {
 //     try {
@@ -3052,33 +3112,36 @@ const MainApp = ({ user, onLogout }) => {
     try {
       const params = { page: 1, limit: 50, tribe: currentTribeId, is_published: true };
       const result = await ApiService.getActivities(params);
-      if (result.success) {
-        const transformedActivities = result.activities.map(activity => {
-          const rawDesc = activity.description || '';
-          const cleanDescription = rawDesc
-            .split(/\r?\n/)
-            .filter(line => !line.startsWith('Activity time:') && !line.startsWith('Max participants:'))
-            .join('\n').trim();
-          return {
-            id: activity.id,
-            author: activity.created_by || 'Unknown',
-            avatar_url: ApiService.processAvatarUrl(activity.creator_avatar_url),
-            datetime: ApiService.formatDateTime(activity.created_at),
-            eventName: activity.title,
-            eventDate: activity.event_date,
-            eventLocation: activity.location,
-            activityTime: activity.event_time,
-            maxParticipants: activity.max_participants || null,
-            description: cleanDescription,
-            privacy: activity.privacy || 'public',
-            tribe: activity.tribe,
-            coverImage: ApiService.processMediaUrl(activity.cover_image),
-            images: (activity.images || []).map(img => ApiService.processMediaUrl(img)),
-            isPublished: activity.is_published || false,
-          };
-        });
-        setActivities(transformedActivities);
-      } else setActivities([]);
+if (result.success) {
+  const transformedActivities = result.activities
+    .filter(activity => Number(activity.tribe) === Number(currentTribeId)) // ✅ THÊM DÒNG NÀY
+    .map(activity => {
+      const rawDesc = activity.description || '';
+      const cleanDescription = rawDesc
+        .split(/\r?\n/)
+        .filter(line => !line.startsWith('Activity time:') && !line.startsWith('Max participants:'))
+        .join('\n').trim();
+      return {
+        id: activity.id,
+        author: activity.created_by || 'Unknown',
+        avatar_url: ApiService.processAvatarUrl(activity.creator_avatar_url),
+        datetime: ApiService.formatDateTime(activity.created_at),
+        eventName: activity.title,
+        eventDate: activity.event_date,
+        eventLocation: activity.location,
+        activityTime: activity.event_time,
+        maxParticipants: activity.max_participants || null,
+        description: cleanDescription,
+        privacy: activity.privacy || 'public',
+        tribe: activity.tribe,
+        coverImage: ApiService.processMediaUrl(activity.cover_image),
+        images: (activity.images || []).map(img => ApiService.processMediaUrl(img)),
+        isPublished: activity.is_published || false,
+      };
+    });
+  setActivities(transformedActivities);
+}
+ else setActivities([]);
     } catch (error) { setActivities([]); }
     finally { setLoading(false); }
   };
