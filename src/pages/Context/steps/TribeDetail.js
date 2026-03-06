@@ -717,7 +717,7 @@ const TribeDetail = ({ tribeId, tribeName, tribeIcon, onBack, onTribeSelected, u
   useEffect(() => {
     const fetchTribeDetails = async () => {
       if (!tribeId) {
-        setError('無支派資訊');
+        setError('No tribe information found');
         setIsLoading(false);
         return;
       }
@@ -749,7 +749,7 @@ const TribeDetail = ({ tribeId, tribeName, tribeIcon, onBack, onTribeSelected, u
 
       } catch (e) {
         console.error("❌ 獲取支派資訊失敗:", e);
-        setError(`無法載入支派資訊: ${e.message}`);
+        setError(`Unable to load tribe information: ${e.message}`);
       } finally {
         setIsLoading(false);
       }
@@ -801,7 +801,7 @@ const TribeDetail = ({ tribeId, tribeName, tribeIcon, onBack, onTribeSelected, u
             <div className="error-container">
               <h3>❌ {error}</h3>
               <button className="back-btn" onClick={handleBack}>
-                ← 返回
+                ← Back
               </button>
             </div>
           </div>

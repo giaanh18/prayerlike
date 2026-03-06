@@ -2852,7 +2852,7 @@ const Post = ({ post, allPosts, onLike, onComment, onWitnessCreated, currentUser
           onClick={handleToggleWitnessForm} disabled={hasWitnessed}
           title={hasWitnessed ? 'You have already witnessed this post' : 'Add your testimony'}
         >
-          {hasWitnessed ? `✨ WITNESSED (${witnessCount})` : `WITNESS (${witnessCount})`}
+          {hasWitnessed ? `✨ WITNESSED` : `WITNESS`}
         </button>
       </div>
       {activeForm === 'witness' && (

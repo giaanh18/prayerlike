@@ -76,7 +76,7 @@ const TribesList = ({ onBack, onTribeSelected, user }) => {
       console.log('➡️ [TribesList] 點擊 "CONTINUE"，開啟確認 Modal');
       setShowWarning(true);
     } else {
-      alert('⚠️ 請先選擇一個支派！');
+      alert('⚠️ Please select a tribe first!');
     }
   };
 
@@ -113,13 +113,13 @@ const TribesList = ({ onBack, onTribeSelected, user }) => {
       if (!response.ok) {
         console.error(`🔴 [TribesList] API 請求失敗 (Status: ${response.status})。回應:`, responseText);
         if (response.status === 401 || response.status === 404) {
-          throw new Error(`(Status ${response.status}) 會話過期或帳號不存在 (Tribe)。`);
+          throw new Error(`(Status ${response.status}) Session expired or account not found.`);
         }
         try {
           const errorData = JSON.parse(responseText);
-          throw new Error(errorData.message || `API 錯誤：無法儲存支派 (${response.status})`);
+          throw new Error(errorData.message || `API Error: Failed to save tribe (${response.status})`);
         } catch (e) {
-          throw new Error(`API 錯誤 (Status ${response.status})，無法解析 JSON 回應 (Tribe)。`);
+          throw new Error(`API Error (Status ${response.status})， Unable to parse JSON response.`);
         }
       }
 
@@ -179,13 +179,13 @@ const TribesList = ({ onBack, onTribeSelected, user }) => {
     } catch (error) {
       console.error('💥 [TribesList] 更新支派失敗:', error);
 
-      let errorMessage = error.message || '未知錯誤';
+      let errorMessage = error.message || 'Unknown error';
 
       // 處理會話過期的情況
       if (error.message.includes('Unauthorized') || 
           error.message.includes('Session') || 
           error.message.includes('會話過期')) {
-        errorMessage = '會話已過期，請重新登入。';
+        errorMessage = 'Session expired, please log in again.';
         alert(`❌ ${errorMessage}`);
         setTimeout(() => {
           navigate('/login', { replace: true });
@@ -193,7 +193,7 @@ const TribesList = ({ onBack, onTribeSelected, user }) => {
         return;
       }
 
-      alert(`❌ 更新支派失敗\n\n錯誤訊息：${errorMessage}\n\n請稍後再試或聯繫管理員`);
+      alert(`❌ Failed to update tribe\n\nError：${errorMessage}\n\nPlease try again later or contact administrator`);
 
     } finally {
       setIsLoading(false);
@@ -414,7 +414,7 @@ const TribesList = ({ onBack, onTribeSelected, user }) => {
               minWidth: '200px'
             }}>
               <div style={{ fontSize: '48px', marginBottom: '15px', animation: 'spin 1s linear infinite' }}>⏳</div>
-              <div style={{ fontSize: '16px', color: '#333', fontWeight: '500' }}>處理中，請稍候...</div>
+              <div style={{ fontSize: '16px', color: '#333', fontWeight: '500' }}>Processing, please wait...</div>
             </div>
           </div>
         )}

@@ -61,7 +61,7 @@ const NoTribeDetail = ({ onBack, onTribeSelected, user }) => {
   const handleTribesList = () => {
     if (!hasViewedIntroduction) {
       console.log('⚠️ 請先查看 Tribes Introduction');
-      alert('請先查看 Tribes Introduction');
+      alert('Please view the Tribes Introduction first');
       return;
     }
     console.log('📋 導向 12 支派列表');
@@ -106,12 +106,12 @@ const NoTribeDetail = ({ onBack, onTribeSelected, user }) => {
 
       // ✅ 6. HIỂN THỊ THÔNG BÁO THÀNH CÔNG
       setTimeout(() => {
-        alert('✅ 支派選擇成功！您的支派已更新。');
+        alert('✅  Tribe selected successfully! Your tribe has been updated.');
       }, 100);
 
     } catch (error) {
       console.error('❌ Lỗi khi lưu tribe:', error);
-      alert('選擇支派時發生錯誤，請稍後再試');
+      alert('An error occurred while selecting tribe. Please try again later');
     }
   };
 
