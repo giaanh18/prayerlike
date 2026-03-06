@@ -2850,7 +2850,7 @@ const ApiService = {
   },
 
   formatDateTime: (datetime) => {
-    if (!datetime) return '剛剛';
+    if (!datetime) return 'Just now';
     try {
       const date = new Date(datetime);
       const now = new Date();
@@ -2859,10 +2859,10 @@ const ApiService = {
       const diffHours = Math.floor(diffMs / 3600000);
       const diffDays = Math.floor(diffMs / 86400000);
 
-      if (diffMins < 1) return '剛剛';
-      if (diffMins < 60) return `${diffMins}分鐘前`;
-      if (diffHours < 24) return `${diffHours}小時前`;
-      if (diffDays < 7) return `${diffDays}天前`;
+      if (diffMins < 1) return 'Just now';
+      if (diffMins < 60) return `${diffMins}minutes ago`;
+      if (diffHours < 24) return `${diffHours}hours ago`;
+      if (diffDays < 7) return `${diffDays}days ago`;
       return date.toLocaleDateString('zh-TW');
     } catch (error) {
       return datetime;
@@ -2884,7 +2884,7 @@ const ApiService = {
     const performanceStart = performance.now();
 
     try {
-      console.log(`🌐 發送請求到: ${url} (第 ${retryCount + 1} 次嘗試)`);
+      console.log(`🌐 Sending request to: ${url} (第 ${retryCount + 1} 次嘗試)`);
 
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), defaultOptions.timeout);
@@ -2906,7 +2906,7 @@ const ApiService = {
         data = await response.text();
       }
 
-      console.log(`⏱️ 請求 ${url} 耗時 ${(performanceEnd - performanceStart).toFixed(2)}ms`);
+      console.log(`⏱️Request ${url} took ${(performanceEnd - performanceStart).toFixed(2)}ms`);
 
       if (!response.ok) {
         throw new ApiError(
@@ -2920,27 +2920,27 @@ const ApiService = {
       return { response, data };
 
     } catch (error) {
-      console.error(`❌ 請求失敗 ${url}:`, error);
+      console.error(`❌  Request failed ${url}:`, error);
 
       if (retryCount < maxRetries && ApiService.isRetryableError(error)) {
-        console.log(`🔄 重試請求 (${retryCount + 1}/${maxRetries}): ${url}`);
+        console.log(`🔄 Retrying request (${retryCount + 1}/${maxRetries}): ${url}`);
         await ApiService.delay(2000 * (retryCount + 1));
         return ApiService.makeRequest(url, options, retryCount + 1);
       }
 
       if (error.name === 'AbortError') {
-        throw new ApiError('請求超時', 408, null, url);
+        throw new ApiError('Request timeout', 408, null, url);
       }
 
       if (error instanceof TypeError && error.message.includes('Failed to fetch')) {
-        throw new ApiError('網路錯誤 - 無法連接到伺服器', 0, null, url);
+        throw new ApiError('Network error - Unable to connect to server', 0, null, url);
       }
 
       if (error instanceof ApiError) {
         throw error;
       }
 
-      throw new ApiError(`意外錯誤: ${error.message}`, 0, null, url);
+      throw new ApiError(`Unexpected error: ${error.message}`, 0, null, url);
     }
   },
 
@@ -2981,15 +2981,15 @@ const ApiService = {
       return {
         success: true,
         data: data,
-        message: 'Email đăng nhập đã được gửi. Vui lòng kiểm tra hộp thư.',
+        message: 'Login email sent. Please check your inbox.',
         performance: `${(performanceEnd - performanceStart).toFixed(2)}ms`
       };
 
     } catch (error) {
       console.error('❌ Đăng nhập thất bại:', error);
-      let errorMessage = 'Không thể gửi email đăng nhập';
-      if (error.statusCode === 400) errorMessage = error.message || 'Dữ liệu không hợp lệ';
-      else if (error.statusCode === 404) errorMessage = 'Không tìm thấy người dùng';
+      let errorMessage = 'Unable to send login email';
+      if (error.statusCode === 400) errorMessage = error.message || 'Invalid data';
+      else if (error.statusCode === 404) errorMessage = 'User not found';
 
       return {
         success: false,
@@ -3099,7 +3099,7 @@ const ApiService = {
           success: false,
           session: null,
           user: null,
-          message: 'Chưa đăng nhập',
+          message: 'Not logged in',
           requireLogin: true
         };
       }
@@ -3125,9 +3125,9 @@ const ApiService = {
       StorageService.removeItem('isAuthenticated');
       StorageService.removeItem('pendingUser');
       cache.clear();
-      return { success: true, message: 'Đăng xuất thành công' };
+      return { success: true, message: 'Logged out successfully' };
     } catch (error) {
-      return { success: true, message: 'Đã xóa dữ liệu local' };
+      return { success: true, message: 'Local data cleared' };
     }
   },
 
@@ -3137,7 +3137,7 @@ const ApiService = {
     const cacheKey = `posts_${page}_${limit}_${JSON.stringify(filters)}`;
 
     if (!forceRefresh && cache.has(cacheKey)) {
-      console.log('📦 Sử dụng cache cho posts');
+      console.log('📦 Using cache for posts');
       return cache.get(cacheKey);
     }
 
@@ -3180,14 +3180,14 @@ const ApiService = {
           posts: processedPosts,
           pagination: data.data.pageinfo || {},
           filters: data.data.filter || {},
-          message: data.message || 'Lấy posts thành công'
+          message: data.message || 'Posts loaded successfully'
         };
 
         cache.set(cacheKey, result);
         setTimeout(() => cache.delete(cacheKey), 60000);
         return result;
       } else {
-        throw new ApiError(data?.message || 'Format response không hợp lệ', 500);
+        throw new ApiError(data?.message || 'Invalid response format', 500);
       }
 
     } catch (error) {
@@ -3220,11 +3220,11 @@ const ApiService = {
           success: true,
           comments: rawComments,
           pagination: data.data.pageinfo || {},
-          message: data.message || 'Lấy comments thành công'
+          message: data.message || 'Comments loaded successfully'
         };
       }
 
-      throw new ApiError(data?.message || 'Format response không hợp lệ', 500);
+      throw new ApiError(data?.message || 'Invalid response format', 500);
 
     } catch (error) {
       console.error('❌ Lấy bulk comments thất bại:', error);
@@ -3267,7 +3267,7 @@ const ApiService = {
       return {
         success: true,
         post: data.data,
-        message: data.message || 'Tạo post thành công'
+        message: data.message || 'Post created successfully'
       };
 
     } catch (error) {
@@ -3279,7 +3279,7 @@ const ApiService = {
   addComment: async ({ userid, content, sn, docid }) => {
     try {
       if (!userid || !content || (!docid && !sn)) {
-        throw new ApiError('Thiếu thông tin bắt buộc', 400);
+        throw new ApiError('Missing required fields', 400);
       }
 
       const targetId = docid || sn;
@@ -3301,7 +3301,7 @@ const ApiService = {
       return {
         success: true,
         comment: data.data?.comment,
-        message: data.message || 'Thêm comment thành công'
+        message: data.message || 'Comment added successfully'
       };
 
     } catch (error) {
@@ -3328,7 +3328,7 @@ const ApiService = {
       return {
         success: true,
         data: data.data,
-        message: data.message || 'Amen 成功'
+        message: data.message || 'Amen successful'
       };
 
     } catch (error) {
@@ -3355,7 +3355,7 @@ const ApiService = {
       return {
         success: true,
         data: data.data,
-        message: data.message || 'Comment Amen 成功'
+        message: data.message || 'Comment Amen successful'
       };
 
     } catch (error) {
@@ -3483,13 +3483,13 @@ const ApiService = {
         console.error('❌ Response không phải JSON:', text.substring(0, 500));
         return {
           success: false,
-          message: 'Backend trả về không phải JSON',
+          message: 'Server returned an invalid response',
           error: text.substring(0, 500)
         };
       }
 
       if (!response.ok) {
-        let errorMessage = 'Tạo witness thất bại';
+        let errorMessage = 'Failed to add testimony';
         if (data.detail) {
           if (typeof data.detail === 'string') {
             errorMessage = data.detail;
@@ -3515,7 +3515,7 @@ const ApiService = {
       return {
         success: true,
         witness: witness,
-        message: data.message || '見證新增成功'
+        message: data.message || 'Testimony added successfully'
       };
 
     } catch (error) {
@@ -3665,11 +3665,11 @@ const ApiService = {
       let errorMessage = error.message;
 
       if (error.statusCode === 403) {
-        errorMessage = '⛔ Không có quyền truy cập. Vui lòng đăng nhập lại.';
+        errorMessage = '⛔ Access denied. Please log in again.';
       } else if (error.statusCode === 401) {
-        errorMessage = '🔐 Session hết hạn. Vui lòng đăng nhập lại.';
+        errorMessage = '🔐 Session expired. Please log in again.';
       } else if (error.statusCode === 0) {
-        errorMessage = '🌐 Không thể kết nối đến server. Vui lòng kiểm tra mạng.';
+        errorMessage = '🌐 Unable to connect to server. Please check your network.';
       }
 
       return {
@@ -3796,7 +3796,7 @@ const ApiService = {
 
         return {
           success: false,
-          message: 'Backend trả về không phải JSON',
+          message: 'Server returned an invalid response',
           error: text.substring(0, 200),
           statusCode: response.status
         };
@@ -3805,7 +3805,7 @@ const ApiService = {
       if (!response.ok) {
         console.error('❌ Backend trả về lỗi:', data);
 
-        let errorMessage = 'Tạo activity thất bại';
+        let errorMessage = 'Failed to create activity';
 
         if (data.detail) {
           if (typeof data.detail === 'string') {
@@ -3833,16 +3833,16 @@ const ApiService = {
       return {
         success: true,
         activity: data.data?.activities?.[0] || data.data || data,
-        message: data.message || 'Tạo activity thành công'
+        message: data.message || 'Activity created successfully'
       };
 
     } catch (error) {
-      console.error('❌ Tạo activity thất bại:', error);
+      console.error('❌ Failed to create activity:', error);
 
-      let errorMessage = 'Không thể kết nối đến server';
+      let errorMessage = 'Unable to connect to server';
 
       if (error instanceof TypeError && error.message.includes('Failed to fetch')) {
-        errorMessage = 'Lỗi mạng - Không thể kết nối đến server';
+        errorMessage = 'Network error - Unable to connect to server';
       } else if (error.name === 'AbortError') {
         errorMessage = 'Request timeout';
       } else if (error.message) {
@@ -3895,7 +3895,7 @@ const ApiService = {
       if (contentType && contentType.includes('application/json')) {
         data = await response.json();
       } else {
-        throw new ApiError('Backend trả về không phải JSON', response.status);
+        throw new ApiError('Server returned an invalid response', response.status);
       }
 
       if (!response.ok) {
@@ -3911,7 +3911,7 @@ const ApiService = {
       return {
         success: true,
         activity: data.data,
-        message: data.message || 'Cập nhật activity thành công'
+        message: data.message || 'Activity updated successfully'
       };
 
     } catch (error) {
@@ -3951,7 +3951,7 @@ const ApiService = {
       return {
         success: true,
         activity: data.data,
-        message: data.message || `${isPublish ? 'Publish' : 'Unpublish'} thành công`
+        message: data.message || `${isPublish ? 'Publish' : 'Unpublish'} successfully`
       };
 
     } catch (error) {
@@ -4002,7 +4002,7 @@ const ApiService = {
           status: data.data?.status,
           created_at: data.data?.created_at
         },
-        message: data.message || 'Gửi lời mời thành công'
+        message: data.message || 'Invitation sent successfully'
       };
 
     } catch (error) {
@@ -4041,7 +4041,7 @@ const ApiService = {
         success: true,
         incoming: (data.data?.incoming || []).map(processInv),   // ✅ đã xử lý avatar
         outgoing: (data.data?.outgoing || []).map(processInv),   // ✅ đã xử lý avatar
-        message: data.message || 'Lấy danh sách thành công'
+        message: data.message || 'Loaded successfully'
       };
 
 
@@ -4097,7 +4097,7 @@ const ApiService = {
           created_at: data.data?.created_at,
           responded_at: data.data?.responded_at
         },
-        message: data.message || (accept ? 'Đã chấp nhận lời mời' : 'Đã từ chối lời mời')
+        message: data.message || (accept ? 'Invitation accepted' : 'Invitation declined')
       };
 
     } catch (error) {
@@ -4188,16 +4188,16 @@ const ApiService = {
     } catch (error) {
       console.error('❌ Tìm kiếm thất bại:', error);
 
-      let errorMessage = 'Không thể tìm kiếm';
+      let errorMessage = 'Search failed';
 
       if (error.statusCode === 404) {
-        errorMessage = 'Không tìm thấy người dùng với ID này';
+        errorMessage = 'No user found with this ID';
       } else if (error.statusCode === 422) {
-        errorMessage = 'User ID không hợp lệ';
+        errorMessage = 'Invalid User ID';
       } else if (error.statusCode === 401 || error.statusCode === 403) {
-        errorMessage = 'Vui lòng đăng nhập lại';
+        errorMessage = 'Please log in again';
       } else if (error.statusCode === 0) {
-        errorMessage = 'Không thể kết nối đến server';
+        errorMessage = 'Unable to connect to server';
       } else if (error.message) {
         errorMessage = error.message;
       }
@@ -4390,7 +4390,7 @@ const ApiService = {
   getUserBalance: async (userId) => {
     try {
       if (!userId) {
-        throw new ApiError('User ID không được để trống', 400);
+        throw new ApiError('User ID is required', 400);
       }
 
       console.log(`💰 Lấy số dư YCoin cho user: ${userId}`);
@@ -4592,7 +4592,7 @@ const ApiService = {
       }
 
       if (!userId) {
-        throw new ApiError('User ID 不可為空', 400);
+        throw new ApiError('User ID is required', 400);
       }
 
       console.log(`👤 獲取 Profile: ${userId}`);
@@ -4630,11 +4630,11 @@ const ApiService = {
             created_at: profileData.created_at,
             updated_at: profileData.updated_at
           },
-          message: '獲取 Profile 成功'
+          message: 'Profile retrieved successfully'
         };
       }
 
-      throw new ApiError('資料格式不符', 500, data);
+      throw new ApiError('Invalid data format', 500, data);
 
     } catch (error) {
       console.error('❌ 獲取 Profile 失敗:', error);
@@ -4644,7 +4644,7 @@ const ApiService = {
         return {
           success: false,
           profile: null,
-          message: 'API 不支援獲取該使用者的 Profile',
+          message: 'API does not support fetching this user profile',
           error: error.message
         };
       }
@@ -4698,7 +4698,7 @@ const ApiService = {
         success: false,
         avatar_url: null,
         user_id: userId,
-        message: '無法直接查詢其他使用者的頭像'
+        message: 'Cannot directly query other users avatar'
       };
 
     } catch (error) {
@@ -4710,19 +4710,19 @@ const ApiService = {
   uploadAvatar: async (userId, imageFile) => {
     try {
       if (!userId) {
-        throw new ApiError('User ID không được để trống', 400);
+        throw new ApiError('User ID is required', 400);
       }
 
       if (!imageFile || !(imageFile instanceof File)) {
-        throw new ApiError('File ảnh không hợp lệ', 400);
+        throw new ApiError('Invalid image file', 400);
       }
 
       if (!imageFile.type.startsWith('image/')) {
-        throw new ApiError('Chỉ chấp nhận file ảnh (JPG, PNG, WEBP)', 400);
+        throw new ApiError('Only image files accepted (JPG, PNG, WEBP)', 400);
       }
 
       if (imageFile.size > 5 * 1024 * 1024) {
-        throw new ApiError('Kích thước file phải nhỏ hơn 5MB', 400);
+        throw new ApiError('File size must be under 5MB', 400);
       }
 
       console.log('📸 Upload avatar:', imageFile.name,
@@ -4767,15 +4767,15 @@ const ApiService = {
           return {
             success: true,
             avatar_url: avatarUrl,
-            message: 'Upload avatar thành công'
+            message: 'Avatar uploaded successfully'
           };
         }
 
-        throw new ApiError('Backend trả về không phải JSON', response.status);
+        throw new ApiError('Server returned an invalid response', response.status);
       }
 
       if (!response.ok) {
-        let errorMessage = 'Upload avatar thất bại';
+        let errorMessage = 'Failed to upload avatar';
 
         if (data.detail) {
           if (typeof data.detail === 'string') {
@@ -4810,11 +4810,11 @@ const ApiService = {
         success: true,
         avatar_url: avatarUrl,
         profile: data.profile || null,
-        message: 'Upload avatar thành công'
+        message: 'Avatar uploaded successfully'
       };
 
     } catch (error) {
-      console.error('❌ Upload avatar thất bại:', error);
+      console.error('❌ Failed to upload avatar:', error);
       return {
         success: false,
         message: error.message,
@@ -4827,7 +4827,7 @@ const ApiService = {
   deleteAvatar: async (userId) => {
     try {
       if (!userId) {
-        throw new ApiError('User ID không được để trống', 400);
+        throw new ApiError('User ID is required', 400);
       }
 
       console.log('🗑️ Xóa avatar user:', userId);
@@ -4845,7 +4845,7 @@ const ApiService = {
 
       return {
         success: true,
-        message: data.message || 'Xóa avatar thành công'
+        message: data.message || 'Avatar deleted successfully'
       };
 
     } catch (error) {
@@ -4863,7 +4863,7 @@ const ApiService = {
   sendAIMessage: async (messages, sessionUuid = null) => {
     try {
       if (!messages || !Array.isArray(messages) || messages.length === 0) {
-        throw new ApiError('Messages array không được để trống', 400);
+        throw new ApiError('Messages array is required', 400);
       }
 
       console.log('🤖 Gửi tin nhắn đến AI:', {
@@ -4954,7 +4954,7 @@ const ApiService = {
   getAISession: async (sessionUuid) => {
     try {
       if (!sessionUuid) {
-        throw new ApiError('Session UUID không được để trống', 400);
+        throw new ApiError('Session UUID is required', 400);
       }
 
       console.log(`📖 Lấy chi tiết session: ${sessionUuid}`);
@@ -5015,7 +5015,7 @@ const ApiService = {
         return {
           success: true,
           session: data.data,
-          message: data.message || 'Kết thúc session thành công'
+          message: data.message || 'Session ended successfully'
         };
       }
 
@@ -5378,7 +5378,7 @@ const ApiService = {
           notifications: data.data.notifications || [],
           total: data.data.total || 0,
           unread_count: data.data.unread_count || 0,
-          message: data.message || 'Lấy thông báo thành công'
+          message: data.message || 'Notifications loaded successfully'
         };
       }
 
@@ -5400,7 +5400,7 @@ const ApiService = {
   markNotificationAsRead: async (notificationId) => {
     try {
       if (!notificationId) {
-        throw new ApiError('Notification ID không được để trống', 400);
+        throw new ApiError('Notification ID is required', 400);
       }
 
       console.log(`✅ Marking notification ${notificationId} as read...`);
@@ -5420,7 +5420,7 @@ const ApiService = {
         return {
           success: true,
           notification: data.data,
-          message: data.message || 'Đánh dấu đã đọc thành công'
+          message: data.message || 'Marked as read successfully'
         };
       }
 
@@ -5485,13 +5485,13 @@ const ApiService = {
 
   clearCache: () => {
     cache.clear();
-    console.log('🗑️ API 快取已清除');
+    console.log('🗑️ API cache cleared');
   },
 
   clearAllData: () => {
     cache.clear();
     StorageService.clear();
-    console.log('🗑️ 所有數據已清除');
+    console.log('🗑️ All data cleared');
   }
 };
 
