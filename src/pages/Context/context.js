@@ -720,7 +720,7 @@
 //       {pagination.total_items > 0 && (
 //         <div className="witness-wall-pagination">
 //           <button className="pagination-btn" onClick={handlePrevPage} disabled={!pagination.has_prev || loading}>← Previous</button>
-//           <span className="pagination-info">Page {pagination.current_page} / {pagination.total_pages} )</span>
+//           <span className="pagination-info">Page {pagination.current_page} / {pagination.total_pages} </span>
 //           <button className="pagination-btn" onClick={handleNextPage} disabled={!pagination.has_next || loading}>Next →</button>
 //         </div>
 //       )}
@@ -1352,33 +1352,36 @@
 //     try {
 //       const params = { page: 1, limit: 50, tribe: currentTribeId, is_published: true };
 //       const result = await ApiService.getActivities(params);
-//       if (result.success) {
-//         const transformedActivities = result.activities.map(activity => {
-//           const rawDesc = activity.description || '';
-//           const cleanDescription = rawDesc
-//             .split(/\r?\n/)
-//             .filter(line => !line.startsWith('Activity time:') && !line.startsWith('Max participants:'))
-//             .join('\n').trim();
-//           return {
-//             id: activity.id,
-//             author: activity.created_by || 'Unknown',
-//             avatar_url: ApiService.processAvatarUrl(activity.creator_avatar_url),
-//             datetime: ApiService.formatDateTime(activity.created_at),
-//             eventName: activity.title,
-//             eventDate: activity.event_date,
-//             eventLocation: activity.location,
-//             activityTime: activity.event_time,
-//             maxParticipants: activity.max_participants || null,
-//             description: cleanDescription,
-//             privacy: activity.privacy || 'public',
-//             tribe: activity.tribe,
-//             coverImage: ApiService.processMediaUrl(activity.cover_image),
-//             images: (activity.images || []).map(img => ApiService.processMediaUrl(img)),
-//             isPublished: activity.is_published || false,
-//           };
-//         });
-//         setActivities(transformedActivities);
-//       } else setActivities([]);
+// if (result.success) {
+//   const transformedActivities = result.activities
+//     .filter(activity => Number(activity.tribe) === Number(currentTribeId)) // ✅ THÊM DÒNG NÀY
+//     .map(activity => {
+//       const rawDesc = activity.description || '';
+//       const cleanDescription = rawDesc
+//         .split(/\r?\n/)
+//         .filter(line => !line.startsWith('Activity time:') && !line.startsWith('Max participants:'))
+//         .join('\n').trim();
+//       return {
+//         id: activity.id,
+//         author: activity.created_by || 'Unknown',
+//         avatar_url: ApiService.processAvatarUrl(activity.creator_avatar_url),
+//         datetime: ApiService.formatDateTime(activity.created_at),
+//         eventName: activity.title,
+//         eventDate: activity.event_date,
+//         eventLocation: activity.location,
+//         activityTime: activity.event_time,
+//         maxParticipants: activity.max_participants || null,
+//         description: cleanDescription,
+//         privacy: activity.privacy || 'public',
+//         tribe: activity.tribe,
+//         coverImage: ApiService.processMediaUrl(activity.cover_image),
+//         images: (activity.images || []).map(img => ApiService.processMediaUrl(img)),
+//         isPublished: activity.is_published || false,
+//       };
+//     });
+//   setActivities(transformedActivities);
+// }
+//  else setActivities([]);
 //     } catch (error) { setActivities([]); }
 //     finally { setLoading(false); }
 //   };
@@ -2034,25 +2037,33 @@ const WitnessWall = ({ selectedCategory, currentUserId, allPosts, refreshBalance
   };
 
   // ==================== LIKE COMMENT ====================
-  const handleLikeComment = async (commentId) => {
-    const currentState = commentStates[commentId];
-    if (!currentState || currentState.isLiking) return;
-    const prevCount = currentState.likeCount;
-    const newCount = prevCount + 1;
-    setCommentStates(prev => ({ ...prev, [commentId]: { ...prev[commentId], isLiked: true, likeCount: newCount, isLiking: true } }));
-    try {
-      const result = await ApiService.likeComment(commentId, currentUserId);
-      if (result.success) {
-        const finalCount = result.data?.amen_count !== undefined ? result.data.amen_count : newCount;
-        setTimeout(() => {
-          setCommentStates(prev => ({ ...prev, [commentId]: { ...prev[commentId], likeCount: finalCount, hasLiked: false, isLiking: false } }));
-        }, 300);
-        if (refreshBalance) await refreshBalance();
-      } else throw new Error(result.message || 'API Error');
-    } catch (error) {
-      setCommentStates(prev => ({ ...prev, [commentId]: { ...prev[commentId], isLiked: false, likeCount: prevCount, isLiking: false } }));
-    }
-  };
+  // ✅ CODE ĐÃ SỬA — toggle đúng
+const handleLikeComment = async (commentId) => {
+  const currentState = commentStates[commentId];
+  if (!currentState || currentState.isLiking) return;
+  const prevCount = currentState.likeCount;
+  const prevIsLiked = currentState.isLiked || false;
+
+  const newIsLiked = !prevIsLiked;
+  const newCount = newIsLiked ? prevCount + 1 : Math.max(0, prevCount - 1);
+
+  setCommentStates(prev => ({ ...prev, [commentId]: { ...prev[commentId], isLiked: newIsLiked, likeCount: newCount, isLiking: true } }));
+  try {
+    const result = await ApiService.likeComment(commentId, currentUserId);
+    if (result.success) {
+      const finalCount = result.data?.amen_count !== undefined ? result.data.amen_count : newCount;
+      const finalLiked = result.data?.amened !== undefined ? result.data.amened : newIsLiked;
+      setTimeout(() => {
+        setCommentStates(prev => ({ ...prev, [commentId]: { ...prev[commentId], likeCount: finalCount, isLiked: finalLiked, isLiking: false } }));
+      }, 300);
+      if (refreshBalance) await refreshBalance();
+    } else throw new Error(result.message || 'API Error');
+  } catch (error) {
+    setCommentStates(prev => ({ ...prev, [commentId]: { ...prev[commentId], isLiked: prevIsLiked, likeCount: prevCount, isLiking: false } }));
+  }
+};
+
+
 
   // ==================== COMMENTS ====================
   const loadComments = async (postId) => {
@@ -2791,25 +2802,32 @@ const Post = ({ post, allPosts, onLike, onComment, onWitnessCreated, currentUser
   };
 
   const handleLikeComment = async (commentId) => {
-    const currentState = commentStates[commentId];
-    if (!currentState || currentState.isLiking) return;
-    const prevCount = currentState.likeCount;
-    const prevIsLiked = currentState.isLiked || false;
-    const newCount = prevCount + 1;
-    setCommentStates(prev => ({ ...prev, [commentId]: { ...prev[commentId], isLiked: true, likeCount: newCount, isLiking: true } }));
-    try {
-      const result = await ApiService.likeComment(commentId, currentUserId);
-      if (result.success) {
-        const finalCount = result.data?.amen_count !== undefined ? result.data.amen_count : newCount;
-        setTimeout(() => {
-          setCommentStates(prev => ({ ...prev, [commentId]: { ...prev[commentId], likeCount: finalCount, isLiking: false } }));
-        }, 300);
-        if (refreshBalance) await refreshBalance();
-      } else throw new Error(result.message || 'API Error');
-    } catch (error) {
-      setCommentStates(prev => ({ ...prev, [commentId]: { ...prev[commentId], isLiked: prevIsLiked, likeCount: prevCount, isLiking: false } }));
-    }
-  };
+  const currentState = commentStates[commentId];
+  if (!currentState || currentState.isLiking) return;
+  const prevCount = currentState.likeCount;
+  const prevIsLiked = currentState.isLiked || false;
+
+  // ✅ Toggle: nếu đã liked thì unlike, chưa liked thì like
+  const newIsLiked = !prevIsLiked;
+  const newCount = newIsLiked ? prevCount + 1 : Math.max(0, prevCount - 1);
+
+  setCommentStates(prev => ({ ...prev, [commentId]: { ...prev[commentId], isLiked: newIsLiked, likeCount: newCount, isLiking: true } }));
+  try {
+    const result = await ApiService.likeComment(commentId, currentUserId);
+    if (result.success) {
+      const finalCount = result.data?.amen_count !== undefined ? result.data.amen_count : newCount;
+      const finalLiked = result.data?.amened !== undefined ? result.data.amened : newIsLiked;
+      setTimeout(() => {
+        setCommentStates(prev => ({ ...prev, [commentId]: { ...prev[commentId], likeCount: finalCount, isLiked: finalLiked, isLiking: false } }));
+      }, 300);
+      if (refreshBalance) await refreshBalance();
+    } else throw new Error(result.message || 'API Error');
+  } catch (error) {
+    // ✅ Rollback về trạng thái cũ nếu lỗi
+    setCommentStates(prev => ({ ...prev, [commentId]: { ...prev[commentId], isLiked: prevIsLiked, likeCount: prevCount, isLiking: false } }));
+  }
+};
+
 
   const handleCommentSubmit = async (e) => {
   e.preventDefault();
