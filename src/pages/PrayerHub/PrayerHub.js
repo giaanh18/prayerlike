@@ -31,7 +31,7 @@
 // import Mdi from '../../assets/icons/mdi_family.png';
 // import Fluent from '../../assets/icons/fluent_people-interwoven-20-filled.png';
 
-// // The following are all possible tribes
+// // Tribe icons
 // import judahIcon from '../../assets/images/tribes/judah.png';
 // import reubenIcon from '../../assets/images/tribes/reuben.png';
 // import gadIcon from '../../assets/images/tribes/gad.png';
@@ -74,6 +74,10 @@
 // const WitnessWall = ({ currentUserId, allPosts, privacyFilter, categoryFilter, refreshBalance }) => {
 //   const [witnesses, setWitnesses] = useState([]);
 //   const [loading, setLoading] = useState(false);
+//   const [currentPage, setCurrentPage] = useState(1);
+//   const [totalItems, setTotalItems] = useState(0);
+//   const [totalPages, setTotalPages] = useState(1);
+//   const ITEMS_PER_PAGE = 20;
 
 //   const getNormalizedImageUrl = (rawUrl) => {
 //     if (!rawUrl) return null;
@@ -104,47 +108,79 @@
 //     );
 //   };
 
-//   useEffect(() => {
-//     const loadWitnesses = async () => {
-//       setLoading(true);
-//       try {
-//         const filters = {};
-//         if (privacyFilter && privacyFilter !== 'Public') filters.privacy = privacyFilter.toLowerCase();
-//         if (categoryFilter) filters.category = categoryFilter;
+//   const loadWitnesses = async (page = 1) => {
+//     setLoading(true);
+//     try {
+//       const filters = {};
+//       if (privacyFilter && privacyFilter !== 'Public') filters.privacy = privacyFilter.toLowerCase();
+//       if (categoryFilter) filters.category = categoryFilter;
 
-//         console.log('📡 Fetching witnesses with filters:', filters);
-//         const result = await ApiService.getWitnessList(1, 100, filters);
+//       console.log(`📡 Fetching witnesses — page ${page}, filters:`, filters);
+//       const result = await ApiService.getWitnessList(page, ITEMS_PER_PAGE, filters);
 
-//         if (result.success) {
-//           let filteredWitnesses = result.witnesses;
+//       if (result.success) {
+//         let fetchedWitnesses = result.witnesses || [];
 
-//           if (privacyFilter && privacyFilter !== 'Public') {
-//             filteredWitnesses = filteredWitnesses.filter(w => {
-//               const originalPost = w.original_post || allPosts?.find(p => p.docid === w.parent_docid);
-//               return originalPost?.privacy?.toLowerCase() === privacyFilter.toLowerCase();
-//             });
-//           }
-
-//           if (categoryFilter) {
-//             filteredWitnesses = filteredWitnesses.filter(w => {
-//               const originalPost = w.original_post || allPosts?.find(p => p.docid === w.parent_docid);
-//               return originalPost?.category === categoryFilter;
-//             });
-//           }
-
-//           console.log(`✅ Loaded ${filteredWitnesses.length} witnesses`);
-//           setWitnesses(filteredWitnesses);
+//         // Client-side fallback filter (nếu API chưa hỗ trợ filter server-side)
+//         if (privacyFilter && privacyFilter !== 'Public') {
+//           fetchedWitnesses = fetchedWitnesses.filter(w => {
+//             const originalPost = w.original_post || allPosts?.find(p => p.docid === w.parent_docid);
+//             return originalPost?.privacy?.toLowerCase() === privacyFilter.toLowerCase();
+//           });
 //         }
-//       } catch (error) {
-//         console.error('❌ Error loading witnesses:', error);
-//         setWitnesses([]);
-//       } finally {
-//         setLoading(false);
-//       }
-//     };
+//         if (categoryFilter) {
+//           fetchedWitnesses = fetchedWitnesses.filter(w => {
+//             const originalPost = w.original_post || allPosts?.find(p => p.docid === w.parent_docid);
+//             return originalPost?.category === categoryFilter;
+//           });
+//         }
 
-//     loadWitnesses();
-//   }, [allPosts, privacyFilter, categoryFilter]);
+//         // Tính total từ API nếu có, fallback về length
+//         const total = result.pagination?.total_items
+//           ?? result.total
+//           ?? fetchedWitnesses.length;
+
+//         const pages = result.pagination?.total_pages
+//           ?? Math.ceil(total / ITEMS_PER_PAGE)
+//           ?? 1;
+
+//         setWitnesses(fetchedWitnesses);
+//         setTotalItems(total);
+//         setTotalPages(pages || 1);
+
+//         console.log(`✅ Witnesses loaded: ${fetchedWitnesses.length} | Total: ${total} | Pages: ${pages}`);
+//       }
+//     } catch (error) {
+//       console.error('❌ Error loading witnesses:', error);
+//       setWitnesses([]);
+//       setTotalItems(0);
+//       setTotalPages(1);
+//     } finally {
+//       setLoading(false);
+//     }
+//   };
+
+//   // Reset về page 1 khi filter thay đổi
+//   useEffect(() => {
+//     setCurrentPage(1);
+//     loadWitnesses(1);
+//   }, [privacyFilter, categoryFilter]);
+
+//   const handlePrevPage = () => {
+//     if (currentPage <= 1 || loading) return;
+//     const prev = currentPage - 1;
+//     setCurrentPage(prev);
+//     loadWitnesses(prev);
+//     window.scrollTo({ top: 0, behavior: 'smooth' });
+//   };
+
+//   const handleNextPage = () => {
+//     if (currentPage >= totalPages || loading) return;
+//     const next = currentPage + 1;
+//     setCurrentPage(next);
+//     loadWitnesses(next);
+//     window.scrollTo({ top: 0, behavior: 'smooth' });
+//   };
 
 //   if (loading) {
 //     return (
@@ -170,7 +206,9 @@
 //       <div className="witness-wall-grid">
 //         {witnesses.map(witness => {
 //           const originalPost = witness.original_post || allPosts?.find(p => p.docid === witness.parent_docid);
-//           const originalImageUrl = originalPost ? getNormalizedImageUrl(originalPost.image || originalPost.image_url) : null;
+//           const originalImageUrl = originalPost
+//             ? getNormalizedImageUrl(originalPost.image || originalPost.image_url)
+//             : null;
 //           const witnessImageUrl = getNormalizedImageUrl(witness.image || witness.image_url);
 
 //           return (
@@ -196,7 +234,12 @@
 //                     {originalPost.title && <h3>{originalPost.title}</h3>}
 //                     <p>{originalPost.content}</p>
 //                   </div>
-//                   {renderMediaBlock(originalImageUrl, 'Original Post Image', originalPost?.category, originalPost?.privacy)}
+//                   {renderMediaBlock(
+//                     originalImageUrl,
+//                     'Original Post Image',
+//                     originalPost?.category,
+//                     originalPost?.privacy
+//                   )}
 //                 </div>
 //               )}
 
@@ -220,12 +263,40 @@
 //                   {witness.title && <h4>{witness.title}</h4>}
 //                   <p>{witness.content}</p>
 //                 </div>
-//                 {renderMediaBlock(witnessImageUrl, 'Witness Image', witness.category, witness.privacy)}
+//                 {renderMediaBlock(
+//                   witnessImageUrl,
+//                   'Witness Image',
+//                   witness.category,
+//                   witness.privacy
+//                 )}
 //               </div>
 //             </div>
 //           );
 //         })}
 //       </div>
+
+//       {/* ✅ Pagination — luôn hiện khi có data */}
+//       {totalItems > 0 && (
+//         <div className="witness-wall-pagination">
+//           <button
+//             className="pagination-btn"
+//             onClick={handlePrevPage}
+//             disabled={currentPage <= 1 || loading}
+//           >
+//             ← Previous
+//           </button>
+//           <span className="pagination-info">
+//             Page {currentPage} / {totalPages}
+//           </span>
+//           <button
+//             className="pagination-btn"
+//             onClick={handleNextPage}
+//             disabled={currentPage >= totalPages || loading}
+//           >
+//             Next →
+//           </button>
+//         </div>
+//       )}
 //     </div>
 //   );
 // };
@@ -252,7 +323,6 @@
 //   const handleTranslate = async () => {
 //     if (isTranslating) return;
 //     if (translatedContent) { setTranslatedContent(null); return; }
-
 //     setIsTranslating(true);
 //     setTranslationError(null);
 //     try {
@@ -464,7 +534,6 @@
 //   const handleTranslate = async () => {
 //     if (isTranslating) return;
 //     if (translatedContent) { setTranslatedContent(null); return; }
-
 //     setIsTranslating(true);
 //     setTranslationError(null);
 //     try {
@@ -1245,6 +1314,7 @@
 //                   />
 //                 ))}
 
+//                 {/* ✅ Pagination cho Posts feed */}
 //                 <div className="pagination-controls" style={{ display: 'flex', justifyContent: 'center', gap: '20px', padding: '20px 0' }}>
 //                   <button
 //                     onClick={handlePrevPage}
@@ -1808,7 +1878,9 @@ const Post = ({ post, allPosts, onLike, onComment, currentUserId, selectedCatego
   const [commentStates, setCommentStates] = useState({});
 
   const isLikingRef = useRef(false);
-
+    const commentsEndRef = useRef(null);
+  const commentFormRef = useRef(null);
+  const [localComments, setLocalComments] = useState([])
   const [likeCount, setLikeCount] = useState(post.likes || 0);
   const [isLiked, setIsLiked] = useState(post.isLiked || false);
   const [isLiking, setIsLiking] = useState(false);
@@ -1980,41 +2052,69 @@ const Post = ({ post, allPosts, onLike, onComment, currentUserId, selectedCatego
     }
   };
 
-  const handleCommentSubmit = async (e) => {
-    e.preventDefault();
-    if (!commentText.trim() || isCommenting) return;
-    setIsCommenting(true);
-    try {
-      const result = await ApiService.addComment({
+  // ✅ THAY BẰNG
+const handleCommentSubmit = async (e) => {
+  e.preventDefault();
+  if (!commentText.trim() || isCommenting) return;
+  setIsCommenting(true);
+
+  const submittedText = commentText.trim(); // ✅ lưu trước khi clear
+
+  try {
+    const result = await ApiService.addComment({
+      userid: currentUserId,
+      content: submittedText,
+      docid: post.id,
+      sn: post.sn
+    });
+    if (result.success) {
+      setCommentText(''); // ✅ clear input
+
+      // ✅ Thêm comment mới vào localComments ngay lập tức
+      const newComment = {
+        id: result.comment?.docid || `temp-${Date.now()}`,
+        author: currentUserId,
+        content: submittedText,
+        time: 'Just now',
+        likes: 0,
+        isLiked: false,
+        isReply: true,
         userid: currentUserId,
-        content: commentText.trim(),
-        docid: post.id,
-        sn: post.sn
-      });
-      if (result.success) {
-        const newCommentId = result.comment?.docid || `temp-${Date.now()}`;
-        setCommentStates(prev => ({
-          ...prev,
-          [newCommentId]: { likeCount: 0, isLiked: false, isLiking: false }
-        }));
-        setCommentText('');
-        loadComments(1, false);
-        if (onComment) onComment(post.id, commentText.trim());
-        if (refreshBalance) await refreshBalance();
-      } else {
-        alert(`Comment failed: ${result.message}`);
-      }
-    } catch (error) {
-      console.error('💥 Comment error:', error);
-      alert(`Error posting comment: ${error.message}`);
-    } finally {
-      setIsCommenting(false);
+        avatar_url: null
+      };
+      setLocalComments(prev => [newComment, ...prev]);
+      setCommentStates(prev => ({
+        ...prev,
+        [newComment.id]: { likeCount: 0, isLiked: false, isLiking: false }
+      }));
+
+      // ✅ Chỉ update count, KHÔNG re-fetch, form KHÔNG đóng
+      if (onComment) await onComment(post.id);
+      if (refreshBalance) await refreshBalance();
+
+      // ✅ Scroll xuống comment mới
+      setTimeout(() => {
+        commentsEndRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      }, 100);
+    } else {
+      alert(`Comment failed: ${result.message}`);
     }
-  };
+  } catch (error) {
+    console.error('💥 Comment error:', error);
+    alert(`Error posting comment: ${error.message}`);
+  } finally {
+    setIsCommenting(false);
+  }
+};
+
 
   const handleCommentReply = (commentId, reply) => { console.log(`💬 Reply to comment ${commentId}:`, reply); };
   const handleCommentEdit = (commentId, newContent) => { console.log(`✏️ Edit comment ${commentId}:`, newContent); };
   const handleCommentDelete = (commentId) => { console.log(`🗑️ Delete comment ${commentId}`); };
+  const serverCommentIds = new Set(comments.map(c => c.id));
+  const filteredLocal = localComments.filter(c => !serverCommentIds.has(c.id));
+  const mergedComments = [...filteredLocal, ...comments];
+
 
   return (
     <div className="post-card">
@@ -2100,7 +2200,7 @@ const Post = ({ post, allPosts, onLike, onComment, currentUserId, selectedCatego
       </div>
 
       {showCommentForm && (
-        <div className="form-container comment-form-wrapper">
+  <div className="form-container comment-form-wrapper" ref={commentFormRef}>
           <form className="comment-form" onSubmit={handleCommentSubmit}>
             <div className="comment-input-container">
               <textarea
@@ -2136,30 +2236,32 @@ const Post = ({ post, allPosts, onLike, onComment, currentUserId, selectedCatego
 
           <div className="comments-section">
             <div className="comments-header">
-              <h4>💬 Prayers({comments.length})</h4>
-              {loadingComments && <span className="loading-indicator">Loading...</span>}
-            </div>
-            <div className="comments-list">
-              {comments.length > 0 ? (
-                comments.map(comment => (
-                  <Comment
-                    key={comment.id}
-                    comment={comment}
-                    onReply={handleCommentReply}
-                    onEdit={handleCommentEdit}
-                    onDelete={handleCommentDelete}
-                    onLike={handleLikeComment}
-                    currentUserId={currentUserId}
-                    postDocid={post.id}
-                    commentState={commentStates[comment.id]}
-                  />
-                ))
-              ) : (
-                <div className="no-comments">
-                  <p>No comments yet. Be the first to comment!</p>
-                </div>
-              )}
-            </div>
+  <h4>💬 Prayers({mergedComments.length})</h4>
+  {loadingComments && <span className="loading-indicator">Loading...</span>}
+</div>
+<div className="comments-list">
+  {mergedComments.length > 0 ? (
+    mergedComments.map(comment => (
+      <Comment
+        key={comment.id}
+        comment={comment}
+        onReply={handleCommentReply}
+        onEdit={handleCommentEdit}
+        onDelete={handleCommentDelete}
+        onLike={handleLikeComment}
+        currentUserId={currentUserId}
+        postDocid={post.id}
+        commentState={commentStates[comment.id]}
+      />
+    ))
+  ) : (
+    <div className="no-comments">
+      <p>No comments yet. Be the first to comment!</p>
+    </div>
+  )}
+  {/* ✅ Anchor scroll */}
+  <div ref={commentsEndRef} />
+</div>
             {hasMoreComments && (
               <div className="load-more-comments">
                 <button onClick={handleLoadMoreComments} disabled={loadingComments} className="load-more-btn">
@@ -2457,10 +2559,18 @@ const PrayerHub = ({ user, onLogout }) => {
     await refreshBalance();
   };
 
-  const handleCommentPost = async (postId, commentText) => {
-    await fetchPosts();
-    await refreshBalance();
-  };
+  // ✅ THAY
+const handleCommentPost = async (postId) => {
+  setPosts(prevPosts =>
+    prevPosts.map(post =>
+      post.id === postId
+        ? { ...post, calculatedComments: (post.calculatedComments || 0) + 1 }
+        : post
+    )
+  );
+  await refreshBalance();
+};
+
 
   if (showTribeDetail) {
     if (userTribeId === null || userTribeId === undefined) {

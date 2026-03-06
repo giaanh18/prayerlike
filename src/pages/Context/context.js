@@ -82,7 +82,7 @@
 //   const [loading, setLoading] = useState(false);
 //   const [pagination, setPagination] = useState({
 //     current_page: 1, total_pages: 1, total_items: 0,
-//     per_page: 10, has_next: false, has_prev: false
+//     per_page: 20, has_next: false, has_prev: false
 //   });
 //   const [currentPage, setCurrentPage] = useState(1);
 //   const [postStates, setPostStates] = useState({});
@@ -91,9 +91,10 @@
 //   const [myWitnessedPostIds, setMyWitnessedPostIds] = useState(new Set());
 //   const [witnessFormStates, setWitnessFormStates] = useState({});
 
-//   // ✅ Fix 1: tránh gọi API 2 lần khi mount
+//   // ✅ dùng để tránh useEffect[currentPage] gọi API lần đầu mount
 //   const isFirstMount = useRef(true);
 
+//   // ==================== TRANSLATE ====================
 //   const handleTranslateOriginalPost = async (postId, content) => {
 //     const currentState = translationStates[postId];
 //     if (currentState?.isTranslating) return;
@@ -112,13 +113,14 @@
 //     }
 //   };
 
+//   // ==================== LOAD WITNESSES ====================
 //   const loadWitnesses = async (page = 1) => {
 //     setLoading(true);
 //     try {
 //       const result = await ApiService.getWitnessList(page, 100);
 //       if (result.success) {
 
-//         // ✅ Fix 3: Merge Set từ API với optimistic update local — tránh nút bị reset về xám
+//         // Merge witnessed IDs từ API với optimistic local
 //         setMyWitnessedPostIds(prev => {
 //           const fromApi = new Set(
 //             result.witnesses
@@ -128,6 +130,7 @@
 //           return new Set([...fromApi, ...prev]);
 //         });
 
+//         // Filter theo viewScope + selectedCategory
 //         const filteredWitnesses = result.witnesses.filter(witness => {
 //           const originalPost = witness.original_post || allPosts?.find(p => p.docid === witness.parent_docid);
 //           if (!originalPost) return false;
@@ -139,6 +142,7 @@
 //           return originalPost.category === selectedCategory;
 //         });
 
+//         // Client-side pagination
 //         const perPage = 20;
 //         const startIndex = (page - 1) * perPage;
 //         const endIndex = startIndex + perPage;
@@ -154,6 +158,7 @@
 //           has_prev: page > 1
 //         });
 
+//         // Init states cho từng post
 //         const initialStates = {};
 //         const initialTranslationStates = {};
 //         const initialWitnessFormStates = {};
@@ -164,26 +169,23 @@
 //             const commentCount = allPosts.filter(
 //               p => p.parent_docid === originalPost.docid && p.event !== 'witness'
 //             ).length;
-//             // ✅ CODE MỚI — thêm isLiked vào initial state
 //             initialStates[originalPost.docid] = {
 //               likeCount: originalPost.amen_count || 0,
 //               hasLiked: false,
-//               isLiked: false,   // ← thêm dòng này
+//               isLiked: false,
 //               isLiking: false,
 //               commentCount,
 //               showCommentForm: false,
-//               commentText: '', isCommenting: false,
-//               comments: [], loadingComments: false
+//               commentText: '',
+//               isCommenting: false,
+//               comments: [],
+//               loadingComments: false
 //             };
-
 //             initialTranslationStates[originalPost.docid] = {
 //               isTranslating: false, translatedContent: null, translationError: null
 //             };
 //             initialWitnessFormStates[originalPost.docid] = {
-//               showWitnessForm: false,
-//               witnessText: '',
-//               witnessImage: null,
-//               isSubmitting: false
+//               showWitnessForm: false, witnessText: '', witnessImage: null, isSubmitting: false
 //             };
 //           }
 //         });
@@ -191,13 +193,11 @@
 //         setPostStates(initialStates);
 //         setTranslationStates(initialTranslationStates);
 
-//         // ✅ Fix 2: Merge witnessFormStates — giữ nguyên form đang mở
+//         // Merge witnessFormStates — giữ nguyên form đang mở
 //         setWitnessFormStates(prev => {
 //           const merged = { ...initialWitnessFormStates };
 //           Object.keys(prev).forEach(postId => {
-//             if (prev[postId]?.showWitnessForm) {
-//               merged[postId] = prev[postId];
-//             }
+//             if (prev[postId]?.showWitnessForm) merged[postId] = prev[postId];
 //           });
 //           return merged;
 //         });
@@ -213,39 +213,46 @@
 //     }
 //   };
 
-//   // ✅ Fix 1: selectedCategory / viewScope thay đổi → reset page + load lại
+//   // ✅ useEffect 1: mount + đổi category/viewScope → reset page 1 + load
 //   useEffect(() => {
 //     setCurrentPage(1);
 //     loadWitnesses(1);
-//   }, [selectedCategory, viewScope]);
+//   }, [selectedCategory, viewScope]); // eslint-disable-line react-hooks/exhaustive-deps
 
-//   // ✅ Fix 1: currentPage thay đổi (bấm Next/Prev) → load trang mới, bỏ qua lần mount đầu
+//   // ✅ useEffect 2: bấm Next/Prev → load trang mới (bỏ qua lần mount đầu)
 //   useEffect(() => {
-//     if (isFirstMount.current) { isFirstMount.current = false; return; }
+//     if (isFirstMount.current) {
+//       isFirstMount.current = false;
+//       return;
+//     }
 //     loadWitnesses(currentPage);
-//   }, [currentPage]);
+//   }, [currentPage]); // eslint-disable-line react-hooks/exhaustive-deps
 
+//   // ==================== PAGINATION ====================
 //   const handleNextPage = () => {
-//     if (pagination.has_next) { setCurrentPage(prev => prev + 1); window.scrollTo({ top: 0, behavior: 'smooth' }); }
+//     if (pagination.has_next) {
+//       setCurrentPage(prev => prev + 1);
+//       window.scrollTo({ top: 0, behavior: 'smooth' });
+//     }
 //   };
 //   const handlePrevPage = () => {
-//     if (pagination.has_prev) { setCurrentPage(prev => Math.max(1, prev - 1)); window.scrollTo({ top: 0, behavior: 'smooth' }); }
+//     if (pagination.has_prev) {
+//       setCurrentPage(prev => Math.max(1, prev - 1));
+//       window.scrollTo({ top: 0, behavior: 'smooth' });
+//     }
 //   };
 
-//   // ✅ CODE MỚI
+//   // ==================== LIKE POST ====================
 //   const handleLikeOriginalPost = async (postId) => {
 //     const currentState = postStates[postId];
 //     if (!currentState || currentState.isLiking) return;
 //     const prevCount = currentState.likeCount;
 //     const prevIsLiked = currentState.isLiked || false;
 //     const newCount = prevCount + 1;
-
-//     // Set hasLiked (flash 300ms) + isLiked (persistent)
 //     setPostStates(prev => ({
 //       ...prev,
 //       [postId]: { ...prev[postId], hasLiked: true, isLiked: true, likeCount: newCount, isLiking: true }
 //     }));
-
 //     try {
 //       const result = await ApiService.likePost(postId, currentUserId);
 //       if (result.success) {
@@ -254,13 +261,11 @@
 //           setPostStates(prev => ({
 //             ...prev,
 //             [postId]: { ...prev[postId], likeCount: finalCount, hasLiked: false, isLiking: false }
-//             // isLiked giữ nguyên true — không reset
 //           }));
 //         }, 300);
 //         if (refreshBalance) await refreshBalance();
 //       } else throw new Error(result.message || 'API Error');
 //     } catch (error) {
-//       // Rollback cả isLiked khi lỗi
 //       setPostStates(prev => ({
 //         ...prev,
 //         [postId]: { ...prev[postId], hasLiked: false, isLiked: prevIsLiked, likeCount: prevCount, isLiking: false }
@@ -268,7 +273,7 @@
 //     }
 //   };
 
-
+//   // ==================== LIKE COMMENT ====================
 //   const handleLikeComment = async (commentId) => {
 //     const currentState = commentStates[commentId];
 //     if (!currentState || currentState.isLiking) return;
@@ -289,6 +294,7 @@
 //     }
 //   };
 
+//   // ==================== COMMENTS ====================
 //   const loadComments = async (postId) => {
 //     setPostStates(prev => ({ ...prev, [postId]: { ...prev[postId], loadingComments: true } }));
 //     try {
@@ -297,7 +303,6 @@
 //       if (result.success && result.comments) {
 //         allReplies = result.comments.filter(c => c.parent_docid === postId && c.event !== 'witness');
 //       }
-//       console.log(`💬 WitnessWall Post ${postId}: Found ${allReplies.length} comments from API`);
 //       const formattedComments = allReplies.map(c => ({
 //         id: c.docid, author: c.userid, content: c.content,
 //         time: c.datetime || 'Just now', likes: c.amen_count || 0,
@@ -365,6 +370,7 @@
 //     }
 //   };
 
+//   // ==================== WITNESS FORM ====================
 //   const handleToggleWitnessForm = (postId) => {
 //     if (myWitnessedPostIds.has(postId)) return;
 //     setWitnessFormStates(prev => ({
@@ -382,22 +388,17 @@
 //     e.preventDefault();
 //     const formState = witnessFormStates[postId];
 //     if (!formState?.witnessText?.trim() || formState?.isSubmitting) return;
-
 //     setWitnessFormStates(prev => ({ ...prev, [postId]: { ...prev[postId], isSubmitting: true } }));
 //     try {
 //       const result = await ApiService.createWitness(
 //         currentUserId, formState.witnessText.trim(), postId, formState.witnessImage
 //       );
 //       if (result.success) {
-//         // ✅ Optimistic update ngay lập tức — nút đổi vàng liền
 //         setMyWitnessedPostIds(prev => new Set([...prev, postId]));
-
 //         setWitnessFormStates(prev => ({
 //           ...prev,
 //           [postId]: { showWitnessForm: false, witnessText: '', witnessImage: null, isSubmitting: false }
 //         }));
-
-//         // ✅ Sync lại với backend (Fix 3 đảm bảo Set không bị reset)
 //         await loadWitnesses(currentPage);
 //         if (refreshBalance) await refreshBalance();
 //       } else {
@@ -419,6 +420,7 @@
 //     }
 //   };
 
+//   // ==================== RENDER ====================
 //   if (loading) {
 //     return (
 //       <div className="witness-wall-loading">
@@ -512,7 +514,6 @@
 //                           ? `AMENED (${postState.likeCount})`
 //                           : `AMEN (${postState.likeCount})`)}
 //                     </button>
-
 
 //                     <button
 //                       className={`action-button action-comment ${postState.showCommentForm ? 'active-comment' : ''}`}
@@ -613,7 +614,6 @@
 //                             handleCommentTextChange(originalPost.docid, postState.commentText + (postState.commentText ? ' ' : '') + transcript);
 //                           }} />
 //                         </div>
-//                         <div className="form-info"><span className="char-count">{postState.commentText.length}/500</span></div>
 //                         <div className="form-actions">
 //                           <button type="submit" disabled={!postState.commentText.trim() || postState.isCommenting} className="submit-btn comment-submit-btn">
 //                             {postState.isCommenting ? 'Sending...' : 'Pray For You'}
@@ -661,7 +661,6 @@
 //                                       <div className="comment-translation-error">⚠️ {commentTransState.translationError}</div>
 //                                     )}
 //                                   </div>
-
 //                                   <div className="comment-actions">
 //                                     <button
 //                                       className={`comment-action-btn like ${commentState.isLiked ? 'active-amen' : ''}`}
@@ -674,7 +673,6 @@
 //                                 </div>
 //                               );
 //                             })
-
 //                           ) : (
 //                             <div className="no-comments"><p>No comments yet. Be the first to leave a message!</p></div>
 //                           )}
@@ -717,18 +715,18 @@
 //         })}
 //       </div>
 
-//       {(pagination.has_prev || pagination.has_next) && (
+//       {/* ✅ Nút pagination — hiện khi có > 1 trang */}
+
+//       {pagination.total_items > 0 && (
 //         <div className="witness-wall-pagination">
 //           <button className="pagination-btn" onClick={handlePrevPage} disabled={!pagination.has_prev || loading}>← Previous</button>
-//           <span className="pagination-info">Page {pagination.current_page} / {pagination.total_pages} ({pagination.total_items} testimonies)</span>
+//           <span className="pagination-info">Page {pagination.current_page} / {pagination.total_pages} )</span>
 //           <button className="pagination-btn" onClick={handleNextPage} disabled={!pagination.has_next || loading}>Next →</button>
 //         </div>
 //       )}
 //     </div>
 //   );
 // };
-
-
 
 // // ==================== PRIVACY DROPDOWN ====================
 // const PrivacyDropdown = ({ onChange, initialValue = 'public' }) => {
@@ -892,20 +890,14 @@
 //   const [isSubmittingWitness, setIsSubmittingWitness] = useState(false);
 //   const [witnessCount, setWitnessCount] = useState(0);
 //   const [activeForm, setActiveForm] = useState(null);
-//   // ✅ Đọc từ localStorage trước, sau đó check allPosts
 //   const WITNESSED_KEY = `witnessed_${currentUserId}`;
 
 //   const getWitnessedSet = () => {
-//     try {
-//       return new Set(JSON.parse(localStorage.getItem(WITNESSED_KEY) || '[]'));
-//     } catch { return new Set(); }
+//     try { return new Set(JSON.parse(localStorage.getItem(WITNESSED_KEY) || '[]')); }
+//     catch { return new Set(); }
 //   };
 
 //   const [hasWitnessed, setHasWitnessed] = useState(() => getWitnessedSet().has(post.id));
-
-//   // Sync từ allPosts (trường hợp data từ API có witness)
-
-
 //   const [isTranslating, setIsTranslating] = useState(false);
 //   const [translatedContent, setTranslatedContent] = useState(null);
 //   const [translationError, setTranslationError] = useState(null);
@@ -916,36 +908,26 @@
 //     );
 //     if (witnessed) {
 //       setHasWitnessed(true);
-//       // ✅ Lưu localStorage luôn khi API confirm đã witnessed
 //       try {
 //         const set = new Set(JSON.parse(localStorage.getItem(WITNESSED_KEY) || '[]'));
 //         set.add(post.id);
 //         localStorage.setItem(WITNESSED_KEY, JSON.stringify([...set]));
 //       } catch { }
 //     }
-//   }, [post.id]);
-
-
+//   }, [post.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
 //   useEffect(() => {
 //     setIsTranslating(false); setTranslatedContent(null); setTranslationError(null);
 //   }, [post.id]);
 
-//   // ✅ 從 allPosts 推導該貼文的留言（fetchPosts 已批次拉取，不需額外 API）
 //   const postComments = allPosts
 //     .filter(c => c.parent_docid === post.id && c.event !== 'witness')
 //     .map(c => ({
-//       id: c.docid,
-//       author: c.userid,
-//       content: c.content,
-//       time: c.datetime || 'Just now',
-//       likes: c.amen_count || 0,
-//       isLiked: c.amened || false,
-//       userid: c.userid,
-//       avatar_url: c.avatar_url
+//       id: c.docid, author: c.userid, content: c.content,
+//       time: c.datetime || 'Just now', likes: c.amen_count || 0,
+//       isLiked: c.amened || false, userid: c.userid, avatar_url: c.avatar_url
 //     }));
 
-//   // ✅ allPosts 更新時同步 commentStates
 //   useEffect(() => {
 //     setCommentStates(prev => {
 //       const next = {};
@@ -954,8 +936,7 @@
 //       });
 //       return next;
 //     });
-//     // eslint-disable-next-line react-hooks/exhaustive-deps
-//   }, [allPosts, post.id]);
+//   }, [allPosts, post.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
 //   const handleTranslate = async () => {
 //     if (isTranslating) return;
@@ -983,32 +964,23 @@
 //       const result = await ApiService.createWitness(currentUserId, witnessText.trim(), post.id, witnessImage);
 //       if (result.success) {
 //         setWitnessText(''); setWitnessImage(null); setActiveForm(null); setHasWitnessed(true);
-
-//         // ✅ Lưu localStorage
 //         try {
 //           const set = new Set(JSON.parse(localStorage.getItem(WITNESSED_KEY) || '[]'));
 //           set.add(post.id);
 //           localStorage.setItem(WITNESSED_KEY, JSON.stringify([...set]));
 //         } catch { }
-
 //         if (refreshBalance) await refreshBalance();
 //         if (onWitnessCreated && typeof onWitnessCreated === 'function') onWitnessCreated(post.id);
-
 //       } else {
 //         const msg = result.message || '';
 //         if (msg.includes('已為此貼文建立過見證') || msg.includes('already') || msg.toLowerCase().includes('witness')) {
 //           setHasWitnessed(true); setActiveForm(null); setWitnessText(''); setWitnessImage(null);
-
-//           // ✅ Lưu localStorage
 //           try {
 //             const set = new Set(JSON.parse(localStorage.getItem(WITNESSED_KEY) || '[]'));
 //             set.add(post.id);
 //             localStorage.setItem(WITNESSED_KEY, JSON.stringify([...set]));
 //           } catch { }
-
-//         } else {
-//           alert(`Failed to add testimony: ${msg}`);
-//         }
+//         } else { alert(`Failed to add testimony: ${msg}`); }
 //       }
 //     } catch (error) { alert(`Error occurred while adding testimony: ${error.message}`); }
 //     finally { setIsSubmittingWitness(false); }
@@ -1021,11 +993,8 @@
 //   };
 
 //   const handleToggleCommentForm = () => {
-//     if (activeForm === 'comment') {
-//       setActiveForm(null); setCommentText('');
-//     } else {
-//       setActiveForm('comment'); setWitnessText('');
-//     }
+//     if (activeForm === 'comment') { setActiveForm(null); setCommentText(''); }
+//     else { setActiveForm('comment'); setWitnessText(''); }
 //   };
 
 //   const handleLike = async () => {
@@ -1065,7 +1034,6 @@
 //         const finalCount = result.data?.amen_count !== undefined ? result.data.amen_count : newCount;
 //         setTimeout(() => {
 //           setCommentStates(prev => ({ ...prev, [commentId]: { ...prev[commentId], likeCount: finalCount, isLiking: false } }));
-//           // isLiked giữ nguyên true — không reset
 //         }, 300);
 //         if (refreshBalance) await refreshBalance();
 //       } else throw new Error(result.message || 'API Error');
@@ -1073,7 +1041,6 @@
 //       setCommentStates(prev => ({ ...prev, [commentId]: { ...prev[commentId], isLiked: prevIsLiked, likeCount: prevCount, isLiking: false } }));
 //     }
 //   };
-
 
 //   const handleCommentSubmit = async (e) => {
 //     e.preventDefault();
@@ -1083,7 +1050,6 @@
 //       const result = await ApiService.addComment({ userid: currentUserId, content: commentText.trim(), docid: post.id, sn: post.sn });
 //       if (result.success) {
 //         setCommentText('');
-//         // ✅ 呼叫 fetchPosts 更新 allPosts，allPosts 更新後 postComments 自動包含新留言
 //         if (onComment) await onComment(post.id, commentText.trim());
 //         if (refreshBalance) await refreshBalance();
 //       } else alert(`Comment failed: ${result.message}`);
@@ -1119,7 +1085,6 @@
 //           </div>
 //         </div>
 //       </div>
-
 //       <div className="post-content">
 //         {post.title && <h3>{post.title}</h3>}
 //         <p>{post.content}</p>
@@ -1130,7 +1095,6 @@
 //         {translationError && <div className="post-translation-error">⚠️ {translationError}</div>}
 //         {post.image && <div className="post-image"><img src={post.image} alt="Post image" /></div>}
 //       </div>
-
 //       <div className="post-actions">
 //         <button className={`action-button action-amen ${isLiked || hasLiked ? 'active-amen' : ''}`} onClick={handleLike} disabled={isLiking}>
 //           {isLiking ? 'Processing...' : (isLiked ? `AMENED (${likeCount})` : `AMEN (${likeCount})`)}
@@ -1146,7 +1110,6 @@
 //           {hasWitnessed ? `✨ WITNESSED (${witnessCount})` : `WITNESS (${witnessCount})`}
 //         </button>
 //       </div>
-
 //       {activeForm === 'witness' && (
 //         <div className="form-container witness-form-wrapper">
 //           <form className="witness-form" onSubmit={handleWitnessSubmit}>
@@ -1383,23 +1346,19 @@
 //     await refreshBalance();
 //   };
 
-//   // ✅ SYNC PrayerHub: đợi fetchPosts xong rồi mới resolve
 //   const handleCommentPost = async (postId, commentText) => {
 //     await fetchPosts(selectedCategory, currentPage);
 //   };
 
-//   // ✅ Sau khi witness: ở lại Original Post, chỉ refresh data
 //   const handleWitnessCreated = async (postId) => {
 //     try {
 //       ApiService.clearCache();
 //       await fetchPosts(selectedCategory, currentPage);
 //       await refreshBalance();
-//       // ✅ Chuyển sang Witness Wall
 //       setViewMode('witness');
 //       setNewlyWitnessedPostId(postId);
 //     } catch (error) { console.error('❌ Error after witness:', error); }
 //   };
-
 
 //   const mapCategoryToPrivacy = useCallback((category) => {
 //     if (!category) return 'public';
@@ -1448,7 +1407,6 @@
 
 //   const getDemoPosts = useCallback(() => [], [user?.name]);
 
-//   // ✅ KEY FIX: postFilters dùng userid, commentFilters KHÔNG dùng userid
 //   const fetchPosts = useCallback(async (categoryOverride, page = 1) => {
 //     setLoading(true);
 //     setCurrentPage(page);
@@ -1456,12 +1414,10 @@
 //       const categoryToFetch = categoryOverride !== undefined ? categoryOverride : selectedCategory;
 //       const currentUserId = user?.id || user?.userId || ApiService.getCurrentUserId();
 
-//       // Posts: 只傳有效參數 userid + category
 //       const postFilters = {};
 //       if (categoryToFetch) postFilters.category = categoryToFetch;
 //       if (viewScope === 'my') postFilters.userid = currentUserId;
 
-//       // Comments: 只傳 event=comment，不傳 userid，取所有人的留言
 //       const commentFilters = {};
 
 //       const [postsResult, commentsResult] = await Promise.all([
@@ -1474,7 +1430,6 @@
 
 //       console.log(`📊 Context - Posts: ${rawPosts.length}, Comments: ${rawComments.length}`);
 
-//       // ✅ Build commentsCountMap từ rawComments (giống PrayerHub)
 //       const commentsCountMap = {};
 //       rawComments.forEach(c => {
 //         if (c.parent_docid && c.event !== 'witness') {
@@ -1484,12 +1439,9 @@
 
 //       if (rawPosts.length > 0) {
 //         const filteredPosts = rawPosts.filter(post => !post.parent_docid && post.docid);
-
 //         const transformedPosts = filteredPosts.map(post => {
-//           // Khai báo 2 biến đếm ở đây để không bị lỗi undefined
 //           const serverCount = post.comment_count !== undefined ? post.comment_count : 0;
 //           const localCount = commentsCountMap[post.docid] || 0;
-
 //           return {
 //             id: post.docid,
 //             sn: post.sn,
@@ -1497,10 +1449,7 @@
 //             avatar_url: post.avatar_url,
 //             likes: post.amen_count !== undefined ? post.amen_count : 0,
 //             isLiked: (post.amened === true || post.amened === 1 || post.amened === 'true'),
-
-//             // Sử dụng 2 biến vừa khai báo
 //             calculatedComments: Math.max(serverCount, localCount),
-
 //             title: post.title || '',
 //             content: post.content || '',
 //             privacy: post.privacy ? post.privacy.toLowerCase() : mapCategoryToPrivacy(post.category),
@@ -1514,7 +1463,6 @@
 //         });
 
 //         setPosts(transformedPosts);
-//         // ✅ allPosts = posts của mình + comments của tất cả mọi người
 //         setAllPosts([...rawPosts, ...rawComments]);
 //         console.log(`✅ allPosts: ${rawPosts.length} posts + ${rawComments.length} comments`);
 //         setHasNextPage(postsResult.pagination?.has_next === true);
@@ -1684,7 +1632,6 @@
 //                 newlyWitnessedPostId={newlyWitnessedPostId}
 //                 onScrollDone={() => setNewlyWitnessedPostId(null)}
 //               />
-
 //             ) : !loading && filteredPosts.length > 0 ? (
 //               <div className="posts-feed">
 //                 {filteredPosts.map(post => (
@@ -2635,6 +2582,9 @@ const Post = ({ post, allPosts, onLike, onComment, onWitnessCreated, currentUser
   const [commentText, setCommentText] = useState('');
   const [commentStates, setCommentStates] = useState({});
   const isLikingRef = useRef(false);
+  const commentsEndRef = useRef(null);
+  const commentFormRef = useRef(null);
+  const [localComments, setLocalComments] = useState([]);
   const [likeCount, setLikeCount] = useState(post.likes || 0);
   const [isLiked, setIsLiked] = useState(post.isLiked || false);
   const [hasLiked, setHasLiked] = useState(false);
@@ -2673,13 +2623,19 @@ const Post = ({ post, allPosts, onLike, onComment, onWitnessCreated, currentUser
     setIsTranslating(false); setTranslatedContent(null); setTranslationError(null);
   }, [post.id]);
 
-  const postComments = allPosts
+  // ✅ Merge allPosts + localComments, tránh duplicate
+  const serverComments = allPosts
     .filter(c => c.parent_docid === post.id && c.event !== 'witness')
     .map(c => ({
       id: c.docid, author: c.userid, content: c.content,
       time: c.datetime || 'Just now', likes: c.amen_count || 0,
       isLiked: c.amened || false, userid: c.userid, avatar_url: c.avatar_url
     }));
+
+  const serverCommentIds = new Set(serverComments.map(c => c.id));
+  const filteredLocal = localComments.filter(c => !serverCommentIds.has(c.id));
+  const postComments = [...filteredLocal, ...serverComments];
+
 
   useEffect(() => {
     setCommentStates(prev => {
@@ -2796,19 +2752,55 @@ const Post = ({ post, allPosts, onLike, onComment, onWitnessCreated, currentUser
   };
 
   const handleCommentSubmit = async (e) => {
-    e.preventDefault();
-    if (!commentText.trim() || isCommenting) return;
-    setIsCommenting(true);
-    try {
-      const result = await ApiService.addComment({ userid: currentUserId, content: commentText.trim(), docid: post.id, sn: post.sn });
-      if (result.success) {
-        setCommentText('');
-        if (onComment) await onComment(post.id, commentText.trim());
-        if (refreshBalance) await refreshBalance();
-      } else alert(`Comment failed: ${result.message}`);
-    } catch (error) { alert(`Error occurred while commenting: ${error.message}`); }
-    finally { setIsCommenting(false); }
-  };
+  e.preventDefault();
+  if (!commentText.trim() || isCommenting) return;
+  setIsCommenting(true);
+
+  // ✅ THÊM: lưu text vào biến tạm TRƯỚC KHI clear
+  const submittedText = commentText.trim();
+
+  try {
+    const result = await ApiService.addComment({
+      userid: currentUserId,
+      content: submittedText,   // ✅ dùng biến tạm
+      docid: post.id,
+      sn: post.sn
+    });
+    if (result.success) {
+      setCommentText('');
+
+      const newComment = {
+        id: result.comment?.docid || `temp-${Date.now()}`,
+        author: currentUserId,
+        content: submittedText,  // ✅ dùng biến tạm
+        time: 'Just now',
+        likes: 0,
+        isLiked: false,
+        userid: currentUserId,
+        avatar_url: null
+      };
+      setLocalComments(prev => [newComment, ...prev]);
+      setCommentStates(prev => ({
+        ...prev,
+        [newComment.id]: { likeCount: 0, isLiked: false, isLiking: false }
+      }));
+
+      if (onComment) await onComment(post.id);
+      if (refreshBalance) await refreshBalance();
+
+      setTimeout(() => {
+        commentsEndRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      }, 100);
+    } else {
+      alert(`Comment failed: ${result.message}`);
+    }
+  } catch (error) {
+    alert(`Error occurred while commenting: ${error.message}`);
+  } finally {
+    setIsCommenting(false);
+  }
+};
+
 
   const handleCommentReply = (commentId, reply) => { console.log(`💬 Reply to comment ${commentId}:`, reply); };
 
@@ -2889,7 +2881,7 @@ const Post = ({ post, allPosts, onLike, onComment, onWitnessCreated, currentUser
       )}
 
       {activeForm === 'comment' && (
-        <div className="form-container comment-form-wrapper">
+        <div className="form-container comment-form-wrapper" ref={commentFormRef}>
           <form className="comment-form" onSubmit={handleCommentSubmit}>
             <div className="comment-input-container">
               <textarea value={commentText} onChange={(e) => setCommentText(e.target.value)} placeholder="Write your comment..." rows="3" maxLength="500" />
@@ -2911,13 +2903,19 @@ const Post = ({ post, allPosts, onLike, onComment, onWitnessCreated, currentUser
                 postComments.map(comment => (
                   <Comment key={comment.id} comment={comment} onReply={handleCommentReply} onLike={handleLikeComment} currentUserId={currentUserId} postDocid={post.id} commentState={commentStates[comment.id]} />
                 ))
+                // ✅ THAY BẰNG
               ) : (
-                <div className="no-comments"><p>No comments yet. Be the first to leave a message!</p></div>
+                <div className="no-comments">
+                  <p>No comments yet. Be the first to leave a message!</p>
+                </div>
               )}
+              {/* ✅ THÊM DÒNG NÀY */}
+              <div ref={commentsEndRef} />
             </div>
           </div>
         </div>
       )}
+
     </div>
   );
 };
@@ -3099,9 +3097,18 @@ const MainApp = ({ user, onLogout }) => {
     await refreshBalance();
   };
 
-  const handleCommentPost = async (postId, commentText) => {
-    await fetchPosts(selectedCategory, currentPage);
+  // ✅ THAY BẰNG đoạn này
+  const handleCommentPost = async (postId) => {
+    setPosts(prevPosts =>
+      prevPosts.map(post =>
+        post.id === postId
+          ? { ...post, calculatedComments: (post.calculatedComments || 0) + 1 }
+          : post
+      )
+    );
+    await refreshBalance();
   };
+
 
   const handleWitnessCreated = async (postId) => {
     try {
