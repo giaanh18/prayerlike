@@ -510,7 +510,9 @@
 //   const [commentStates, setCommentStates] = useState({});
 
 //   const isLikingRef = useRef(false);
-
+//     const commentsEndRef = useRef(null);
+//   const commentFormRef = useRef(null);
+//   const [localComments, setLocalComments] = useState([])
 //   const [likeCount, setLikeCount] = useState(post.likes || 0);
 //   const [isLiked, setIsLiked] = useState(post.isLiked || false);
 //   const [isLiking, setIsLiking] = useState(false);
@@ -682,41 +684,69 @@
 //     }
 //   };
 
-//   const handleCommentSubmit = async (e) => {
-//     e.preventDefault();
-//     if (!commentText.trim() || isCommenting) return;
-//     setIsCommenting(true);
-//     try {
-//       const result = await ApiService.addComment({
+//   // ✅ THAY BẰNG
+// const handleCommentSubmit = async (e) => {
+//   e.preventDefault();
+//   if (!commentText.trim() || isCommenting) return;
+//   setIsCommenting(true);
+
+//   const submittedText = commentText.trim(); // ✅ lưu trước khi clear
+
+//   try {
+//     const result = await ApiService.addComment({
+//       userid: currentUserId,
+//       content: submittedText,
+//       docid: post.id,
+//       sn: post.sn
+//     });
+//     if (result.success) {
+//       setCommentText(''); // ✅ clear input
+
+//       // ✅ Thêm comment mới vào localComments ngay lập tức
+//       const newComment = {
+//         id: result.comment?.docid || `temp-${Date.now()}`,
+//         author: currentUserId,
+//         content: submittedText,
+//         time: 'Just now',
+//         likes: 0,
+//         isLiked: false,
+//         isReply: true,
 //         userid: currentUserId,
-//         content: commentText.trim(),
-//         docid: post.id,
-//         sn: post.sn
-//       });
-//       if (result.success) {
-//         const newCommentId = result.comment?.docid || `temp-${Date.now()}`;
-//         setCommentStates(prev => ({
-//           ...prev,
-//           [newCommentId]: { likeCount: 0, isLiked: false, isLiking: false }
-//         }));
-//         setCommentText('');
-//         loadComments(1, false);
-//         if (onComment) onComment(post.id, commentText.trim());
-//         if (refreshBalance) await refreshBalance();
-//       } else {
-//         alert(`Comment failed: ${result.message}`);
-//       }
-//     } catch (error) {
-//       console.error('💥 Comment error:', error);
-//       alert(`Error posting comment: ${error.message}`);
-//     } finally {
-//       setIsCommenting(false);
+//         avatar_url: null
+//       };
+//       setLocalComments(prev => [newComment, ...prev]);
+//       setCommentStates(prev => ({
+//         ...prev,
+//         [newComment.id]: { likeCount: 0, isLiked: false, isLiking: false }
+//       }));
+
+//       // ✅ Chỉ update count, KHÔNG re-fetch, form KHÔNG đóng
+//       if (onComment) await onComment(post.id);
+//       if (refreshBalance) await refreshBalance();
+
+//       // ✅ Scroll xuống comment mới
+//       setTimeout(() => {
+//         commentsEndRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+//       }, 100);
+//     } else {
+//       alert(`Comment failed: ${result.message}`);
 //     }
-//   };
+//   } catch (error) {
+//     console.error('💥 Comment error:', error);
+//     alert(`Error posting comment: ${error.message}`);
+//   } finally {
+//     setIsCommenting(false);
+//   }
+// };
+
 
 //   const handleCommentReply = (commentId, reply) => { console.log(`💬 Reply to comment ${commentId}:`, reply); };
 //   const handleCommentEdit = (commentId, newContent) => { console.log(`✏️ Edit comment ${commentId}:`, newContent); };
 //   const handleCommentDelete = (commentId) => { console.log(`🗑️ Delete comment ${commentId}`); };
+//   const serverCommentIds = new Set(comments.map(c => c.id));
+//   const filteredLocal = localComments.filter(c => !serverCommentIds.has(c.id));
+//   const mergedComments = [...filteredLocal, ...comments];
+
 
 //   return (
 //     <div className="post-card">
@@ -802,7 +832,7 @@
 //       </div>
 
 //       {showCommentForm && (
-//         <div className="form-container comment-form-wrapper">
+//   <div className="form-container comment-form-wrapper" ref={commentFormRef}>
 //           <form className="comment-form" onSubmit={handleCommentSubmit}>
 //             <div className="comment-input-container">
 //               <textarea
@@ -838,30 +868,32 @@
 
 //           <div className="comments-section">
 //             <div className="comments-header">
-//               <h4>💬 Prayers({comments.length})</h4>
-//               {loadingComments && <span className="loading-indicator">Loading...</span>}
-//             </div>
-//             <div className="comments-list">
-//               {comments.length > 0 ? (
-//                 comments.map(comment => (
-//                   <Comment
-//                     key={comment.id}
-//                     comment={comment}
-//                     onReply={handleCommentReply}
-//                     onEdit={handleCommentEdit}
-//                     onDelete={handleCommentDelete}
-//                     onLike={handleLikeComment}
-//                     currentUserId={currentUserId}
-//                     postDocid={post.id}
-//                     commentState={commentStates[comment.id]}
-//                   />
-//                 ))
-//               ) : (
-//                 <div className="no-comments">
-//                   <p>No comments yet. Be the first to comment!</p>
-//                 </div>
-//               )}
-//             </div>
+//   <h4>💬 Prayers({mergedComments.length})</h4>
+//   {loadingComments && <span className="loading-indicator">Loading...</span>}
+// </div>
+// <div className="comments-list">
+//   {mergedComments.length > 0 ? (
+//     mergedComments.map(comment => (
+//       <Comment
+//         key={comment.id}
+//         comment={comment}
+//         onReply={handleCommentReply}
+//         onEdit={handleCommentEdit}
+//         onDelete={handleCommentDelete}
+//         onLike={handleLikeComment}
+//         currentUserId={currentUserId}
+//         postDocid={post.id}
+//         commentState={commentStates[comment.id]}
+//       />
+//     ))
+//   ) : (
+//     <div className="no-comments">
+//       <p>No comments yet. Be the first to comment!</p>
+//     </div>
+//   )}
+//   {/* ✅ Anchor scroll */}
+//   <div ref={commentsEndRef} />
+// </div>
 //             {hasMoreComments && (
 //               <div className="load-more-comments">
 //                 <button onClick={handleLoadMoreComments} disabled={loadingComments} className="load-more-btn">
@@ -1159,10 +1191,18 @@
 //     await refreshBalance();
 //   };
 
-//   const handleCommentPost = async (postId, commentText) => {
-//     await fetchPosts();
-//     await refreshBalance();
-//   };
+//   // ✅ THAY
+// const handleCommentPost = async (postId) => {
+//   setPosts(prevPosts =>
+//     prevPosts.map(post =>
+//       post.id === postId
+//         ? { ...post, calculatedComments: (post.calculatedComments || 0) + 1 }
+//         : post
+//     )
+//   );
+//   await refreshBalance();
+// };
+
 
 //   if (showTribeDetail) {
 //     if (userTribeId === null || userTribeId === undefined) {
@@ -1878,7 +1918,7 @@ const Post = ({ post, allPosts, onLike, onComment, currentUserId, selectedCatego
   const [commentStates, setCommentStates] = useState({});
 
   const isLikingRef = useRef(false);
-    const commentsEndRef = useRef(null);
+  const commentsEndRef = useRef(null);
   const commentFormRef = useRef(null);
   const [localComments, setLocalComments] = useState([])
   const [likeCount, setLikeCount] = useState(post.likes || 0);
@@ -2053,59 +2093,59 @@ const Post = ({ post, allPosts, onLike, onComment, currentUserId, selectedCatego
   };
 
   // ✅ THAY BẰNG
-const handleCommentSubmit = async (e) => {
-  e.preventDefault();
-  if (!commentText.trim() || isCommenting) return;
-  setIsCommenting(true);
+  const handleCommentSubmit = async (e) => {
+    e.preventDefault();
+    if (!commentText.trim() || isCommenting) return;
+    setIsCommenting(true);
 
-  const submittedText = commentText.trim(); // ✅ lưu trước khi clear
+    const submittedText = commentText.trim(); // ✅ lưu trước khi clear
 
-  try {
-    const result = await ApiService.addComment({
-      userid: currentUserId,
-      content: submittedText,
-      docid: post.id,
-      sn: post.sn
-    });
-    if (result.success) {
-      setCommentText(''); // ✅ clear input
-
-      // ✅ Thêm comment mới vào localComments ngay lập tức
-      const newComment = {
-        id: result.comment?.docid || `temp-${Date.now()}`,
-        author: currentUserId,
-        content: submittedText,
-        time: 'Just now',
-        likes: 0,
-        isLiked: false,
-        isReply: true,
+    try {
+      const result = await ApiService.addComment({
         userid: currentUserId,
-        avatar_url: null
-      };
-      setLocalComments(prev => [newComment, ...prev]);
-      setCommentStates(prev => ({
-        ...prev,
-        [newComment.id]: { likeCount: 0, isLiked: false, isLiking: false }
-      }));
+        content: submittedText,
+        docid: post.id,
+        sn: post.sn
+      });
+      if (result.success) {
+        setCommentText(''); // ✅ clear input
 
-      // ✅ Chỉ update count, KHÔNG re-fetch, form KHÔNG đóng
-      if (onComment) await onComment(post.id);
-      if (refreshBalance) await refreshBalance();
+        // ✅ Thêm comment mới vào localComments ngay lập tức
+        const newComment = {
+          id: result.comment?.docid || `temp-${Date.now()}`,
+          author: currentUserId,
+          content: submittedText,
+          time: 'Just now',
+          likes: 0,
+          isLiked: false,
+          isReply: true,
+          userid: currentUserId,
+          avatar_url: null
+        };
+        setLocalComments(prev => [newComment, ...prev]);
+        setCommentStates(prev => ({
+          ...prev,
+          [newComment.id]: { likeCount: 0, isLiked: false, isLiking: false }
+        }));
 
-      // ✅ Scroll xuống comment mới
-      setTimeout(() => {
-        commentsEndRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-      }, 100);
-    } else {
-      alert(`Comment failed: ${result.message}`);
+        // ✅ Chỉ update count, KHÔNG re-fetch, form KHÔNG đóng
+        if (onComment) await onComment(post.id);
+        if (refreshBalance) await refreshBalance();
+
+        // ✅ Scroll xuống comment mới
+        setTimeout(() => {
+          commentsEndRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }, 100);
+      } else {
+        alert(`Comment failed: ${result.message}`);
+      }
+    } catch (error) {
+      console.error('💥 Comment error:', error);
+      alert(`Error posting comment: ${error.message}`);
+    } finally {
+      setIsCommenting(false);
     }
-  } catch (error) {
-    console.error('💥 Comment error:', error);
-    alert(`Error posting comment: ${error.message}`);
-  } finally {
-    setIsCommenting(false);
-  }
-};
+  };
 
 
   const handleCommentReply = (commentId, reply) => { console.log(`💬 Reply to comment ${commentId}:`, reply); };
@@ -2200,7 +2240,7 @@ const handleCommentSubmit = async (e) => {
       </div>
 
       {showCommentForm && (
-  <div className="form-container comment-form-wrapper" ref={commentFormRef}>
+        <div className="form-container comment-form-wrapper" ref={commentFormRef}>
           <form className="comment-form" onSubmit={handleCommentSubmit}>
             <div className="comment-input-container">
               <textarea
@@ -2236,32 +2276,32 @@ const handleCommentSubmit = async (e) => {
 
           <div className="comments-section">
             <div className="comments-header">
-  <h4>💬 Prayers({mergedComments.length})</h4>
-  {loadingComments && <span className="loading-indicator">Loading...</span>}
-</div>
-<div className="comments-list">
-  {mergedComments.length > 0 ? (
-    mergedComments.map(comment => (
-      <Comment
-        key={comment.id}
-        comment={comment}
-        onReply={handleCommentReply}
-        onEdit={handleCommentEdit}
-        onDelete={handleCommentDelete}
-        onLike={handleLikeComment}
-        currentUserId={currentUserId}
-        postDocid={post.id}
-        commentState={commentStates[comment.id]}
-      />
-    ))
-  ) : (
-    <div className="no-comments">
-      <p>No comments yet. Be the first to comment!</p>
-    </div>
-  )}
-  {/* ✅ Anchor scroll */}
-  <div ref={commentsEndRef} />
-</div>
+              <h4>💬 Prayers({mergedComments.length})</h4>
+              {loadingComments && <span className="loading-indicator">Loading...</span>}
+            </div>
+            <div className="comments-list">
+              {mergedComments.length > 0 ? (
+                mergedComments.map(comment => (
+                  <Comment
+                    key={comment.id}
+                    comment={comment}
+                    onReply={handleCommentReply}
+                    onEdit={handleCommentEdit}
+                    onDelete={handleCommentDelete}
+                    onLike={handleLikeComment}
+                    currentUserId={currentUserId}
+                    postDocid={post.id}
+                    commentState={commentStates[comment.id]}
+                  />
+                ))
+              ) : (
+                <div className="no-comments">
+                  <p>No comments yet. Be the first to comment!</p>
+                </div>
+              )}
+              {/* ✅ Anchor scroll */}
+              <div ref={commentsEndRef} />
+            </div>
             {hasMoreComments && (
               <div className="load-more-comments">
                 <button onClick={handleLoadMoreComments} disabled={loadingComments} className="load-more-btn">
@@ -2526,25 +2566,39 @@ const PrayerHub = ({ user, onLogout }) => {
 
   const handleCategoryClick = (categoryName) => {
     if (categoryName === 'Privacy Choices') {
-      setPrivacyFilterActive(!privacyFilterActive);
-      setIsPrivacyOpen(!privacyFilterActive);
-      setCategoryFilterActive(false);
-      setWitnessWallActive(false);
-      setIsPrayerCategoryOpen(false);
+      if (witnessWallActive) {
+        // Đang ở Witness Wall → chỉ mở dropdown, không tắt witnessWall
+        setPrivacyFilterActive(true);
+        setIsPrivacyOpen(true);
+        setCategoryFilterActive(false);
+        setIsPrayerCategoryOpen(false);
+      } else {
+        setPrivacyFilterActive(!privacyFilterActive);
+        setIsPrivacyOpen(!privacyFilterActive);
+        setCategoryFilterActive(false);
+        setIsPrayerCategoryOpen(false);
+      }
     } else if (categoryName === 'Prayer Category') {
-      setCategoryFilterActive(!categoryFilterActive);
-      setIsPrayerCategoryOpen(!categoryFilterActive);
-      setPrivacyFilterActive(false);
-      setWitnessWallActive(false);
-      setIsPrivacyOpen(false);
+      if (witnessWallActive) {
+        // Đang ở Witness Wall → chỉ mở dropdown, không tắt witnessWall
+        setCategoryFilterActive(true);
+        setIsPrayerCategoryOpen(true);
+        setPrivacyFilterActive(false);
+        setIsPrivacyOpen(false);
+      } else {
+        setCategoryFilterActive(!categoryFilterActive);
+        setIsPrayerCategoryOpen(!categoryFilterActive);
+        setPrivacyFilterActive(false);
+        setIsPrivacyOpen(false);
+      }
     } else if (categoryName === 'Witness Wall') {
-      setWitnessWallActive(!witnessWallActive);
-      setPrivacyFilterActive(false);
-      setCategoryFilterActive(false);
+      setWitnessWallActive(prev => !prev);
+      // ✅ Giữ nguyên selectedPrivacy & selectedPrayerCategory đã chọn
       setIsPrivacyOpen(false);
       setIsPrayerCategoryOpen(false);
     }
   };
+
 
   const getFilteredPosts = () => posts;
 
@@ -2560,16 +2614,16 @@ const PrayerHub = ({ user, onLogout }) => {
   };
 
   // ✅ THAY
-const handleCommentPost = async (postId) => {
-  setPosts(prevPosts =>
-    prevPosts.map(post =>
-      post.id === postId
-        ? { ...post, calculatedComments: (post.calculatedComments || 0) + 1 }
-        : post
-    )
-  );
-  await refreshBalance();
-};
+  const handleCommentPost = async (postId) => {
+    setPosts(prevPosts =>
+      prevPosts.map(post =>
+        post.id === postId
+          ? { ...post, calculatedComments: (post.calculatedComments || 0) + 1 }
+          : post
+      )
+    );
+    await refreshBalance();
+  };
 
 
   if (showTribeDetail) {
@@ -2703,10 +2757,11 @@ const handleCommentPost = async (postId) => {
               <WitnessWall
                 currentUserId={user?.id}
                 allPosts={allPosts}
-                privacyFilter={privacyFilterActive ? selectedPrivacy : null}
-                categoryFilter={categoryFilterActive ? selectedPrayerCategory : null}
+                privacyFilter={selectedPrivacy || null}
+                categoryFilter={selectedPrayerCategory || null}
                 refreshBalance={refreshBalance}
               />
+
             ) : filteredPosts.length > 0 ? (
               <div className="posts-feed">
                 {filteredPosts.map(post => (
@@ -2763,7 +2818,7 @@ const handleCommentPost = async (postId) => {
 
         <div className="bottom-navigation">
           <CircleButton provider="Home" iconSrc={Home} onClick={() => handleTabChange('Home')} isActive={false} size="medium" ariaLabel="Home" />
-          <CircleButton provider="PrayerHub" iconSrc={Search} onClick={() => {}} isActive={true} size="medium" ariaLabel="Prayer Hub" />
+          <CircleButton provider="PrayerHub" iconSrc={Search} onClick={() => { }} isActive={true} size="medium" ariaLabel="Prayer Hub" />
           <CircleButton provider="Add" iconSrc={Add} onClick={() => handleTabChange('Add')} isActive={false} size="medium" ariaLabel="Add Post" />
           <CircleButton provider="AddFriend" iconSrc={Profile} onClick={() => handleTabChange('AddFriend')} isActive={false} size="medium" ariaLabel="Add Friend" />
           <CircleButton provider="Nova" iconSrc={Nova} onClick={() => handleTabChange('Nova')} isActive={false} size="medium" ariaLabel="Nova Assistant" />

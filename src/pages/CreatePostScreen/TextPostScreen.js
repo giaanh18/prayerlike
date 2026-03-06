@@ -357,7 +357,7 @@ const TextPostScreen = ({ user }) => {
           <button 
             className="action-btn submit-btn"
             onClick={handleSubmit}
-            disabled={!content.trim() || isSubmitting}
+            disabled={!title.trim() || !content.trim() || isSubmitting}
           >
             {isSubmitting ? 'posting...' : 'post'}
           </button>
