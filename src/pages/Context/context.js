@@ -303,38 +303,49 @@ const handleLikeComment = async (commentId) => {
 
 
   // ==================== COMMENTS ====================
-  const loadComments = async (postId) => {
-    setPostStates(prev => ({ ...prev, [postId]: { ...prev[postId], loadingComments: true } }));
-    try {
-      const result = await ApiService.getComments(postId, 1, 50);
-      let allReplies = [];
-      if (result.success && result.comments) {
-        allReplies = result.comments.filter(c => c.parent_docid === postId && c.event !== 'witness');
-      }
-      const formattedComments = allReplies.map(c => ({
-        id: c.docid, author: c.userid, content: c.content,
-        time: c.datetime || 'Just now', likes: c.amen_count || 0,
-        isReply: true, userid: c.userid, avatar_url: c.avatar_url
-      }));
-      const newCommentStates = {};
-      formattedComments.forEach(comment => {
-        newCommentStates[comment.id] = { likeCount: comment.likes || 0, isLiked: false, isLiking: false };
-      });
-      setCommentStates(prev => ({ ...prev, ...newCommentStates }));
-      setPostStates(prev => ({ ...prev, [postId]: { ...prev[postId], comments: formattedComments, loadingComments: false } }));
-    } catch (error) {
-      setPostStates(prev => ({ ...prev, [postId]: { ...prev[postId], loadingComments: false } }));
-    }
-  };
+  // ✅ MỚI — giống hệt Original: lấy từ allPosts đã có, filter client-side
+const loadComments = (postId) => {
+  const commentsFromAllPosts = allPosts
+    .filter(c => c.parent_docid === postId && c.event !== 'witness')
+    .map(c => ({
+      id: c.docid,
+      author: c.userid,
+      content: c.content,
+      time: c.datetime || 'Just now',
+      likes: c.amen_count || 0,
+      isReply: true,
+      userid: c.userid,
+      avatar_url: c.avatar_url
+    }));
 
-  const handleToggleCommentForm = (postId) => {
-    const currentState = postStates[postId];
-    const newShowState = !currentState?.showCommentForm;
-    setPostStates(prev => ({ ...prev, [postId]: { ...prev[postId], showCommentForm: newShowState } }));
-    if (newShowState && (!currentState?.comments || currentState.comments.length === 0)) {
-      loadComments(postId);
+  const newCommentStates = {};
+  commentsFromAllPosts.forEach(comment => {
+    newCommentStates[comment.id] = { likeCount: comment.likes || 0, isLiked: false, isLiking: false };
+  });
+
+  setCommentStates(prev => ({ ...prev, ...newCommentStates }));
+  setPostStates(prev => ({
+    ...prev,
+    [postId]: {
+      ...prev[postId],
+      comments: commentsFromAllPosts,
+      commentCount: commentsFromAllPosts.length,
+      loadingComments: false
     }
-  };
+  }));
+};
+
+
+  // ✅ MỚI — luôn reload từ allPosts mỗi lần mở (để có data mới nhất)
+const handleToggleCommentForm = (postId) => {
+  const currentState = postStates[postId];
+  const newShowState = !currentState?.showCommentForm;
+  setPostStates(prev => ({ ...prev, [postId]: { ...prev[postId], showCommentForm: newShowState } }));
+  if (newShowState) {
+    loadComments(postId); // ✅ luôn gọi — không cần async, không gọi API
+  }
+};
+
 
   const handleCommentTextChange = (postId, text) => {
     setPostStates(prev => ({ ...prev, [postId]: { ...prev[postId], commentText: text } }));
@@ -1778,4 +1789,6 @@ if (result.success) {
 };
 
 export default MainApp;
+
+
 
