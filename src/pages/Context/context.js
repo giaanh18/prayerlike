@@ -3132,7 +3132,10 @@ const MainApp = ({ user, onLogout }) => {
       const result = await ApiService.getActivities(params);
 if (result.success) {
   const transformedActivities = result.activities
-    .filter(activity => Number(activity.tribe) === Number(currentTribeId)) // ✅ THÊM DÒNG NÀY
+    .filter(activity => {
+  if (Number(currentTribeId) === 0) return true; // tribe 0 = xem tất cả
+  return Number(activity.tribe) === Number(currentTribeId);
+}) // ✅ THÊM DÒNG NÀY
     .map(activity => {
       const rawDesc = activity.description || '';
       const cleanDescription = rawDesc
