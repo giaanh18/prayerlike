@@ -342,3 +342,33 @@
     padding: 10px 12px !important;
   }
 }
+
+/* ═══════════════════════════════════════════════════════════
+   🔴 Validation Error Styles
+   ═══════════════════════════════════════════════════════════ */
+
+.field-wrapper {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  margin-bottom: 15px;
+}
+
+.input-error {
+  border: 1.5px solid #e53935 !important;
+  background-color: #ffe8e8 !important;
+}
+
+.input-error::placeholder,
+.textarea-wrapper.input-error textarea::placeholder {
+  color: #e53935 !important;
+  opacity: 1;
+}
+
+.field-error-msg {
+  display: block;
+  color: #e53935 !important;
+  font-size: 12px;
+  margin-top: 5px;
+  margin-left: 2px;
+}
