@@ -280,3 +280,9 @@
     height: 80px;
   }
 }
+/* ✅ FIX: No Activities text màu trắng */
+.no-activities,
+.no-activities h3,
+.no-activities p {
+  color: #FFFFFF;
+}

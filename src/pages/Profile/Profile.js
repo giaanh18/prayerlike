@@ -34,6 +34,22 @@ const ProviderIcon = ({ provider }) => {
   );
 };
 
+// ✅ THÊM: Mapping tribe ID → tên
+const TRIBE_NAMES = {
+  1:  'Judah',
+  2:  'Reuben',
+  3:  'Gad',
+  4:  'Asher',
+  5:  'Naphtali',
+  6:  'Manasseh',
+  7:  'Simeon',
+  8:  'Levi',
+  9:  'Issachar',
+  10: 'Zebulun',
+  11: 'Joseph',
+  12: 'Benjamin',
+};
+
 const Profile = ({ user, onLogout }) => {
   const navigate = useNavigate();
   const location = useLocation();
@@ -431,7 +447,8 @@ The Service will respond and assist with related requests within a reasonable ti
             <div className="info-item">
               <label>Tribe</label>
               <div className="info-value">
-                <span>Tribe {profile.tribe}</span>
+                {/* ✅ SỬA: Hiển thị tên tribe thay vì số */}
+                <span>{TRIBE_NAMES[profile.tribe] || `Tribe ${profile.tribe}`}</span>
               </div>
             </div>
           )}

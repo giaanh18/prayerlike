@@ -104,7 +104,7 @@ const YBHistoricalRecord = ({ user }) => {
           <button className="yb-back-button" onClick={() => navigate(-1)}>
             ←
           </button>
-          <h1 className="yb-title">YB historical record</h1>
+          <h1 className="yb-title">Yield to God Coins (YC) Historical record</h1>
           <div className="yb-coin-display">
             <span className="yb-coin-icon">💰</span>
             <span className="yb-coin-amount">{balance.toFixed(1)}</span>
@@ -121,7 +121,7 @@ const YBHistoricalRecord = ({ user }) => {
         {/* Recent Achievement */}
         {recentRecord && (
           <div className="yb-section">
-            <h2 className="yb-section-title">YB recently achieved a record.</h2>
+            <h2 className="yb-section-title">YC recently achieved a record</h2>
             <div className="yb-record-card yb-recent">
               <div className="yb-record-icon" style={{ color: recentRecord.eventColor }}>
                 {recentRecord.eventLabel.split(' ')[0]}

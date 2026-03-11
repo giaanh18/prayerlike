@@ -140,20 +140,35 @@ const WitnessWall = ({ currentUserId, allPosts, privacyFilter, categoryFilter, r
       }
 
 
-        // Tính total từ API nếu có, fallback về length
-        const total = result.pagination?.total_items
-          ?? result.total
-          ?? fetchedWitnesses.length;
+       const hasActiveFilter = !!(privacyFilter || categoryFilter);
 
-        const pages = result.pagination?.total_pages
-          ?? Math.ceil(total / ITEMS_PER_PAGE)
-          ?? 1;
+if (hasActiveFilter) {
+  if (fetchedWitnesses.length === 0) {
+    // ✅ Trang này trống → lùi về trang trước, khoá Next
+    const safePage = Math.max(page - 1, 1);
+    setCurrentPage(safePage);
+    setTotalPages(safePage);
+    setTotalItems(0);
+    setWitnesses([]);
+  } else {
+    // ✅ Còn data → kiểm tra có trang tiếp không
+    const isLastPage = fetchedWitnesses.length < ITEMS_PER_PAGE;
+    const pages = isLastPage ? page : page + 1;
+    setWitnesses(fetchedWitnesses);
+    setTotalItems(fetchedWitnesses.length);
+    setTotalPages(pages);
+  }
+} else {
+  // ✅ Không filter → tin hoàn toàn vào API pagination
+  const total = result.pagination?.total_items ?? result.total ?? fetchedWitnesses.length;
+  const pages = result.pagination?.total_pages ?? Math.ceil(total / ITEMS_PER_PAGE) ?? 1;
+  setWitnesses(fetchedWitnesses);
+  setTotalItems(total);
+  setTotalPages(Math.max(pages, 1));
+}
 
-        setWitnesses(fetchedWitnesses);
-        setTotalItems(total);
-        setTotalPages(pages || 1);
+console.log(`✅ Witnesses: ${fetchedWitnesses.length} items | Page ${page} | HasFilter: ${hasActiveFilter}`);
 
-        console.log(`✅ Witnesses loaded: ${fetchedWitnesses.length} | Total: ${total} | Pages: ${pages}`);
       }
     } catch (error) {
       console.error('❌ Error loading witnesses:', error);
@@ -197,14 +212,35 @@ const WitnessWall = ({ currentUserId, allPosts, privacyFilter, categoryFilter, r
   }
 
   if (!witnesses || witnesses.length === 0) {
-    return (
-      <div className="witness-wall-empty">
-        <div className="witness-wall-empty-icon">✨</div>
-        <h3>No Witnesses</h3>
-        <p>No witnesses in this category yet. Be the first to share!</p>
-      </div>
-    );
-  }
+  return (
+    <div className="witness-wall-empty">
+      <div className="witness-wall-empty-icon">✨</div>
+      <h3>No Witnesses</h3>
+      <p>No witnesses in this category yet. Be the first to share!</p>
+
+      {/* ✅ Vẫn hiện pagination khi empty để user có thể quay lại */}
+      {currentPage > 1 && (
+        <div className="witness-wall-pagination">
+          <button
+            className="pagination-btn"
+            onClick={handlePrevPage}
+            disabled={loading}
+          >
+            ← Previous
+          </button>
+          <span className="pagination-info">Page {currentPage}</span>
+          <button
+            className="pagination-btn"
+            disabled={true}
+          >
+            Next →
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
 
   return (
     <div className="witness-wall">
