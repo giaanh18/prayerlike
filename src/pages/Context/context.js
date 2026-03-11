@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import ApiService from '../../services/api';
@@ -44,7 +45,6 @@ import benjaminIcon from '../../assets/images/tribes/benjamin.png';
 
 import './context.css';
 
-// ==================== Tribe ID Mapping Table ====================
 const tribeIdMap = {
   1: { name: 'Judah', icon: judahIcon },
   2: { name: 'Reuben', icon: reubenIcon },
@@ -60,7 +60,6 @@ const tribeIdMap = {
   12: { name: 'Benjamin', icon: benjaminIcon },
 };
 
-// ==================== IMAGE HELPER ====================
 const getActivityImageUrl = (imagePath) => {
   if (!imagePath) return null;
   if (imagePath.startsWith('http://') || imagePath.startsWith('https://')) return imagePath;
@@ -69,7 +68,6 @@ const getActivityImageUrl = (imagePath) => {
   return `${baseUrl}${cleanPath}`;
 };
 
-// ==================== TRANSLATE ICON ====================
 const TranslateIcon = ({ size = 18 }) => (
   <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" style={{ width: size, height: size }}>
     <path d="M12.87 15.07l-2.54-2.51.03-.03c1.74-1.94 2.98-4.17 3.71-6.53H17V4h-7V2H8v2H1v1.99h11.17C11.5 7.92 10.44 9.75 9 11.35 8.07 10.32 7.3 9.19 6.69 8h-2c.73 1.63 1.73 3.17 2.98 4.56l-5.09 5.02L4 19l5-5 3.11 3.11.76-2.04zM18.5 10h-2L12 22h2l1.12-3h4.75L21 22h2l-4.5-12zm-2.62 7l1.62-4.33L19.12 17h-3.24z" fill="currentColor" />
@@ -90,11 +88,8 @@ const WitnessWall = ({ selectedCategory, currentUserId, allPosts, refreshBalance
   const [translationStates, setTranslationStates] = useState({});
   const [myWitnessedPostIds, setMyWitnessedPostIds] = useState(new Set());
   const [witnessFormStates, setWitnessFormStates] = useState({});
-
-  // ✅ dùng để tránh useEffect[currentPage] gọi API lần đầu mount
   const isFirstMount = useRef(true);
 
-  // ==================== TRANSLATE ====================
   const handleTranslateOriginalPost = async (postId, content) => {
     const currentState = translationStates[postId];
     if (currentState?.isTranslating) return;
@@ -113,24 +108,17 @@ const WitnessWall = ({ selectedCategory, currentUserId, allPosts, refreshBalance
     }
   };
 
-  // ==================== LOAD WITNESSES ====================
   const loadWitnesses = async (page = 1) => {
     setLoading(true);
     try {
       const result = await ApiService.getWitnessList(page, 100);
       if (result.success) {
-
-        // Merge witnessed IDs từ API với optimistic local
         setMyWitnessedPostIds(prev => {
           const fromApi = new Set(
-            result.witnesses
-              .filter(w => w.userid === currentUserId)
-              .map(w => w.parent_docid)
+            result.witnesses.filter(w => w.userid === currentUserId).map(w => w.parent_docid)
           );
           return new Set([...fromApi, ...prev]);
         });
-
-        // Filter theo viewScope + selectedCategory
         const filteredWitnesses = result.witnesses.filter(witness => {
           const originalPost = witness.original_post || allPosts?.find(p => p.docid === witness.parent_docid);
           if (!originalPost) return false;
@@ -141,13 +129,10 @@ const WitnessWall = ({ selectedCategory, currentUserId, allPosts, refreshBalance
           if (!selectedCategory) return true;
           return originalPost.category === selectedCategory;
         });
-
-        // Client-side pagination
         const perPage = 20;
         const startIndex = (page - 1) * perPage;
         const endIndex = startIndex + perPage;
         const paginatedWitnesses = filteredWitnesses.slice(startIndex, endIndex);
-
         setWitnesses(paginatedWitnesses);
         setPagination({
           current_page: page,
@@ -157,51 +142,28 @@ const WitnessWall = ({ selectedCategory, currentUserId, allPosts, refreshBalance
           has_next: endIndex < filteredWitnesses.length,
           has_prev: page > 1
         });
-
-        // Init states cho từng post
         const initialStates = {};
         const initialTranslationStates = {};
         const initialWitnessFormStates = {};
-
         paginatedWitnesses.forEach(witness => {
           const originalPost = witness.original_post || allPosts?.find(p => p.docid === witness.parent_docid);
           if (originalPost) {
-            const commentCount = allPosts.filter(
-              p => p.parent_docid === originalPost.docid && p.event !== 'witness'
-            ).length;
+            const commentCount = allPosts.filter(p => p.parent_docid === originalPost.docid && p.event !== 'witness').length;
             initialStates[originalPost.docid] = {
-              likeCount: originalPost.amen_count || 0,
-              hasLiked: false,
-              isLiked: false,
-              isLiking: false,
-              commentCount,
-              showCommentForm: false,
-              commentText: '',
-              isCommenting: false,
-              comments: [],
-              loadingComments: false
+              likeCount: originalPost.amen_count || 0, hasLiked: false, isLiked: false, isLiking: false,
+              commentCount, showCommentForm: false, commentText: '', isCommenting: false, comments: [], loadingComments: false
             };
-            initialTranslationStates[originalPost.docid] = {
-              isTranslating: false, translatedContent: null, translationError: null
-            };
-            initialWitnessFormStates[originalPost.docid] = {
-              showWitnessForm: false, witnessText: '', witnessImage: null, isSubmitting: false
-            };
+            initialTranslationStates[originalPost.docid] = { isTranslating: false, translatedContent: null, translationError: null };
+            initialWitnessFormStates[originalPost.docid] = { showWitnessForm: false, witnessText: '', witnessImage: null, isSubmitting: false };
           }
         });
-
         setPostStates(initialStates);
         setTranslationStates(initialTranslationStates);
-
-        // Merge witnessFormStates — giữ nguyên form đang mở
         setWitnessFormStates(prev => {
           const merged = { ...initialWitnessFormStates };
-          Object.keys(prev).forEach(postId => {
-            if (prev[postId]?.showWitnessForm) merged[postId] = prev[postId];
-          });
+          Object.keys(prev).forEach(postId => { if (prev[postId]?.showWitnessForm) merged[postId] = prev[postId]; });
           return merged;
         });
-
       } else {
         setWitnesses([]);
       }
@@ -213,139 +175,79 @@ const WitnessWall = ({ selectedCategory, currentUserId, allPosts, refreshBalance
     }
   };
 
-  // ✅ useEffect 1: mount + đổi category/viewScope → reset page 1 + load
   useEffect(() => {
     setCurrentPage(1);
     loadWitnesses(1);
   }, [selectedCategory, viewScope]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // ✅ useEffect 2: bấm Next/Prev → load trang mới (bỏ qua lần mount đầu)
   useEffect(() => {
-    if (isFirstMount.current) {
-      isFirstMount.current = false;
-      return;
-    }
+    if (isFirstMount.current) { isFirstMount.current = false; return; }
     loadWitnesses(currentPage);
   }, [currentPage]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // ==================== PAGINATION ====================
   const handleNextPage = () => {
-    if (pagination.has_next) {
-      setCurrentPage(prev => prev + 1);
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    }
+    if (pagination.has_next) { setCurrentPage(prev => prev + 1); window.scrollTo({ top: 0, behavior: 'smooth' }); }
   };
   const handlePrevPage = () => {
-    if (pagination.has_prev) {
-      setCurrentPage(prev => Math.max(1, prev - 1));
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    }
+    if (pagination.has_prev) { setCurrentPage(prev => Math.max(1, prev - 1)); window.scrollTo({ top: 0, behavior: 'smooth' }); }
   };
 
-  // ==================== LIKE POST ====================
   const handleLikeOriginalPost = async (postId) => {
     const currentState = postStates[postId];
     if (!currentState || currentState.isLiking) return;
     const prevCount = currentState.likeCount;
     const prevIsLiked = currentState.isLiked || false;
     const newCount = prevCount + 1;
-    setPostStates(prev => ({
-      ...prev,
-      [postId]: { ...prev[postId], hasLiked: true, isLiked: true, likeCount: newCount, isLiking: true }
-    }));
+    setPostStates(prev => ({ ...prev, [postId]: { ...prev[postId], hasLiked: true, isLiked: true, likeCount: newCount, isLiking: true } }));
     try {
       const result = await ApiService.likePost(postId, currentUserId);
       if (result.success) {
         const finalCount = result.data?.amen_count !== undefined ? result.data.amen_count : newCount;
-        setTimeout(() => {
-          setPostStates(prev => ({
-            ...prev,
-            [postId]: { ...prev[postId], likeCount: finalCount, hasLiked: false, isLiking: false }
-          }));
-        }, 300);
+        setTimeout(() => { setPostStates(prev => ({ ...prev, [postId]: { ...prev[postId], likeCount: finalCount, hasLiked: false, isLiking: false } })); }, 300);
         if (refreshBalance) await refreshBalance();
       } else throw new Error(result.message || 'API Error');
     } catch (error) {
-      setPostStates(prev => ({
-        ...prev,
-        [postId]: { ...prev[postId], hasLiked: false, isLiked: prevIsLiked, likeCount: prevCount, isLiking: false }
-      }));
+      setPostStates(prev => ({ ...prev, [postId]: { ...prev[postId], hasLiked: false, isLiked: prevIsLiked, likeCount: prevCount, isLiking: false } }));
     }
   };
 
-  // ==================== LIKE COMMENT ====================
-  // ✅ CODE ĐÃ SỬA — toggle đúng
-const handleLikeComment = async (commentId) => {
-  const currentState = commentStates[commentId];
-  if (!currentState || currentState.isLiking) return;
-  const prevCount = currentState.likeCount;
-  const prevIsLiked = currentState.isLiked || false;
-
-  const newIsLiked = !prevIsLiked;
-  const newCount = newIsLiked ? prevCount + 1 : Math.max(0, prevCount - 1);
-
-  setCommentStates(prev => ({ ...prev, [commentId]: { ...prev[commentId], isLiked: newIsLiked, likeCount: newCount, isLiking: true } }));
-  try {
-    const result = await ApiService.likeComment(commentId, currentUserId);
-    if (result.success) {
-      const finalCount = result.data?.amen_count !== undefined ? result.data.amen_count : newCount;
-      const finalLiked = result.data?.amened !== undefined ? result.data.amened : newIsLiked;
-      setTimeout(() => {
-        setCommentStates(prev => ({ ...prev, [commentId]: { ...prev[commentId], likeCount: finalCount, isLiked: finalLiked, isLiking: false } }));
-      }, 300);
-      if (refreshBalance) await refreshBalance();
-    } else throw new Error(result.message || 'API Error');
-  } catch (error) {
-    setCommentStates(prev => ({ ...prev, [commentId]: { ...prev[commentId], isLiked: prevIsLiked, likeCount: prevCount, isLiking: false } }));
-  }
-};
-
-
-
-  // ==================== COMMENTS ====================
-  // ✅ MỚI — giống hệt Original: lấy từ allPosts đã có, filter client-side
-const loadComments = (postId) => {
-  const commentsFromAllPosts = allPosts
-    .filter(c => c.parent_docid === postId && c.event !== 'witness')
-    .map(c => ({
-      id: c.docid,
-      author: c.userid,
-      content: c.content,
-      time: c.datetime || 'Just now',
-      likes: c.amen_count || 0,
-      isReply: true,
-      userid: c.userid,
-      avatar_url: c.avatar_url
-    }));
-
-  const newCommentStates = {};
-  commentsFromAllPosts.forEach(comment => {
-    newCommentStates[comment.id] = { likeCount: comment.likes || 0, isLiked: false, isLiking: false };
-  });
-
-  setCommentStates(prev => ({ ...prev, ...newCommentStates }));
-  setPostStates(prev => ({
-    ...prev,
-    [postId]: {
-      ...prev[postId],
-      comments: commentsFromAllPosts,
-      commentCount: commentsFromAllPosts.length,
-      loadingComments: false
+  const handleLikeComment = async (commentId) => {
+    const currentState = commentStates[commentId];
+    if (!currentState || currentState.isLiking) return;
+    const prevCount = currentState.likeCount;
+    const prevIsLiked = currentState.isLiked || false;
+    const newIsLiked = !prevIsLiked;
+    const newCount = newIsLiked ? prevCount + 1 : Math.max(0, prevCount - 1);
+    setCommentStates(prev => ({ ...prev, [commentId]: { ...prev[commentId], isLiked: newIsLiked, likeCount: newCount, isLiking: true } }));
+    try {
+      const result = await ApiService.likeComment(commentId, currentUserId);
+      if (result.success) {
+        const finalCount = result.data?.amen_count !== undefined ? result.data.amen_count : newCount;
+        const finalLiked = result.data?.amened !== undefined ? result.data.amened : newIsLiked;
+        setTimeout(() => { setCommentStates(prev => ({ ...prev, [commentId]: { ...prev[commentId], likeCount: finalCount, isLiked: finalLiked, isLiking: false } })); }, 300);
+        if (refreshBalance) await refreshBalance();
+      } else throw new Error(result.message || 'API Error');
+    } catch (error) {
+      setCommentStates(prev => ({ ...prev, [commentId]: { ...prev[commentId], isLiked: prevIsLiked, likeCount: prevCount, isLiking: false } }));
     }
-  }));
-};
+  };
 
+  const loadComments = (postId) => {
+    const commentsFromAllPosts = allPosts
+      .filter(c => c.parent_docid === postId && c.event !== 'witness')
+      .map(c => ({ id: c.docid, author: c.userid, content: c.content, time: c.datetime || 'Just now', likes: c.amen_count || 0, isReply: true, userid: c.userid, avatar_url: c.avatar_url }));
+    const newCommentStates = {};
+    commentsFromAllPosts.forEach(comment => { newCommentStates[comment.id] = { likeCount: comment.likes || 0, isLiked: false, isLiking: false }; });
+    setCommentStates(prev => ({ ...prev, ...newCommentStates }));
+    setPostStates(prev => ({ ...prev, [postId]: { ...prev[postId], comments: commentsFromAllPosts, commentCount: commentsFromAllPosts.length, loadingComments: false } }));
+  };
 
-  // ✅ MỚI — luôn reload từ allPosts mỗi lần mở (để có data mới nhất)
-const handleToggleCommentForm = (postId) => {
-  const currentState = postStates[postId];
-  const newShowState = !currentState?.showCommentForm;
-  setPostStates(prev => ({ ...prev, [postId]: { ...prev[postId], showCommentForm: newShowState } }));
-  if (newShowState) {
-    loadComments(postId); // ✅ luôn gọi — không cần async, không gọi API
-  }
-};
-
+  const handleToggleCommentForm = (postId) => {
+    const currentState = postStates[postId];
+    const newShowState = !currentState?.showCommentForm;
+    setPostStates(prev => ({ ...prev, [postId]: { ...prev[postId], showCommentForm: newShowState } }));
+    if (newShowState) loadComments(postId);
+  };
 
   const handleCommentTextChange = (postId, text) => {
     setPostStates(prev => ({ ...prev, [postId]: { ...prev[postId], commentText: text } }));
@@ -357,27 +259,12 @@ const handleToggleCommentForm = (postId) => {
     if (!currentState?.commentText.trim() || currentState.isCommenting) return;
     setPostStates(prev => ({ ...prev, [postId]: { ...prev[postId], isCommenting: true } }));
     try {
-      const result = await ApiService.addComment({
-        userid: currentUserId, content: currentState.commentText.trim(), docid: postId, sn: postSn
-      });
+      const result = await ApiService.addComment({ userid: currentUserId, content: currentState.commentText.trim(), docid: postId, sn: postSn });
       if (result.success) {
         const newCommentId = result.comment?.docid || `temp-${Date.now()}`;
-        const newComment = {
-          id: newCommentId, author: currentUserId,
-          content: currentState.commentText.trim(),
-          time: 'Just now', likes: 0, isReply: true,
-          userid: currentUserId, avatar_url: result.comment?.avatar_url
-        };
+        const newComment = { id: newCommentId, author: currentUserId, content: currentState.commentText.trim(), time: 'Just now', likes: 0, isReply: true, userid: currentUserId, avatar_url: result.comment?.avatar_url };
         setCommentStates(prev => ({ ...prev, [newCommentId]: { likeCount: 0, isLiked: false, isLiking: false } }));
-        setPostStates(prev => ({
-          ...prev,
-          [postId]: {
-            ...prev[postId],
-            commentText: '', isCommenting: false,
-            commentCount: prev[postId].commentCount + 1,
-            comments: [newComment, ...prev[postId].comments]
-          }
-        }));
+        setPostStates(prev => ({ ...prev, [postId]: { ...prev[postId], commentText: '', isCommenting: false, commentCount: prev[postId].commentCount + 1, comments: [newComment, ...prev[postId].comments] } }));
         if (refreshBalance) await refreshBalance();
       } else {
         alert(`Comment failed: ${result.message}`);
@@ -389,18 +276,9 @@ const handleToggleCommentForm = (postId) => {
     }
   };
 
-  // ==================== WITNESS FORM ====================
   const handleToggleWitnessForm = (postId) => {
     if (myWitnessedPostIds.has(postId)) return;
-    setWitnessFormStates(prev => ({
-      ...prev,
-      [postId]: {
-        ...prev[postId],
-        showWitnessForm: !prev[postId]?.showWitnessForm,
-        witnessText: '',
-        witnessImage: null
-      }
-    }));
+    setWitnessFormStates(prev => ({ ...prev, [postId]: { ...prev[postId], showWitnessForm: !prev[postId]?.showWitnessForm, witnessText: '', witnessImage: null } }));
   };
 
   const handleWitnessSubmit = async (e, postId) => {
@@ -409,25 +287,17 @@ const handleToggleCommentForm = (postId) => {
     if (!formState?.witnessText?.trim() || formState?.isSubmitting) return;
     setWitnessFormStates(prev => ({ ...prev, [postId]: { ...prev[postId], isSubmitting: true } }));
     try {
-      const result = await ApiService.createWitness(
-        currentUserId, formState.witnessText.trim(), postId, formState.witnessImage
-      );
+      const result = await ApiService.createWitness(currentUserId, formState.witnessText.trim(), postId, formState.witnessImage);
       if (result.success) {
         setMyWitnessedPostIds(prev => new Set([...prev, postId]));
-        setWitnessFormStates(prev => ({
-          ...prev,
-          [postId]: { showWitnessForm: false, witnessText: '', witnessImage: null, isSubmitting: false }
-        }));
+        setWitnessFormStates(prev => ({ ...prev, [postId]: { showWitnessForm: false, witnessText: '', witnessImage: null, isSubmitting: false } }));
         await loadWitnesses(currentPage);
         if (refreshBalance) await refreshBalance();
       } else {
         const msg = result.message || '';
         if (msg.includes('already') || msg.toLowerCase().includes('witness')) {
           setMyWitnessedPostIds(prev => new Set([...prev, postId]));
-          setWitnessFormStates(prev => ({
-            ...prev,
-            [postId]: { showWitnessForm: false, witnessText: '', witnessImage: null, isSubmitting: false }
-          }));
+          setWitnessFormStates(prev => ({ ...prev, [postId]: { showWitnessForm: false, witnessText: '', witnessImage: null, isSubmitting: false } }));
         } else {
           alert(`Failed to add testimony: ${msg}`);
           setWitnessFormStates(prev => ({ ...prev, [postId]: { ...prev[postId], isSubmitting: false } }));
@@ -439,7 +309,6 @@ const handleToggleCommentForm = (postId) => {
     }
   };
 
-  // ==================== RENDER ====================
   if (loading) {
     return (
       <div className="witness-wall-loading">
@@ -470,12 +339,8 @@ const handleToggleCommentForm = (postId) => {
             commentCount: originalPost?.comment_count || allPosts.filter(p => p.parent_docid === originalPost?.docid && p.event !== 'witness').length,
             showCommentForm: false, commentText: '', isCommenting: false, comments: [], loadingComments: false
           };
-          const translationState = translationStates[originalPost?.docid] || {
-            isTranslating: false, translatedContent: null, translationError: null
-          };
-          const witnessFormState = witnessFormStates[originalPost?.docid] || {
-            showWitnessForm: false, witnessText: '', witnessImage: null, isSubmitting: false
-          };
+          const translationState = translationStates[originalPost?.docid] || { isTranslating: false, translatedContent: null, translationError: null };
+          const witnessFormState = witnessFormStates[originalPost?.docid] || { showWitnessForm: false, witnessText: '', witnessImage: null, isSubmitting: false };
 
           return (
             <div key={witness.docid} className="witness-wall-post-card">
@@ -499,144 +364,55 @@ const handleToggleCommentForm = (postId) => {
                       <div className="post-category-badge"><span>{originalPost.category || 'General'}</span></div>
                     </div>
                   </div>
-
                   <div className="post-content">
                     {originalPost.title && <h3>{originalPost.title}</h3>}
                     <p>{originalPost.content}</p>
-                    <button
-                      className={`post-translate-button ${translationState.isTranslating ? 'translating' : ''} ${translationState.translatedContent ? 'active' : ''}`}
-                      onClick={() => handleTranslateOriginalPost(originalPost.docid, originalPost.content)}
-                      disabled={translationState.isTranslating}
-                    >
+                    <button className={`post-translate-button ${translationState.isTranslating ? 'translating' : ''} ${translationState.translatedContent ? 'active' : ''}`} onClick={() => handleTranslateOriginalPost(originalPost.docid, originalPost.content)} disabled={translationState.isTranslating}>
                       <TranslateIcon size={18} />
                     </button>
-                    {translationState.translatedContent && (
-                      <div className="post-translated-content">
-                        <span className="translate-label">🌐 Translation:</span>
-                        <p>{translationState.translatedContent}</p>
-                      </div>
-                    )}
-                    {translationState.translationError && (
-                      <div className="post-translation-error">⚠️ {translationState.translationError}</div>
-                    )}
+                    {translationState.translatedContent && (<div className="post-translated-content"><span className="translate-label">🌐 Translation:</span><p>{translationState.translatedContent}</p></div>)}
+                    {translationState.translationError && (<div className="post-translation-error">⚠️ {translationState.translationError}</div>)}
                   </div>
-
                   <div className="post-actions">
-                    <button
-                      className={`action-button action-amen ${(postState.hasLiked || postState.isLiked) ? 'active-amen' : ''}`}
-                      onClick={() => handleLikeOriginalPost(originalPost.docid)}
-                      disabled={postState.isLiking}
-                    >
-                      {postState.isLiking
-                        ? 'Processing...'
-                        : ((postState.hasLiked || postState.isLiked)
-                          ? `AMENED (${postState.likeCount})`
-                          : `AMEN (${postState.likeCount})`)}
+                    <button className={`action-button action-amen ${(postState.hasLiked || postState.isLiked) ? 'active-amen' : ''}`} onClick={() => handleLikeOriginalPost(originalPost.docid)} disabled={postState.isLiking}>
+                      {postState.isLiking ? 'Processing...' : ((postState.hasLiked || postState.isLiked) ? `AMENED (${postState.likeCount})` : `AMEN (${postState.likeCount})`)}
                     </button>
-
-                    <button
-                      className={`action-button action-comment ${postState.showCommentForm ? 'active-comment' : ''}`}
-                      onClick={() => handleToggleCommentForm(originalPost.docid)}
-                    >
+                    <button className={`action-button action-comment ${postState.showCommentForm ? 'active-comment' : ''}`} onClick={() => handleToggleCommentForm(originalPost.docid)}>
                       PRAY FOR ME ({postState.commentCount || 0})
                     </button>
-
-                    <button
-                      className={`action-button action-witness ${hasWitnessed ? 'witnessed-done' : (witnessFormState.showWitnessForm ? 'active-witness' : '')}`}
-                      onClick={() => handleToggleWitnessForm(originalPost.docid)}
-                      disabled={hasWitnessed}
-                      title={hasWitnessed ? 'You have already witnessed this post' : 'Add your testimony'}
-                      style={{
-                        backgroundColor: hasWitnessed ? '#FFD700' : undefined,
-                        cursor: hasWitnessed ? 'not-allowed' : 'pointer'
-                      }}
-                    >
+                    <button className={`action-button action-witness ${hasWitnessed ? 'witnessed-done' : (witnessFormState.showWitnessForm ? 'active-witness' : '')}`} onClick={() => handleToggleWitnessForm(originalPost.docid)} disabled={hasWitnessed} title={hasWitnessed ? 'You have already witnessed this post' : 'Add your testimony'} style={{ backgroundColor: hasWitnessed ? '#FFD700' : undefined, cursor: hasWitnessed ? 'not-allowed' : 'pointer' }}>
                       {hasWitnessed ? `✨ WITNESSED` : `WITNESS`}
                     </button>
                   </div>
-
                   {witnessFormState.showWitnessForm && !hasWitnessed && (
                     <div className="form-container witness-form-wrapper">
                       <form className="witness-form" onSubmit={(e) => handleWitnessSubmit(e, originalPost.docid)}>
-                        <textarea
-                          value={witnessFormState.witnessText}
-                          onChange={(e) => setWitnessFormStates(prev => ({
-                            ...prev,
-                            [originalPost.docid]: { ...prev[originalPost.docid], witnessText: e.target.value }
-                          }))}
-                          placeholder="Share your testimony..."
-                          rows="4"
-                          maxLength="1000"
-                        />
+                        <textarea value={witnessFormState.witnessText} onChange={(e) => setWitnessFormStates(prev => ({ ...prev, [originalPost.docid]: { ...prev[originalPost.docid], witnessText: e.target.value } }))} placeholder="Share your testimony..." rows="4" maxLength="1000" />
                         <div className="witness-image-picker" style={{ marginTop: '8px' }}>
-                          <label
-                            htmlFor={`witness-image-wall-${originalPost.docid}`}
-                            style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', cursor: 'pointer', padding: '6px 12px', borderRadius: '8px', border: '1px dashed #aaa', fontSize: '13px', color: '#555', backgroundColor: '#f9f9f9' }}
-                          >
+                          <label htmlFor={`witness-image-wall-${originalPost.docid}`} style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', cursor: 'pointer', padding: '6px 12px', borderRadius: '8px', border: '1px dashed #aaa', fontSize: '13px', color: '#555', backgroundColor: '#f9f9f9' }}>
                             📷 {witnessFormState.witnessImage ? witnessFormState.witnessImage.name : 'Add photo (optional)'}
                           </label>
-                          <input
-                            id={`witness-image-wall-${originalPost.docid}`}
-                            type="file" accept="image/*"
-                            style={{ display: 'none' }}
-                            onChange={(e) => setWitnessFormStates(prev => ({
-                              ...prev,
-                              [originalPost.docid]: { ...prev[originalPost.docid], witnessImage: e.target.files[0] || null }
-                            }))}
-                          />
+                          <input id={`witness-image-wall-${originalPost.docid}`} type="file" accept="image/*" style={{ display: 'none' }} onChange={(e) => setWitnessFormStates(prev => ({ ...prev, [originalPost.docid]: { ...prev[originalPost.docid], witnessImage: e.target.files[0] || null } }))} />
                           {witnessFormState.witnessImage && (
-                            <button
-                              type="button"
-                              onClick={() => setWitnessFormStates(prev => ({
-                                ...prev,
-                                [originalPost.docid]: { ...prev[originalPost.docid], witnessImage: null }
-                              }))}
-                              style={{ marginLeft: '8px', background: 'none', border: 'none', color: '#e53935', cursor: 'pointer', fontSize: '13px' }}
-                            >
-                              ✕ Remove
-                            </button>
+                            <button type="button" onClick={() => setWitnessFormStates(prev => ({ ...prev, [originalPost.docid]: { ...prev[originalPost.docid], witnessImage: null } }))} style={{ marginLeft: '8px', background: 'none', border: 'none', color: '#e53935', cursor: 'pointer', fontSize: '13px' }}>✕ Remove</button>
                           )}
                         </div>
                         <div className="form-actions">
-                          <button
-                            type="submit"
-                            disabled={!witnessFormState.witnessText?.trim() || witnessFormState.isSubmitting}
-                            className="submit-btn witness-submit-btn"
-                          >
-                            {witnessFormState.isSubmitting ? 'Submitting...' : '✨ Submit Testimony'}
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => setWitnessFormStates(prev => ({
-                              ...prev,
-                              [originalPost.docid]: { showWitnessForm: false, witnessText: '', witnessImage: null, isSubmitting: false }
-                            }))}
-                            className="cancel-btn"
-                          >
-                            Cancel
-                          </button>
+                          <button type="submit" disabled={!witnessFormState.witnessText?.trim() || witnessFormState.isSubmitting} className="submit-btn witness-submit-btn">{witnessFormState.isSubmitting ? 'Submitting...' : '✨ Submit Testimony'}</button>
+                          <button type="button" onClick={() => setWitnessFormStates(prev => ({ ...prev, [originalPost.docid]: { showWitnessForm: false, witnessText: '', witnessImage: null, isSubmitting: false } }))} className="cancel-btn">Cancel</button>
                         </div>
                       </form>
                     </div>
                   )}
-
                   {postState.showCommentForm && (
                     <div className="form-container comment-form-wrapper">
                       <form className="comment-form" onSubmit={(e) => handleCommentSubmit(e, originalPost.docid, originalPost.sn)}>
                         <div className="comment-input-container">
-                          <textarea
-                            value={postState.commentText}
-                            onChange={(e) => handleCommentTextChange(originalPost.docid, e.target.value)}
-                            placeholder="Write your comment..." rows="3" maxLength="500"
-                          />
-                          <VoiceRecordButton onTranscriptComplete={(transcript) => {
-                            handleCommentTextChange(originalPost.docid, postState.commentText + (postState.commentText ? ' ' : '') + transcript);
-                          }} />
+                          <textarea value={postState.commentText} onChange={(e) => handleCommentTextChange(originalPost.docid, e.target.value)} placeholder="Write your comment..." rows="3" maxLength="500" />
+                          <VoiceRecordButton onTranscriptComplete={(transcript) => { handleCommentTextChange(originalPost.docid, postState.commentText + (postState.commentText ? ' ' : '') + transcript); }} />
                         </div>
                         <div className="form-actions">
-                          <button type="submit" disabled={!postState.commentText.trim() || postState.isCommenting} className="submit-btn comment-submit-btn">
-                            {postState.isCommenting ? 'Sending...' : 'Pray For You'}
-                          </button>
+                          <button type="submit" disabled={!postState.commentText.trim() || postState.isCommenting} className="submit-btn comment-submit-btn">{postState.isCommenting ? 'Sending...' : 'Pray For You'}</button>
                           <button type="button" onClick={() => handleToggleCommentForm(originalPost.docid)} className="cancel-btn">Cancel</button>
                         </div>
                       </form>
@@ -653,9 +429,7 @@ const handleToggleCommentForm = (postId) => {
                               return (
                                 <div key={comment.id} className="comment comment-reply">
                                   <div className="comment-header">
-                                    <div className="comment-avatar">
-                                      <AvatarImage userId={comment.userid || comment.author} userName={comment.author} src={comment.avatar_url} size={32} clickable={true} />
-                                    </div>
+                                    <div className="comment-avatar"><AvatarImage userId={comment.userid || comment.author} userName={comment.author} src={comment.avatar_url} size={32} clickable={true} /></div>
                                     <div className="comment-info">
                                       <div className="comment-author">{comment.author}</div>
                                       <div className="comment-time">{comment.time}</div>
@@ -663,29 +437,12 @@ const handleToggleCommentForm = (postId) => {
                                   </div>
                                   <div className="comment-content">
                                     <p>{comment.content}</p>
-                                    <button
-                                      className={`comment-translate-button ${commentTransState.isTranslating ? 'translating' : ''} ${commentTransState.translatedContent ? 'active' : ''}`}
-                                      onClick={() => handleTranslateOriginalPost(comment.id, comment.content)}
-                                      disabled={commentTransState.isTranslating}
-                                    >
-                                      <TranslateIcon size={14} />
-                                    </button>
-                                    {commentTransState.translatedContent && (
-                                      <div className="comment-translated-content">
-                                        <span className="translate-label">🌐 Translation:</span>
-                                        <p>{commentTransState.translatedContent}</p>
-                                      </div>
-                                    )}
-                                    {commentTransState.translationError && (
-                                      <div className="comment-translation-error">⚠️ {commentTransState.translationError}</div>
-                                    )}
+                                    <button className={`comment-translate-button ${commentTransState.isTranslating ? 'translating' : ''} ${commentTransState.translatedContent ? 'active' : ''}`} onClick={() => handleTranslateOriginalPost(comment.id, comment.content)} disabled={commentTransState.isTranslating}><TranslateIcon size={14} /></button>
+                                    {commentTransState.translatedContent && (<div className="comment-translated-content"><span className="translate-label">🌐 Translation:</span><p>{commentTransState.translatedContent}</p></div>)}
+                                    {commentTransState.translationError && (<div className="comment-translation-error">⚠️ {commentTransState.translationError}</div>)}
                                   </div>
                                   <div className="comment-actions">
-                                    <button
-                                      className={`comment-action-btn like ${commentState.isLiked ? 'active-amen' : ''}`}
-                                      onClick={() => handleLikeComment(comment.id)}
-                                      disabled={commentState.isLiking}
-                                    >
+                                    <button className={`comment-action-btn like ${commentState.isLiked ? 'active-amen' : ''}`} onClick={() => handleLikeComment(comment.id)} disabled={commentState.isLiking}>
                                       {commentState.isLiking ? 'Processing...' : (commentState.isLiked ? `AMENED (${commentState.likeCount})` : `AMEN (${commentState.likeCount})`)}
                                     </button>
                                   </div>
@@ -701,12 +458,9 @@ const handleToggleCommentForm = (postId) => {
                   )}
                 </div>
               )}
-
               <div className="witness-section">
                 <div className="witness-wall-header">
-                  <div className="witness-wall-avatar">
-                    <AvatarImage userId={witness.userid} userName={witness.userid} src={witness.avatar_url} size={48} clickable={true} />
-                  </div>
+                  <div className="witness-wall-avatar"><AvatarImage userId={witness.userid} userName={witness.userid} src={witness.avatar_url} size={48} clickable={true} /></div>
                   <div className="witness-wall-info">
                     <div className="witness-wall-author">{witness.userid}</div>
                     <div className="witness-wall-time">{witness.datetime || 'Just now'}</div>
@@ -733,13 +487,10 @@ const handleToggleCommentForm = (postId) => {
           );
         })}
       </div>
-
-      {/* ✅ Nút pagination — hiện khi có > 1 trang */}
-
       {pagination.total_items > 0 && (
         <div className="witness-wall-pagination">
           <button className="pagination-btn" onClick={handlePrevPage} disabled={!pagination.has_prev || loading}>← Previous</button>
-          <span className="pagination-info">Page {pagination.current_page} / {pagination.total_pages} </span>
+          <span className="pagination-info">Page {pagination.current_page} / {pagination.total_pages}</span>
           <button className="pagination-btn" onClick={handleNextPage} disabled={!pagination.has_next || loading}>Next →</button>
         </div>
       )}
@@ -752,10 +503,8 @@ const PrivacyDropdown = ({ onChange, initialValue = 'public' }) => {
   const [selected, setSelected] = useState(initialValue);
   const [isOpen, setIsOpen] = useState(false);
   const options = [
-    { id: 'all', label: 'All', icon: '' },
-    { id: 'public', label: 'Public', icon: '' },
-    { id: 'family', label: 'Family', icon: '' },
-    { id: 'tribe', label: 'Tribe', icon: '' },
+    { id: 'all', label: 'All', icon: '' }, { id: 'public', label: 'Public', icon: '' },
+    { id: 'family', label: 'Family', icon: '' }, { id: 'tribe', label: 'Tribe', icon: '' },
     { id: 'private', label: 'Private', icon: '' }
   ];
   const selectedOption = options.find(option => option.id === selected);
@@ -795,9 +544,7 @@ const Comment = ({ comment, onReply, onEdit, onDelete, onLike, currentUserId, po
   const [translatedContent, setTranslatedContent] = useState(null);
   const [translationError, setTranslationError] = useState(null);
 
-  useEffect(() => {
-    setIsTranslating(false); setTranslatedContent(null); setTranslationError(null);
-  }, [comment.id]);
+  useEffect(() => { setIsTranslating(false); setTranslatedContent(null); setTranslationError(null); }, [comment.id]);
 
   const handleTranslate = async () => {
     if (isTranslating) return;
@@ -857,9 +604,7 @@ const Comment = ({ comment, onReply, onEdit, onDelete, onLike, currentUserId, po
   return (
     <div className={`comment ${comment.isReply ? 'comment-reply' : ''}`}>
       <div className="comment-header">
-        <div className="comment-avatar">
-          <AvatarImage userId={comment.userid || comment.author} userName={comment.author} src={comment.avatar_url} size={32} clickable={true} />
-        </div>
+        <div className="comment-avatar"><AvatarImage userId={comment.userid || comment.author} userName={comment.author} src={comment.avatar_url} size={32} clickable={true} /></div>
         <div className="comment-info">
           <div className="comment-author">{comment.author}</div>
           <div className="comment-time">{comment.time}</div>
@@ -877,9 +622,7 @@ const Comment = ({ comment, onReply, onEdit, onDelete, onLike, currentUserId, po
         ) : (
           <>
             <p>{comment.content}</p>
-            <button className={`comment-translate-button ${isTranslating ? 'translating' : ''} ${translatedContent ? 'active' : ''}`} onClick={handleTranslate} disabled={isTranslating}>
-              <TranslateIcon size={14} />
-            </button>
+            <button className={`comment-translate-button ${isTranslating ? 'translating' : ''} ${translatedContent ? 'active' : ''}`} onClick={handleTranslate} disabled={isTranslating}><TranslateIcon size={14} /></button>
             {translatedContent && <div className="comment-translated-content"><span className="translate-label">🌐 Translation:</span><p>{translatedContent}</p></div>}
             {translationError && <div className="comment-translation-error">⚠️ {translationError}</div>}
           </>
@@ -914,54 +657,33 @@ const Post = ({ post, allPosts, onLike, onComment, onWitnessCreated, currentUser
   const [activeForm, setActiveForm] = useState(null);
   const WITNESSED_KEY = `witnessed_${currentUserId}`;
 
-  const getWitnessedSet = () => {
-    try { return new Set(JSON.parse(localStorage.getItem(WITNESSED_KEY) || '[]')); }
-    catch { return new Set(); }
-  };
-
+  const getWitnessedSet = () => { try { return new Set(JSON.parse(localStorage.getItem(WITNESSED_KEY) || '[]')); } catch { return new Set(); } };
   const [hasWitnessed, setHasWitnessed] = useState(() => getWitnessedSet().has(post.id));
   const [isTranslating, setIsTranslating] = useState(false);
   const [translatedContent, setTranslatedContent] = useState(null);
   const [translationError, setTranslationError] = useState(null);
 
   useEffect(() => {
-    const witnessed = allPosts.some(
-      p => p.parent_docid === post.id && p.event === 'witness' && p.userid === currentUserId
-    );
+    const witnessed = allPosts.some(p => p.parent_docid === post.id && p.event === 'witness' && p.userid === currentUserId);
     if (witnessed) {
       setHasWitnessed(true);
-      try {
-        const set = new Set(JSON.parse(localStorage.getItem(WITNESSED_KEY) || '[]'));
-        set.add(post.id);
-        localStorage.setItem(WITNESSED_KEY, JSON.stringify([...set]));
-      } catch { }
+      try { const set = new Set(JSON.parse(localStorage.getItem(WITNESSED_KEY) || '[]')); set.add(post.id); localStorage.setItem(WITNESSED_KEY, JSON.stringify([...set])); } catch { }
     }
   }, [post.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  useEffect(() => {
-    setIsTranslating(false); setTranslatedContent(null); setTranslationError(null);
-  }, [post.id]);
+  useEffect(() => { setIsTranslating(false); setTranslatedContent(null); setTranslationError(null); }, [post.id]);
 
-  // ✅ Merge allPosts + localComments, tránh duplicate
   const serverComments = allPosts
     .filter(c => c.parent_docid === post.id && c.event !== 'witness')
-    .map(c => ({
-      id: c.docid, author: c.userid, content: c.content,
-      time: c.datetime || 'Just now', likes: c.amen_count || 0,
-      isLiked: c.amened || false, userid: c.userid, avatar_url: c.avatar_url
-    }));
-
+    .map(c => ({ id: c.docid, author: c.userid, content: c.content, time: c.datetime || 'Just now', likes: c.amen_count || 0, isLiked: c.amened || false, userid: c.userid, avatar_url: c.avatar_url }));
   const serverCommentIds = new Set(serverComments.map(c => c.id));
   const filteredLocal = localComments.filter(c => !serverCommentIds.has(c.id));
   const postComments = [...filteredLocal, ...serverComments];
 
-
   useEffect(() => {
     setCommentStates(prev => {
       const next = {};
-      postComments.forEach(c => {
-        next[c.id] = prev[c.id] || { likeCount: c.likes || 0, isLiked: c.isLiked || false, isLiking: false };
-      });
+      postComments.forEach(c => { next[c.id] = prev[c.id] || { likeCount: c.likes || 0, isLiked: c.isLiked || false, isLiking: false }; });
       return next;
     });
   }, [allPosts, post.id]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -992,22 +714,14 @@ const Post = ({ post, allPosts, onLike, onComment, onWitnessCreated, currentUser
       const result = await ApiService.createWitness(currentUserId, witnessText.trim(), post.id, witnessImage);
       if (result.success) {
         setWitnessText(''); setWitnessImage(null); setActiveForm(null); setHasWitnessed(true);
-        try {
-          const set = new Set(JSON.parse(localStorage.getItem(WITNESSED_KEY) || '[]'));
-          set.add(post.id);
-          localStorage.setItem(WITNESSED_KEY, JSON.stringify([...set]));
-        } catch { }
+        try { const set = new Set(JSON.parse(localStorage.getItem(WITNESSED_KEY) || '[]')); set.add(post.id); localStorage.setItem(WITNESSED_KEY, JSON.stringify([...set])); } catch { }
         if (refreshBalance) await refreshBalance();
         if (onWitnessCreated && typeof onWitnessCreated === 'function') onWitnessCreated(post.id);
       } else {
         const msg = result.message || '';
         if (msg.includes('已為此貼文建立過見證') || msg.includes('already') || msg.toLowerCase().includes('witness')) {
           setHasWitnessed(true); setActiveForm(null); setWitnessText(''); setWitnessImage(null);
-          try {
-            const set = new Set(JSON.parse(localStorage.getItem(WITNESSED_KEY) || '[]'));
-            set.add(post.id);
-            localStorage.setItem(WITNESSED_KEY, JSON.stringify([...set]));
-          } catch { }
+          try { const set = new Set(JSON.parse(localStorage.getItem(WITNESSED_KEY) || '[]')); set.add(post.id); localStorage.setItem(WITNESSED_KEY, JSON.stringify([...set])); } catch { }
         } else { alert(`Failed to add testimony: ${msg}`); }
       }
     } catch (error) { alert(`Error occurred while adding testimony: ${error.message}`); }
@@ -1028,8 +742,7 @@ const Post = ({ post, allPosts, onLike, onComment, onWitnessCreated, currentUser
   const handleLike = async () => {
     if (isLikingRef.current) return;
     isLikingRef.current = true; setIsLiking(true);
-    const prevCount = likeCount;
-    const prevLiked = isLiked;
+    const prevCount = likeCount; const prevLiked = isLiked;
     const newLiked = !prevLiked;
     const newCount = newLiked ? prevCount + 1 : Math.max(0, prevCount - 1);
     setIsLiked(newLiked); setLikeCount(newCount); setHasLiked(true);
@@ -1043,99 +756,54 @@ const Post = ({ post, allPosts, onLike, onComment, onWitnessCreated, currentUser
         if (onLike) onLike(post.id, finalLiked, finalCount);
         if (refreshBalance) await refreshBalance();
       } else throw new Error(result.message || 'API Error');
-    } catch (error) {
-      console.error('❌ Like error:', error);
-      setIsLiked(prevLiked); setLikeCount(prevCount); setHasLiked(false);
-    } finally { isLikingRef.current = false; setIsLiking(false); }
+    } catch (error) { console.error('❌ Like error:', error); setIsLiked(prevLiked); setLikeCount(prevCount); setHasLiked(false); }
+    finally { isLikingRef.current = false; setIsLiking(false); }
   };
 
   const handleLikeComment = async (commentId) => {
-  const currentState = commentStates[commentId];
-  if (!currentState || currentState.isLiking) return;
-  const prevCount = currentState.likeCount;
-  const prevIsLiked = currentState.isLiked || false;
-
-  // ✅ Toggle: nếu đã liked thì unlike, chưa liked thì like
-  const newIsLiked = !prevIsLiked;
-  const newCount = newIsLiked ? prevCount + 1 : Math.max(0, prevCount - 1);
-
-  setCommentStates(prev => ({ ...prev, [commentId]: { ...prev[commentId], isLiked: newIsLiked, likeCount: newCount, isLiking: true } }));
-  try {
-    const result = await ApiService.likeComment(commentId, currentUserId);
-    if (result.success) {
-      const finalCount = result.data?.amen_count !== undefined ? result.data.amen_count : newCount;
-      const finalLiked = result.data?.amened !== undefined ? result.data.amened : newIsLiked;
-      setTimeout(() => {
-        setCommentStates(prev => ({ ...prev, [commentId]: { ...prev[commentId], likeCount: finalCount, isLiked: finalLiked, isLiking: false } }));
-      }, 300);
-      if (refreshBalance) await refreshBalance();
-    } else throw new Error(result.message || 'API Error');
-  } catch (error) {
-    // ✅ Rollback về trạng thái cũ nếu lỗi
-    setCommentStates(prev => ({ ...prev, [commentId]: { ...prev[commentId], isLiked: prevIsLiked, likeCount: prevCount, isLiking: false } }));
-  }
-};
-
+    const currentState = commentStates[commentId];
+    if (!currentState || currentState.isLiking) return;
+    const prevCount = currentState.likeCount; const prevIsLiked = currentState.isLiked || false;
+    const newIsLiked = !prevIsLiked;
+    const newCount = newIsLiked ? prevCount + 1 : Math.max(0, prevCount - 1);
+    setCommentStates(prev => ({ ...prev, [commentId]: { ...prev[commentId], isLiked: newIsLiked, likeCount: newCount, isLiking: true } }));
+    try {
+      const result = await ApiService.likeComment(commentId, currentUserId);
+      if (result.success) {
+        const finalCount = result.data?.amen_count !== undefined ? result.data.amen_count : newCount;
+        const finalLiked = result.data?.amened !== undefined ? result.data.amened : newIsLiked;
+        setTimeout(() => { setCommentStates(prev => ({ ...prev, [commentId]: { ...prev[commentId], likeCount: finalCount, isLiked: finalLiked, isLiking: false } })); }, 300);
+        if (refreshBalance) await refreshBalance();
+      } else throw new Error(result.message || 'API Error');
+    } catch (error) { setCommentStates(prev => ({ ...prev, [commentId]: { ...prev[commentId], isLiked: prevIsLiked, likeCount: prevCount, isLiking: false } })); }
+  };
 
   const handleCommentSubmit = async (e) => {
-  e.preventDefault();
-  if (!commentText.trim() || isCommenting) return;
-  setIsCommenting(true);
-
-  // ✅ THÊM: lưu text vào biến tạm TRƯỚC KHI clear
-  const submittedText = commentText.trim();
-
-  try {
-    const result = await ApiService.addComment({
-      userid: currentUserId,
-      content: submittedText,   // ✅ dùng biến tạm
-      docid: post.id,
-      sn: post.sn
-    });
-    if (result.success) {
-      setCommentText('');
-
-      const newComment = {
-        id: result.comment?.docid || `temp-${Date.now()}`,
-        author: currentUserId,
-        content: submittedText,  // ✅ dùng biến tạm
-        time: 'Just now',
-        likes: 0,
-        isLiked: false,
-        userid: currentUserId,
-        avatar_url: null
-      };
-      setLocalComments(prev => [newComment, ...prev]);
-      setCommentStates(prev => ({
-        ...prev,
-        [newComment.id]: { likeCount: 0, isLiked: false, isLiking: false }
-      }));
-
-      if (onComment) await onComment(post.id);
-      if (refreshBalance) await refreshBalance();
-
-      setTimeout(() => {
-        commentsEndRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-      }, 100);
-    } else {
-      alert(`Comment failed: ${result.message}`);
-    }
-  } catch (error) {
-    alert(`Error occurred while commenting: ${error.message}`);
-  } finally {
-    setIsCommenting(false);
-  }
-};
-
+    e.preventDefault();
+    if (!commentText.trim() || isCommenting) return;
+    setIsCommenting(true);
+    const submittedText = commentText.trim();
+    try {
+      const result = await ApiService.addComment({ userid: currentUserId, content: submittedText, docid: post.id, sn: post.sn });
+      if (result.success) {
+        setCommentText('');
+        const newComment = { id: result.comment?.docid || `temp-${Date.now()}`, author: currentUserId, content: submittedText, time: 'Just now', likes: 0, isLiked: false, userid: currentUserId, avatar_url: null };
+        setLocalComments(prev => [newComment, ...prev]);
+        setCommentStates(prev => ({ ...prev, [newComment.id]: { likeCount: 0, isLiked: false, isLiking: false } }));
+        if (onComment) await onComment(post.id);
+        if (refreshBalance) await refreshBalance();
+        setTimeout(() => { commentsEndRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); }, 100);
+      } else { alert(`Comment failed: ${result.message}`); }
+    } catch (error) { alert(`Error occurred while commenting: ${error.message}`); }
+    finally { setIsCommenting(false); }
+  };
 
   const handleCommentReply = (commentId, reply) => { console.log(`💬 Reply to comment ${commentId}:`, reply); };
 
   return (
     <div className="post-card">
       <div className="post-header">
-        <div className="post-avatar">
-          <AvatarImage userId={post.userid || post.author} userName={post.author} src={post.avatar_url} size={48} clickable={true} />
-        </div>
+        <div className="post-avatar"><AvatarImage userId={post.userid || post.author} userName={post.author} src={post.avatar_url} size={48} clickable={true} /></div>
         <div className="post-info">
           <div className="post-author">{post.author}</div>
           <div className="post-time">{post.time || post.datetime || 'Just now'}</div>
@@ -1159,9 +827,7 @@ const Post = ({ post, allPosts, onLike, onComment, onWitnessCreated, currentUser
       <div className="post-content">
         {post.title && <h3>{post.title}</h3>}
         <p>{post.content}</p>
-        <button className={`post-translate-button ${isTranslating ? 'translating' : ''} ${translatedContent ? 'active' : ''}`} onClick={handleTranslate} disabled={isTranslating}>
-          <TranslateIcon size={18} />
-        </button>
+        <button className={`post-translate-button ${isTranslating ? 'translating' : ''} ${translatedContent ? 'active' : ''}`} onClick={handleTranslate} disabled={isTranslating}><TranslateIcon size={18} /></button>
         {translatedContent && <div className="post-translated-content"><span className="translate-label">🌐 Translation:</span><p>{translatedContent}</p></div>}
         {translationError && <div className="post-translation-error">⚠️ {translationError}</div>}
         {post.image && <div className="post-image"><img src={post.image} alt="Post image" /></div>}
@@ -1173,11 +839,7 @@ const Post = ({ post, allPosts, onLike, onComment, onWitnessCreated, currentUser
         <button className={`action-button action-comment ${activeForm === 'comment' ? 'active-comment' : ''}`} onClick={handleToggleCommentForm}>
           PRAY FOR ME ({postComments.length})
         </button>
-        <button
-          className={`action-button action-witness ${hasWitnessed ? 'witnessed-done' : (activeForm === 'witness' ? 'active-witness' : '')}`}
-          onClick={handleToggleWitnessForm} disabled={hasWitnessed}
-          title={hasWitnessed ? 'You have already witnessed this post' : 'Add your testimony'}
-        >
+        <button className={`action-button action-witness ${hasWitnessed ? 'witnessed-done' : (activeForm === 'witness' ? 'active-witness' : '')}`} onClick={handleToggleWitnessForm} disabled={hasWitnessed} title={hasWitnessed ? 'You have already witnessed this post' : 'Add your testimony'}>
           {hasWitnessed ? `✨ WITNESSED` : `WITNESS`}
         </button>
       </div>
@@ -1190,22 +852,15 @@ const Post = ({ post, allPosts, onLike, onComment, onWitnessCreated, currentUser
                 📷 {witnessImage ? witnessImage.name : 'Add photo (optional)'}
               </label>
               <input id={`witness-image-${post.id}`} type="file" accept="image/*" style={{ display: 'none' }} onChange={(e) => setWitnessImage(e.target.files[0] || null)} />
-              {witnessImage && (
-                <button type="button" onClick={() => setWitnessImage(null)} style={{ marginLeft: '8px', background: 'none', border: 'none', color: '#e53935', cursor: 'pointer', fontSize: '13px' }}>
-                  ✕ Remove
-                </button>
-              )}
+              {witnessImage && (<button type="button" onClick={() => setWitnessImage(null)} style={{ marginLeft: '8px', background: 'none', border: 'none', color: '#e53935', cursor: 'pointer', fontSize: '13px' }}>✕ Remove</button>)}
             </div>
             <div className="form-actions">
-              <button type="submit" disabled={!witnessText.trim() || isSubmittingWitness} className="submit-btn witness-submit-btn">
-                {isSubmittingWitness ? 'Submitting...' : '✨ Submit Testimony'}
-              </button>
+              <button type="submit" disabled={!witnessText.trim() || isSubmittingWitness} className="submit-btn witness-submit-btn">{isSubmittingWitness ? 'Submitting...' : '✨ Submit Testimony'}</button>
               <button type="button" onClick={() => { setActiveForm(null); setWitnessText(''); setWitnessImage(null); }} className="cancel-btn">Cancel</button>
             </div>
           </form>
         </div>
       )}
-
       {activeForm === 'comment' && (
         <div className="form-container comment-form-wrapper" ref={commentFormRef}>
           <form className="comment-form" onSubmit={handleCommentSubmit}>
@@ -1214,9 +869,7 @@ const Post = ({ post, allPosts, onLike, onComment, onWitnessCreated, currentUser
               <VoiceRecordButton onTranscriptComplete={(transcript) => { setCommentText(prev => prev + (prev ? ' ' : '') + transcript); }} />
             </div>
             <div className="form-actions">
-              <button type="submit" disabled={!commentText.trim() || isCommenting} className="submit-btn comment-submit-btn">
-                {isCommenting ? 'Sending...' : 'Pray For You'}
-              </button>
+              <button type="submit" disabled={!commentText.trim() || isCommenting} className="submit-btn comment-submit-btn">{isCommenting ? 'Sending...' : 'Pray For You'}</button>
               <button type="button" onClick={() => { setActiveForm(null); setCommentText(''); }} className="cancel-btn">Cancel</button>
             </div>
           </form>
@@ -1229,19 +882,14 @@ const Post = ({ post, allPosts, onLike, onComment, onWitnessCreated, currentUser
                 postComments.map(comment => (
                   <Comment key={comment.id} comment={comment} onReply={handleCommentReply} onLike={handleLikeComment} currentUserId={currentUserId} postDocid={post.id} commentState={commentStates[comment.id]} />
                 ))
-                // ✅ THAY BẰNG
               ) : (
-                <div className="no-comments">
-                  <p>No comments yet. Be the first to leave a message!</p>
-                </div>
+                <div className="no-comments"><p>No comments yet. Be the first to leave a message!</p></div>
               )}
-              {/* ✅ THÊM DÒNG NÀY */}
               <div ref={commentsEndRef} />
             </div>
           </div>
         </div>
       )}
-
     </div>
   );
 };
@@ -1272,6 +920,9 @@ const MainApp = ({ user, onLogout }) => {
   const [viewScope, setViewScope] = useState('my');
   const [showActivityForm, setShowActivityForm] = useState(false);
   const [activities, setActivities] = useState([]);
+  const [activityPage, setActivityPage] = useState(1);
+  const [activityHasNext, setActivityHasNext] = useState(false);
+  const ACTIVITY_PER_PAGE = 20;
   const [newlyWitnessedPostId, setNewlyWitnessedPostId] = useState(null);
   const navigatingRef = useRef(false);
   const hasTribe = currentTribeId !== null && currentTribeId !== undefined;
@@ -1370,49 +1021,66 @@ const MainApp = ({ user, onLogout }) => {
     setShowActivityForm(true);
   };
 
-  const handleCloseActivityForm = () => { setShowActivityForm(false); fetchActivities(); };
+  const handleCloseActivityForm = () => { setShowActivityForm(false); fetchActivities(1); setActivityPage(1); };
 
-  const fetchActivities = async () => {
+  const fetchActivities = async (page = 1) => {
     if (!hasTribe) { setActivities([]); setLoading(false); return; }
     setLoading(true);
     try {
-      const params = { page: 1, limit: 50, tribe: currentTribeId, is_published: true };
+      const params = { page: page, limit: ACTIVITY_PER_PAGE, tribe: currentTribeId, is_published: true };
       const result = await ApiService.getActivities(params);
-if (result.success) {
-  const transformedActivities = result.activities
-    .filter(activity => {
-  if (Number(currentTribeId) === 0) return true; // tribe 0 = xem tất cả
-  return Number(activity.tribe) === Number(currentTribeId);
-}) // ✅ THÊM DÒNG NÀY
-    .map(activity => {
-      const rawDesc = activity.description || '';
-      const cleanDescription = rawDesc
-        .split(/\r?\n/)
-        .filter(line => !line.startsWith('Activity time:') && !line.startsWith('Max participants:'))
-        .join('\n').trim();
-      return {
-        id: activity.id,
-        author: activity.created_by || 'Unknown',
-        avatar_url: ApiService.processAvatarUrl(activity.creator_avatar_url),
-        datetime: ApiService.formatDateTime(activity.created_at),
-        eventName: activity.title,
-        eventDate: activity.event_date,
-        eventLocation: activity.location,
-        activityTime: activity.event_time,
-        maxParticipants: activity.max_participants || null,
-        description: cleanDescription,
-        privacy: activity.privacy || 'public',
-        tribe: activity.tribe,
-        coverImage: ApiService.processMediaUrl(activity.cover_image),
-        images: (activity.images || []).map(img => ApiService.processMediaUrl(img)),
-        isPublished: activity.is_published || false,
-      };
-    });
-  setActivities(transformedActivities);
-}
- else setActivities([]);
-    } catch (error) { setActivities([]); }
-    finally { setLoading(false); }
+      if (result.success) {
+        const transformedActivities = result.activities
+          .filter(activity => {
+            if (Number(currentTribeId) === 0) return true;
+            return Number(activity.tribe) === Number(currentTribeId);
+          })
+          .map(activity => {
+            const rawDesc = activity.description || '';
+            const cleanDescription = rawDesc
+              .split(/\r?\n/)
+              .filter(line => !line.startsWith('Activity time:') && !line.startsWith('Max participants:'))
+              .join('\n').trim();
+            return {
+              id: activity.id,
+              author: activity.created_by || 'Unknown',
+              avatar_url: ApiService.processAvatarUrl(activity.creator_avatar_url),
+              datetime: ApiService.formatDateTime(activity.created_at),
+              eventName: activity.title,
+              eventDate: activity.event_date,
+              eventLocation: activity.location,
+              activityTime: activity.event_time,
+              maxParticipants: activity.max_participants || null,
+              description: cleanDescription,
+              privacy: activity.privacy || 'public',
+              tribe: activity.tribe,
+              coverImage: ApiService.processMediaUrl(activity.cover_image),
+              images: (activity.images || []).map(img => ApiService.processMediaUrl(img)),
+              isPublished: activity.is_published || false,
+            };
+          });
+        setActivities(transformedActivities);
+        setActivityPage(page);
+        const pageinfo = result.pageinfo || {};
+        const rawCount = result.activities?.length || 0;
+        const hasNext =
+          pageinfo.has_next === true ||
+          pageinfo.next_page != null ||
+          (pageinfo.total_pages != null && pageinfo.current_page != null
+            ? pageinfo.current_page < pageinfo.total_pages
+            : rawCount >= ACTIVITY_PER_PAGE);
+        console.log('📄 pageinfo:', pageinfo, '| rawCount:', rawCount, '| hasNext:', hasNext);
+        setActivityHasNext(hasNext);
+      } else {
+        setActivities([]);
+        setActivityHasNext(false);
+      }
+    } catch (error) {
+      setActivities([]);
+      setActivityHasNext(false);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const getFilteredPosts = () => {
@@ -1422,25 +1090,17 @@ if (result.success) {
 
   const handleLikePost = async (postId, newLikedStatus, newCount) => {
     setPosts(prevPosts => prevPosts.map(post =>
-      post.id === postId
-        ? { ...post, likes: newCount, isLiked: newLikedStatus, amen_count: newCount, amened: newLikedStatus }
-        : post
+      post.id === postId ? { ...post, likes: newCount, isLiked: newLikedStatus, amen_count: newCount, amened: newLikedStatus } : post
     ));
     await refreshBalance();
   };
 
-  // ✅ THAY BẰNG đoạn này
   const handleCommentPost = async (postId) => {
-    setPosts(prevPosts =>
-      prevPosts.map(post =>
-        post.id === postId
-          ? { ...post, calculatedComments: (post.calculatedComments || 0) + 1 }
-          : post
-      )
-    );
+    setPosts(prevPosts => prevPosts.map(post =>
+      post.id === postId ? { ...post, calculatedComments: (post.calculatedComments || 0) + 1 } : post
+    ));
     await refreshBalance();
   };
-
 
   const handleWitnessCreated = async (postId) => {
     try {
@@ -1505,45 +1165,36 @@ if (result.success) {
     try {
       const categoryToFetch = categoryOverride !== undefined ? categoryOverride : selectedCategory;
       const currentUserId = user?.id || user?.userId || ApiService.getCurrentUserId();
-
       const postFilters = {};
       if (categoryToFetch) postFilters.category = categoryToFetch;
       if (viewScope === 'my') postFilters.userid = currentUserId;
-
       const commentFilters = {};
-
       const [postsResult, commentsResult] = await Promise.all([
         ApiService.getPosts(page, 50, true, postFilters),
         ApiService.getCommentsPage(1, 100, commentFilters)
       ]);
-
       const rawPosts = postsResult?.success ? (postsResult.posts || []) : [];
       const rawComments = commentsResult?.success ? (commentsResult.comments || []) : [];
-
       console.log(`📊 Context - Posts: ${rawPosts.length}, Comments: ${rawComments.length}`);
-
       const commentsCountMap = {};
       rawComments.forEach(c => {
         if (c.parent_docid && c.event !== 'witness') {
           commentsCountMap[c.parent_docid] = (commentsCountMap[c.parent_docid] || 0) + 1;
         }
       });
-
       if (rawPosts.length > 0) {
         const filteredPosts = rawPosts.filter(post => !post.parent_docid && post.docid);
         const transformedPosts = filteredPosts.map(post => {
           const serverCount = post.comment_count !== undefined ? post.comment_count : 0;
           const localCount = commentsCountMap[post.docid] || 0;
           return {
-            id: post.docid,
-            sn: post.sn,
+            id: post.docid, sn: post.sn,
             userid: post.userid || post.author_id,
             avatar_url: post.avatar_url,
             likes: post.amen_count !== undefined ? post.amen_count : 0,
             isLiked: (post.amened === true || post.amened === 1 || post.amened === 'true'),
             calculatedComments: Math.max(serverCount, localCount),
-            title: post.title || '',
-            content: post.content || '',
+            title: post.title || '', content: post.content || '',
             privacy: post.privacy ? post.privacy.toLowerCase() : mapCategoryToPrivacy(post.category),
             category: post.category || categoryToFetch,
             author: post.author || post.userid || user?.name || 'Anonymous',
@@ -1553,15 +1204,12 @@ if (result.success) {
             comments: 0
           };
         });
-
         setPosts(transformedPosts);
         setAllPosts([...rawPosts, ...rawComments]);
         console.log(`✅ allPosts: ${rawPosts.length} posts + ${rawComments.length} comments`);
         setHasNextPage(postsResult.pagination?.has_next === true);
       } else {
-        setPosts([]);
-        setAllPosts([]);
-        setHasNextPage(false);
+        setPosts([]); setAllPosts([]); setHasNextPage(false);
       }
     } catch (error) {
       console.error('💥 Error fetching posts:', error);
@@ -1598,14 +1246,11 @@ if (result.success) {
           onLogoClick={handleLogoClick} onTribeLogoClick={handleTribeLogoClick}
           onFamilyClick={handleFamilyClick} onBlessingClick={handleBlessingClick}
         />
-
         <div className="top-action-bar">
           <NotificationBell count={notificationCount} onClick={handleNotificationClick} size="medium" />
           <CoinDisplay amount={loadingBalance ? '...' : coinAmount} onClick={handleCoinClick} size="medium" />
         </div>
-
         <hr className="divider-line" />
-
         <div className="category-buttons">
           <div className="category-item" onClick={() => handleCategoryClick('Personal & Family')}>
             <RectButton image={family_and_personal} imageAlt="Personal & Family" size="medium" active={selectedCategory === 'Personal & Family'} />
@@ -1624,9 +1269,7 @@ if (result.success) {
             <CategoryLabel text={hasTribe ? "Tribe Prayer" : "Tribe Prayer 🔒"} isActive={selectedCategory === 'Tribe Prayer'} />
           </div>
         </div>
-
         <hr className="divider-line" />
-
         <div className="filter-bar">
           <div className="filter-controls">
             <RectButton icon="" onClick={() => { setViewMode('original'); handleRefreshPosts(); }} disabled={loading} size="small" variant="secondary" active={viewMode === 'original'}>
@@ -1642,7 +1285,6 @@ if (result.success) {
             )}
           </div>
         </div>
-
         <div className="main-content" style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: '50vh', alignItems: 'stretch' }}>
           <div className="posts-container" style={{ flex: 1, width: '100%' }}>
             {loading && (
@@ -1651,7 +1293,6 @@ if (result.success) {
                 <p>Loading...</p>
               </div>
             )}
-
             {!loading && viewMode === 'activity' ? (
               !hasTribe ? (
                 <div className="no-tribe-message">
@@ -1712,6 +1353,14 @@ if (result.success) {
                       </div>
                     )}
                   </div>
+
+                  {/* ✅ ĐÃ SỬA — bỏ điều kiện, pagination luôn hiện */}
+                  <div className="pagination-controls" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '20px', padding: '20px 0' }}>
+                    <button onClick={() => { fetchActivities(activityPage - 1); window.scrollTo({ top: 0, behavior: 'smooth' }); }} disabled={activityPage === 1 || loading} className="pagination-btn" style={{ padding: '8px 16px', borderRadius: '20px', border: 'none', backgroundColor: activityPage === 1 ? '#ccc' : '#4CAF50', color: 'white', cursor: activityPage === 1 ? 'not-allowed' : 'pointer', fontWeight: 'bold' }}>← Previous</button>
+                    <span style={{ color: 'white', fontWeight: 'bold' }}>Page {activityPage}</span>
+                    <button onClick={() => { fetchActivities(activityPage + 1); window.scrollTo({ top: 0, behavior: 'smooth' }); }} disabled={!activityHasNext || loading} className="pagination-btn" style={{ padding: '8px 16px', borderRadius: '20px', border: 'none', backgroundColor: !activityHasNext ? '#ccc' : '#4CAF50', color: 'white', cursor: !activityHasNext ? 'not-allowed' : 'pointer', fontWeight: 'bold' }}>Next →</button>
+                  </div>
+
                 </div>
               )
             ) : !loading && viewMode === 'witness' ? (
@@ -1736,15 +1385,9 @@ if (result.success) {
                   />
                 ))}
                 <div className="pagination-controls" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '20px', padding: '20px 0' }}>
-                  <button onClick={handlePrevPage} disabled={currentPage === 1 || loading} className="pagination-btn"
-                    style={{ padding: '8px 16px', borderRadius: '20px', border: 'none', backgroundColor: currentPage === 1 ? '#ccc' : '#4CAF50', color: 'white', cursor: currentPage === 1 ? 'not-allowed' : 'pointer', fontWeight: 'bold' }}>
-                    ← Previous
-                  </button>
+                  <button onClick={handlePrevPage} disabled={currentPage === 1 || loading} className="pagination-btn" style={{ padding: '8px 16px', borderRadius: '20px', border: 'none', backgroundColor: currentPage === 1 ? '#ccc' : '#4CAF50', color: 'white', cursor: currentPage === 1 ? 'not-allowed' : 'pointer', fontWeight: 'bold' }}>← Previous</button>
                   <span style={{ color: 'white', fontWeight: 'bold' }}>Page {currentPage}</span>
-                  <button onClick={handleNextPage} disabled={!hasNextPage || loading} className="pagination-btn"
-                    style={{ padding: '8px 16px', borderRadius: '20px', border: 'none', backgroundColor: !hasNextPage ? '#ccc' : '#4CAF50', color: 'white', cursor: !hasNextPage ? 'not-allowed' : 'pointer', fontWeight: 'bold' }}>
-                    Next →
-                  </button>
+                  <button onClick={handleNextPage} disabled={!hasNextPage || loading} className="pagination-btn" style={{ padding: '8px 16px', borderRadius: '20px', border: 'none', backgroundColor: !hasNextPage ? '#ccc' : '#4CAF50', color: 'white', cursor: !hasNextPage ? 'not-allowed' : 'pointer', fontWeight: 'bold' }}>Next →</button>
                 </div>
               </div>
             ) : !loading ? (
@@ -1756,14 +1399,9 @@ if (result.success) {
             ) : null}
           </div>
         </div>
-
         <div className="bottom-navigation">
           <CircleButton provider="Home" iconSrc={Home}
-            onClick={() => {
-              setViewScope('my'); handleTabChange('Home');
-              setCurrentPage(1); setHasNextPage(false);
-              fetchPosts(selectedCategory, 1);
-            }}
+            onClick={() => { setViewScope('my'); handleTabChange('Home'); setCurrentPage(1); setHasNextPage(false); fetchPosts(selectedCategory, 1); }}
             isActive={activeTab === 'Home'} size="medium" ariaLabel="Home"
           />
           <CircleButton provider="PrayerHub" iconSrc={Search}
@@ -1789,6 +1427,8 @@ if (result.success) {
 };
 
 export default MainApp;
+
+
 
 
 
