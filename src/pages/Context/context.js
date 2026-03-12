@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import ApiService from '../../services/api';
@@ -44,6 +43,36 @@ import josephIcon from '../../assets/images/tribes/joseph.png';
 import benjaminIcon from '../../assets/images/tribes/benjamin.png';
 
 import './context.css';
+
+const userTimeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+
+const formatTime = (timeString) => {
+  if (!timeString) return 'Just now';
+  try {
+    const normalized = timeString.endsWith('Z') || timeString.includes('+')
+      ? timeString
+      : timeString + 'Z';
+    const date = new Date(normalized);
+    if (isNaN(date.getTime())) return 'Just now';
+    const now = new Date();
+    const diffMs = now - date;
+    const diffMin = Math.floor(diffMs / 60000);
+    const diffHour = Math.floor(diffMs / 3600000);
+    const diffDay = Math.floor(diffMs / 86400000);
+    if (diffMin < 1) return 'Just now';
+    if (diffMin < 60) return `${diffMin} minutes ago`;
+    if (diffHour < 24) return `${diffHour} hours ago`;
+    if (diffDay < 7) return `${diffDay} days ago`;
+    return date.toLocaleDateString('en-CA', {
+      timeZone: userTimeZone,
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+    });
+  } catch (e) {
+    return 'Just now';
+  }
+};
 
 const tribeIdMap = {
   1: { name: 'Judah', icon: judahIcon },
@@ -150,8 +179,15 @@ const WitnessWall = ({ selectedCategory, currentUserId, allPosts, refreshBalance
           if (originalPost) {
             const commentCount = allPosts.filter(p => p.parent_docid === originalPost.docid && p.event !== 'witness').length;
             initialStates[originalPost.docid] = {
-              likeCount: originalPost.amen_count || 0, hasLiked: false, isLiked: false, isLiking: false,
-              commentCount, showCommentForm: false, commentText: '', isCommenting: false, comments: [], loadingComments: false
+              likeCount: originalPost.amen_count || 0,
+              isLiked: originalPost.amened === true || originalPost.amened === 1 || originalPost.amened === 'true',
+              isLiking: false,
+              commentCount,
+              showCommentForm: false,
+              commentText: '',
+              isCommenting: false,
+              comments: [],
+              loadingComments: false
             };
             initialTranslationStates[originalPost.docid] = { isTranslating: false, translatedContent: null, translationError: null };
             initialWitnessFormStates[originalPost.docid] = { showWitnessForm: false, witnessText: '', witnessImage: null, isSubmitting: false };
@@ -197,17 +233,28 @@ const WitnessWall = ({ selectedCategory, currentUserId, allPosts, refreshBalance
     if (!currentState || currentState.isLiking) return;
     const prevCount = currentState.likeCount;
     const prevIsLiked = currentState.isLiked || false;
-    const newCount = prevCount + 1;
-    setPostStates(prev => ({ ...prev, [postId]: { ...prev[postId], hasLiked: true, isLiked: true, likeCount: newCount, isLiking: true } }));
+    const newIsLiked = !prevIsLiked;
+    const newCount = newIsLiked ? prevCount + 1 : Math.max(0, prevCount - 1);
+    setPostStates(prev => ({
+      ...prev,
+      [postId]: { ...prev[postId], isLiked: newIsLiked, likeCount: newCount, isLiking: true }
+    }));
     try {
       const result = await ApiService.likePost(postId, currentUserId);
       if (result.success) {
         const finalCount = result.data?.amen_count !== undefined ? result.data.amen_count : newCount;
-        setTimeout(() => { setPostStates(prev => ({ ...prev, [postId]: { ...prev[postId], likeCount: finalCount, hasLiked: false, isLiking: false } })); }, 300);
+        const finalLiked = result.data?.amened !== undefined ? result.data.amened : newIsLiked;
+        setPostStates(prev => ({
+          ...prev,
+          [postId]: { ...prev[postId], likeCount: finalCount, isLiked: finalLiked, isLiking: false }
+        }));
         if (refreshBalance) await refreshBalance();
       } else throw new Error(result.message || 'API Error');
     } catch (error) {
-      setPostStates(prev => ({ ...prev, [postId]: { ...prev[postId], hasLiked: false, isLiked: prevIsLiked, likeCount: prevCount, isLiking: false } }));
+      setPostStates(prev => ({
+        ...prev,
+        [postId]: { ...prev[postId], isLiked: prevIsLiked, likeCount: prevCount, isLiking: false }
+      }));
     }
   };
 
@@ -235,7 +282,11 @@ const WitnessWall = ({ selectedCategory, currentUserId, allPosts, refreshBalance
   const loadComments = (postId) => {
     const commentsFromAllPosts = allPosts
       .filter(c => c.parent_docid === postId && c.event !== 'witness')
-      .map(c => ({ id: c.docid, author: c.userid, content: c.content, time: c.datetime || 'Just now', likes: c.amen_count || 0, isReply: true, userid: c.userid, avatar_url: c.avatar_url }));
+      .map(c => ({
+        id: c.docid, author: c.userid, content: c.content,
+        time: formatTime(c.datetime),
+        likes: c.amen_count || 0, isReply: true, userid: c.userid, avatar_url: c.avatar_url
+      }));
     const newCommentStates = {};
     commentsFromAllPosts.forEach(comment => { newCommentStates[comment.id] = { likeCount: comment.likes || 0, isLiked: false, isLiking: false }; });
     setCommentStates(prev => ({ ...prev, ...newCommentStates }));
@@ -335,7 +386,9 @@ const WitnessWall = ({ selectedCategory, currentUserId, allPosts, refreshBalance
           const originalPost = witness.original_post || allPosts?.find(p => p.docid === witness.parent_docid);
           const hasWitnessed = myWitnessedPostIds.has(originalPost?.docid);
           const postState = postStates[originalPost?.docid] || {
-            likeCount: originalPost?.amen_count || 0, hasLiked: false, isLiking: false,
+            likeCount: originalPost?.amen_count || 0,
+            isLiked: originalPost?.amened === true || originalPost?.amened === 1 || originalPost?.amened === 'true',
+            isLiking: false,
             commentCount: originalPost?.comment_count || allPosts.filter(p => p.parent_docid === originalPost?.docid && p.event !== 'witness').length,
             showCommentForm: false, commentText: '', isCommenting: false, comments: [], loadingComments: false
           };
@@ -352,7 +405,7 @@ const WitnessWall = ({ selectedCategory, currentUserId, allPosts, refreshBalance
                     </div>
                     <div className="post-info">
                       <div className="post-author">{originalPost.userid || originalPost.author}</div>
-                      <div className="post-time">{originalPost.datetime || 'Just now'}</div>
+                      <div className="post-time">{formatTime(originalPost.datetime)}</div>
                     </div>
                     <div className="post-badges-container">
                       <div className="post-privacy-badge">
@@ -374,31 +427,60 @@ const WitnessWall = ({ selectedCategory, currentUserId, allPosts, refreshBalance
                     {translationState.translationError && (<div className="post-translation-error">⚠️ {translationState.translationError}</div>)}
                   </div>
                   <div className="post-actions">
-                    <button className={`action-button action-amen ${(postState.hasLiked || postState.isLiked) ? 'active-amen' : ''}`} onClick={() => handleLikeOriginalPost(originalPost.docid)} disabled={postState.isLiking}>
-                      {postState.isLiking ? 'Processing...' : ((postState.hasLiked || postState.isLiked) ? `AMENED (${postState.likeCount})` : `AMEN (${postState.likeCount})`)}
+                    <button
+                      className={`action-button action-amen ${postState.isLiked ? 'active-amen' : ''}`}
+                      onClick={() => handleLikeOriginalPost(originalPost.docid)}
+                      disabled={postState.isLiking}
+                    >
+                      {postState.isLiking
+                        ? 'Processing...'
+                        : postState.isLiked
+                          ? `AMENED (${postState.likeCount})`
+                          : `AMEN (${postState.likeCount})`
+                      }
                     </button>
                     <button className={`action-button action-comment ${postState.showCommentForm ? 'active-comment' : ''}`} onClick={() => handleToggleCommentForm(originalPost.docid)}>
                       PRAY FOR ME ({postState.commentCount || 0})
                     </button>
-                    <button className={`action-button action-witness ${hasWitnessed ? 'witnessed-done' : (witnessFormState.showWitnessForm ? 'active-witness' : '')}`} onClick={() => handleToggleWitnessForm(originalPost.docid)} disabled={hasWitnessed} title={hasWitnessed ? 'You have already witnessed this post' : 'Add your testimony'} style={{ backgroundColor: hasWitnessed ? '#FFD700' : undefined, cursor: hasWitnessed ? 'not-allowed' : 'pointer' }}>
+                    <button
+                      className={`action-button action-witness ${hasWitnessed ? 'witnessed-done' : (witnessFormState.showWitnessForm ? 'active-witness' : '')}`}
+                      onClick={() => handleToggleWitnessForm(originalPost.docid)}
+                      disabled={hasWitnessed}
+                      title={hasWitnessed ? 'You have already witnessed this post' : 'Add your testimony'}
+                      style={{ backgroundColor: hasWitnessed ? '#FFD700' : undefined, cursor: hasWitnessed ? 'not-allowed' : 'pointer' }}
+                    >
                       {hasWitnessed ? `✨ WITNESSED` : `WITNESS`}
                     </button>
                   </div>
                   {witnessFormState.showWitnessForm && !hasWitnessed && (
                     <div className="form-container witness-form-wrapper">
                       <form className="witness-form" onSubmit={(e) => handleWitnessSubmit(e, originalPost.docid)}>
-                        <textarea value={witnessFormState.witnessText} onChange={(e) => setWitnessFormStates(prev => ({ ...prev, [originalPost.docid]: { ...prev[originalPost.docid], witnessText: e.target.value } }))} placeholder="Share your testimony..." rows="4" maxLength="1000" />
+                        <textarea
+                          value={witnessFormState.witnessText}
+                          onChange={(e) => setWitnessFormStates(prev => ({ ...prev, [originalPost.docid]: { ...prev[originalPost.docid], witnessText: e.target.value } }))}
+                          placeholder="Share your testimony..."
+                          rows="4"
+                          maxLength="1000"
+                        />
                         <div className="witness-image-picker" style={{ marginTop: '8px' }}>
                           <label htmlFor={`witness-image-wall-${originalPost.docid}`} style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', cursor: 'pointer', padding: '6px 12px', borderRadius: '8px', border: '1px dashed #aaa', fontSize: '13px', color: '#555', backgroundColor: '#f9f9f9' }}>
                             📷 {witnessFormState.witnessImage ? witnessFormState.witnessImage.name : 'Add photo (optional)'}
                           </label>
-                          <input id={`witness-image-wall-${originalPost.docid}`} type="file" accept="image/*" style={{ display: 'none' }} onChange={(e) => setWitnessFormStates(prev => ({ ...prev, [originalPost.docid]: { ...prev[originalPost.docid], witnessImage: e.target.files[0] || null } }))} />
+                          <input
+                            id={`witness-image-wall-${originalPost.docid}`}
+                            type="file"
+                            accept="image/*"
+                            style={{ display: 'none' }}
+                            onChange={(e) => setWitnessFormStates(prev => ({ ...prev, [originalPost.docid]: { ...prev[originalPost.docid], witnessImage: e.target.files[0] || null } }))}
+                          />
                           {witnessFormState.witnessImage && (
                             <button type="button" onClick={() => setWitnessFormStates(prev => ({ ...prev, [originalPost.docid]: { ...prev[originalPost.docid], witnessImage: null } }))} style={{ marginLeft: '8px', background: 'none', border: 'none', color: '#e53935', cursor: 'pointer', fontSize: '13px' }}>✕ Remove</button>
                           )}
                         </div>
                         <div className="form-actions">
-                          <button type="submit" disabled={!witnessFormState.witnessText?.trim() || witnessFormState.isSubmitting} className="submit-btn witness-submit-btn">{witnessFormState.isSubmitting ? 'Submitting...' : '✨ Submit Testimony'}</button>
+                          <button type="submit" disabled={!witnessFormState.witnessText?.trim() || witnessFormState.isSubmitting} className="submit-btn witness-submit-btn">
+                            {witnessFormState.isSubmitting ? 'Submitting...' : '✨ Submit Testimony'}
+                          </button>
                           <button type="button" onClick={() => setWitnessFormStates(prev => ({ ...prev, [originalPost.docid]: { showWitnessForm: false, witnessText: '', witnessImage: null, isSubmitting: false } }))} className="cancel-btn">Cancel</button>
                         </div>
                       </form>
@@ -408,11 +490,19 @@ const WitnessWall = ({ selectedCategory, currentUserId, allPosts, refreshBalance
                     <div className="form-container comment-form-wrapper">
                       <form className="comment-form" onSubmit={(e) => handleCommentSubmit(e, originalPost.docid, originalPost.sn)}>
                         <div className="comment-input-container">
-                          <textarea value={postState.commentText} onChange={(e) => handleCommentTextChange(originalPost.docid, e.target.value)} placeholder="Write your comment..." rows="3" maxLength="500" />
+                          <textarea
+                            value={postState.commentText}
+                            onChange={(e) => handleCommentTextChange(originalPost.docid, e.target.value)}
+                            placeholder="Write your comment..."
+                            rows="3"
+                            maxLength="500"
+                          />
                           <VoiceRecordButton onTranscriptComplete={(transcript) => { handleCommentTextChange(originalPost.docid, postState.commentText + (postState.commentText ? ' ' : '') + transcript); }} />
                         </div>
                         <div className="form-actions">
-                          <button type="submit" disabled={!postState.commentText.trim() || postState.isCommenting} className="submit-btn comment-submit-btn">{postState.isCommenting ? 'Sending...' : 'Pray For You'}</button>
+                          <button type="submit" disabled={!postState.commentText.trim() || postState.isCommenting} className="submit-btn comment-submit-btn">
+                            {postState.isCommenting ? 'Sending...' : 'Pray For You'}
+                          </button>
                           <button type="button" onClick={() => handleToggleCommentForm(originalPost.docid)} className="cancel-btn">Cancel</button>
                         </div>
                       </form>
@@ -429,7 +519,9 @@ const WitnessWall = ({ selectedCategory, currentUserId, allPosts, refreshBalance
                               return (
                                 <div key={comment.id} className="comment comment-reply">
                                   <div className="comment-header">
-                                    <div className="comment-avatar"><AvatarImage userId={comment.userid || comment.author} userName={comment.author} src={comment.avatar_url} size={32} clickable={true} /></div>
+                                    <div className="comment-avatar">
+                                      <AvatarImage userId={comment.userid || comment.author} userName={comment.author} src={comment.avatar_url} size={32} clickable={true} />
+                                    </div>
                                     <div className="comment-info">
                                       <div className="comment-author">{comment.author}</div>
                                       <div className="comment-time">{comment.time}</div>
@@ -437,7 +529,9 @@ const WitnessWall = ({ selectedCategory, currentUserId, allPosts, refreshBalance
                                   </div>
                                   <div className="comment-content">
                                     <p>{comment.content}</p>
-                                    <button className={`comment-translate-button ${commentTransState.isTranslating ? 'translating' : ''} ${commentTransState.translatedContent ? 'active' : ''}`} onClick={() => handleTranslateOriginalPost(comment.id, comment.content)} disabled={commentTransState.isTranslating}><TranslateIcon size={14} /></button>
+                                    <button className={`comment-translate-button ${commentTransState.isTranslating ? 'translating' : ''} ${commentTransState.translatedContent ? 'active' : ''}`} onClick={() => handleTranslateOriginalPost(comment.id, comment.content)} disabled={commentTransState.isTranslating}>
+                                      <TranslateIcon size={14} />
+                                    </button>
                                     {commentTransState.translatedContent && (<div className="comment-translated-content"><span className="translate-label">🌐 Translation:</span><p>{commentTransState.translatedContent}</p></div>)}
                                     {commentTransState.translationError && (<div className="comment-translation-error">⚠️ {commentTransState.translationError}</div>)}
                                   </div>
@@ -460,10 +554,12 @@ const WitnessWall = ({ selectedCategory, currentUserId, allPosts, refreshBalance
               )}
               <div className="witness-section">
                 <div className="witness-wall-header">
-                  <div className="witness-wall-avatar"><AvatarImage userId={witness.userid} userName={witness.userid} src={witness.avatar_url} size={48} clickable={true} /></div>
+                  <div className="witness-wall-avatar">
+                    <AvatarImage userId={witness.userid} userName={witness.userid} src={witness.avatar_url} size={48} clickable={true} />
+                  </div>
                   <div className="witness-wall-info">
                     <div className="witness-wall-author">{witness.userid}</div>
-                    <div className="witness-wall-time">{witness.datetime || 'Just now'}</div>
+                    <div className="witness-wall-time">{formatTime(witness.datetime)}</div>
                   </div>
                 </div>
                 <div className="witness-wall-content">
@@ -604,7 +700,9 @@ const Comment = ({ comment, onReply, onEdit, onDelete, onLike, currentUserId, po
   return (
     <div className={`comment ${comment.isReply ? 'comment-reply' : ''}`}>
       <div className="comment-header">
-        <div className="comment-avatar"><AvatarImage userId={comment.userid || comment.author} userName={comment.author} src={comment.avatar_url} size={32} clickable={true} /></div>
+        <div className="comment-avatar">
+          <AvatarImage userId={comment.userid || comment.author} userName={comment.author} src={comment.avatar_url} size={32} clickable={true} />
+        </div>
         <div className="comment-info">
           <div className="comment-author">{comment.author}</div>
           <div className="comment-time">{comment.time}</div>
@@ -622,7 +720,9 @@ const Comment = ({ comment, onReply, onEdit, onDelete, onLike, currentUserId, po
         ) : (
           <>
             <p>{comment.content}</p>
-            <button className={`comment-translate-button ${isTranslating ? 'translating' : ''} ${translatedContent ? 'active' : ''}`} onClick={handleTranslate} disabled={isTranslating}><TranslateIcon size={14} /></button>
+            <button className={`comment-translate-button ${isTranslating ? 'translating' : ''} ${translatedContent ? 'active' : ''}`} onClick={handleTranslate} disabled={isTranslating}>
+              <TranslateIcon size={14} />
+            </button>
             {translatedContent && <div className="comment-translated-content"><span className="translate-label">🌐 Translation:</span><p>{translatedContent}</p></div>}
             {translationError && <div className="comment-translation-error">⚠️ {translationError}</div>}
           </>
@@ -675,7 +775,11 @@ const Post = ({ post, allPosts, onLike, onComment, onWitnessCreated, currentUser
 
   const serverComments = allPosts
     .filter(c => c.parent_docid === post.id && c.event !== 'witness')
-    .map(c => ({ id: c.docid, author: c.userid, content: c.content, time: c.datetime || 'Just now', likes: c.amen_count || 0, isLiked: c.amened || false, userid: c.userid, avatar_url: c.avatar_url }));
+    .map(c => ({
+      id: c.docid, author: c.userid, content: c.content,
+      time: formatTime(c.datetime),
+      likes: c.amen_count || 0, isLiked: c.amened || false, userid: c.userid, avatar_url: c.avatar_url
+    }));
   const serverCommentIds = new Set(serverComments.map(c => c.id));
   const filteredLocal = localComments.filter(c => !serverCommentIds.has(c.id));
   const postComments = [...filteredLocal, ...serverComments];
@@ -803,10 +907,12 @@ const Post = ({ post, allPosts, onLike, onComment, onWitnessCreated, currentUser
   return (
     <div className="post-card">
       <div className="post-header">
-        <div className="post-avatar"><AvatarImage userId={post.userid || post.author} userName={post.author} src={post.avatar_url} size={48} clickable={true} /></div>
+        <div className="post-avatar">
+          <AvatarImage userId={post.userid || post.author} userName={post.author} src={post.avatar_url} size={48} clickable={true} />
+        </div>
         <div className="post-info">
           <div className="post-author">{post.author}</div>
-          <div className="post-time">{post.time || post.datetime || 'Just now'}</div>
+          <div className="post-time">{formatTime(post.time || post.datetime || post.created_at)}</div>
         </div>
         <div className="post-badges-container">
           <div className="post-privacy-badge">
@@ -827,7 +933,9 @@ const Post = ({ post, allPosts, onLike, onComment, onWitnessCreated, currentUser
       <div className="post-content">
         {post.title && <h3>{post.title}</h3>}
         <p>{post.content}</p>
-        <button className={`post-translate-button ${isTranslating ? 'translating' : ''} ${translatedContent ? 'active' : ''}`} onClick={handleTranslate} disabled={isTranslating}><TranslateIcon size={18} /></button>
+        <button className={`post-translate-button ${isTranslating ? 'translating' : ''} ${translatedContent ? 'active' : ''}`} onClick={handleTranslate} disabled={isTranslating}>
+          <TranslateIcon size={18} />
+        </button>
         {translatedContent && <div className="post-translated-content"><span className="translate-label">🌐 Translation:</span><p>{translatedContent}</p></div>}
         {translationError && <div className="post-translation-error">⚠️ {translationError}</div>}
         {post.image && <div className="post-image"><img src={post.image} alt="Post image" /></div>}
@@ -839,23 +947,43 @@ const Post = ({ post, allPosts, onLike, onComment, onWitnessCreated, currentUser
         <button className={`action-button action-comment ${activeForm === 'comment' ? 'active-comment' : ''}`} onClick={handleToggleCommentForm}>
           PRAY FOR ME ({postComments.length})
         </button>
-        <button className={`action-button action-witness ${hasWitnessed ? 'witnessed-done' : (activeForm === 'witness' ? 'active-witness' : '')}`} onClick={handleToggleWitnessForm} disabled={hasWitnessed} title={hasWitnessed ? 'You have already witnessed this post' : 'Add your testimony'}>
+        <button
+          className={`action-button action-witness ${hasWitnessed ? 'witnessed-done' : (activeForm === 'witness' ? 'active-witness' : '')}`}
+          onClick={handleToggleWitnessForm}
+          disabled={hasWitnessed}
+          title={hasWitnessed ? 'You have already witnessed this post' : 'Add your testimony'}
+        >
           {hasWitnessed ? `✨ WITNESSED` : `WITNESS`}
         </button>
       </div>
       {activeForm === 'witness' && (
         <div className="form-container witness-form-wrapper">
-          <form className="witness-form" onSubmit={handleWitnessSubmit}>
-            <textarea value={witnessText} onChange={(e) => setWitnessText(e.target.value)} placeholder="Share your testimony..." rows="4" maxLength="1000" />
+          <form className="witness-form" onSubmit={handleWitnessSubmit}>            <textarea
+            value={witnessText}
+            onChange={(e) => setWitnessText(e.target.value)}
+            placeholder="Share your testimony..."
+            rows="4"
+            maxLength="1000"
+          />
             <div className="witness-image-picker" style={{ marginTop: '8px' }}>
               <label htmlFor={`witness-image-${post.id}`} style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', cursor: 'pointer', padding: '6px 12px', borderRadius: '8px', border: '1px dashed #aaa', fontSize: '13px', color: '#555', backgroundColor: '#f9f9f9' }}>
                 📷 {witnessImage ? witnessImage.name : 'Add photo (optional)'}
               </label>
-              <input id={`witness-image-${post.id}`} type="file" accept="image/*" style={{ display: 'none' }} onChange={(e) => setWitnessImage(e.target.files[0] || null)} />
-              {witnessImage && (<button type="button" onClick={() => setWitnessImage(null)} style={{ marginLeft: '8px', background: 'none', border: 'none', color: '#e53935', cursor: 'pointer', fontSize: '13px' }}>✕ Remove</button>)}
+              <input
+                id={`witness-image-${post.id}`}
+                type="file"
+                accept="image/*"
+                style={{ display: 'none' }}
+                onChange={(e) => setWitnessImage(e.target.files[0] || null)}
+              />
+              {witnessImage && (
+                <button type="button" onClick={() => setWitnessImage(null)} style={{ marginLeft: '8px', background: 'none', border: 'none', color: '#e53935', cursor: 'pointer', fontSize: '13px' }}>✕ Remove</button>
+              )}
             </div>
             <div className="form-actions">
-              <button type="submit" disabled={!witnessText.trim() || isSubmittingWitness} className="submit-btn witness-submit-btn">{isSubmittingWitness ? 'Submitting...' : '✨ Submit Testimony'}</button>
+              <button type="submit" disabled={!witnessText.trim() || isSubmittingWitness} className="submit-btn witness-submit-btn">
+                {isSubmittingWitness ? 'Submitting...' : '✨ Submit Testimony'}
+              </button>
               <button type="button" onClick={() => { setActiveForm(null); setWitnessText(''); setWitnessImage(null); }} className="cancel-btn">Cancel</button>
             </div>
           </form>
@@ -865,11 +993,19 @@ const Post = ({ post, allPosts, onLike, onComment, onWitnessCreated, currentUser
         <div className="form-container comment-form-wrapper" ref={commentFormRef}>
           <form className="comment-form" onSubmit={handleCommentSubmit}>
             <div className="comment-input-container">
-              <textarea value={commentText} onChange={(e) => setCommentText(e.target.value)} placeholder="Write your comment..." rows="3" maxLength="500" />
+              <textarea
+                value={commentText}
+                onChange={(e) => setCommentText(e.target.value)}
+                placeholder="Write your comment..."
+                rows="3"
+                maxLength="500"
+              />
               <VoiceRecordButton onTranscriptComplete={(transcript) => { setCommentText(prev => prev + (prev ? ' ' : '') + transcript); }} />
             </div>
             <div className="form-actions">
-              <button type="submit" disabled={!commentText.trim() || isCommenting} className="submit-btn comment-submit-btn">{isCommenting ? 'Sending...' : 'Pray For You'}</button>
+              <button type="submit" disabled={!commentText.trim() || isCommenting} className="submit-btn comment-submit-btn">
+                {isCommenting ? 'Sending...' : 'Pray For You'}
+              </button>
               <button type="button" onClick={() => { setActiveForm(null); setCommentText(''); }} className="cancel-btn">Cancel</button>
             </div>
           </form>
@@ -880,7 +1016,15 @@ const Post = ({ post, allPosts, onLike, onComment, onWitnessCreated, currentUser
             <div className="comments-list">
               {postComments.length > 0 ? (
                 postComments.map(comment => (
-                  <Comment key={comment.id} comment={comment} onReply={handleCommentReply} onLike={handleLikeComment} currentUserId={currentUserId} postDocid={post.id} commentState={commentStates[comment.id]} />
+                  <Comment
+                    key={comment.id}
+                    comment={comment}
+                    onReply={handleCommentReply}
+                    onLike={handleLikeComment}
+                    currentUserId={currentUserId}
+                    postDocid={post.id}
+                    commentState={commentStates[comment.id]}
+                  />
                 ))
               ) : (
                 <div className="no-comments"><p>No comments yet. Be the first to leave a message!</p></div>
@@ -1045,7 +1189,7 @@ const MainApp = ({ user, onLogout }) => {
               id: activity.id,
               author: activity.created_by || 'Unknown',
               avatar_url: ApiService.processAvatarUrl(activity.creator_avatar_url),
-              datetime: ApiService.formatDateTime(activity.created_at),
+              datetime: formatTime(activity.created_at),
               eventName: activity.title,
               eventDate: activity.event_date,
               eventLocation: activity.location,
@@ -1054,8 +1198,8 @@ const MainApp = ({ user, onLogout }) => {
               description: cleanDescription,
               privacy: activity.privacy || 'public',
               tribe: activity.tribe,
-              coverImage: ApiService.processMediaUrl(activity.cover_image),
-              images: (activity.images || []).map(img => ApiService.processMediaUrl(img)),
+              coverImage: getActivityImageUrl(activity.cover_image),
+              images: (activity.images || []).map(img => getActivityImageUrl(img)).filter(Boolean),
               isPublished: activity.is_published || false,
             };
           });
@@ -1069,7 +1213,6 @@ const MainApp = ({ user, onLogout }) => {
           (pageinfo.total_pages != null && pageinfo.current_page != null
             ? pageinfo.current_page < pageinfo.total_pages
             : rawCount >= ACTIVITY_PER_PAGE);
-        console.log('📄 pageinfo:', pageinfo, '| rawCount:', rawCount, '| hasNext:', hasNext);
         setActivityHasNext(hasNext);
       } else {
         setActivities([]);
@@ -1175,7 +1318,6 @@ const MainApp = ({ user, onLogout }) => {
       ]);
       const rawPosts = postsResult?.success ? (postsResult.posts || []) : [];
       const rawComments = commentsResult?.success ? (commentsResult.comments || []) : [];
-      console.log(`📊 Context - Posts: ${rawPosts.length}, Comments: ${rawComments.length}`);
       const commentsCountMap = {};
       rawComments.forEach(c => {
         if (c.parent_docid && c.event !== 'witness') {
@@ -1198,7 +1340,7 @@ const MainApp = ({ user, onLogout }) => {
             privacy: post.privacy ? post.privacy.toLowerCase() : mapCategoryToPrivacy(post.category),
             category: post.category || categoryToFetch,
             author: post.author || post.userid || user?.name || 'Anonymous',
-            time: post.datetime || 'Just now',
+            time: post.datetime || post.created_at || null,
             image: post.image || null,
             audioRecordId: post.uuid || null,
             comments: 0
@@ -1206,7 +1348,6 @@ const MainApp = ({ user, onLogout }) => {
         });
         setPosts(transformedPosts);
         setAllPosts([...rawPosts, ...rawComments]);
-        console.log(`✅ allPosts: ${rawPosts.length} posts + ${rawComments.length} comments`);
         setHasNextPage(postsResult.pagination?.has_next === true);
       } else {
         setPosts([]); setAllPosts([]); setHasNextPage(false);
@@ -1353,14 +1494,11 @@ const MainApp = ({ user, onLogout }) => {
                       </div>
                     )}
                   </div>
-
-                  {/* ✅ ĐÃ SỬA — bỏ điều kiện, pagination luôn hiện */}
                   <div className="pagination-controls" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '20px', padding: '20px 0' }}>
                     <button onClick={() => { fetchActivities(activityPage - 1); window.scrollTo({ top: 0, behavior: 'smooth' }); }} disabled={activityPage === 1 || loading} className="pagination-btn" style={{ padding: '8px 16px', borderRadius: '20px', border: 'none', backgroundColor: activityPage === 1 ? '#ccc' : '#4CAF50', color: 'white', cursor: activityPage === 1 ? 'not-allowed' : 'pointer', fontWeight: 'bold' }}>← Previous</button>
                     <span style={{ color: 'white', fontWeight: 'bold' }}>Page {activityPage}</span>
                     <button onClick={() => { fetchActivities(activityPage + 1); window.scrollTo({ top: 0, behavior: 'smooth' }); }} disabled={!activityHasNext || loading} className="pagination-btn" style={{ padding: '8px 16px', borderRadius: '20px', border: 'none', backgroundColor: !activityHasNext ? '#ccc' : '#4CAF50', color: 'white', cursor: !activityHasNext ? 'not-allowed' : 'pointer', fontWeight: 'bold' }}>Next →</button>
                   </div>
-
                 </div>
               )
             ) : !loading && viewMode === 'witness' ? (
@@ -1427,8 +1565,4 @@ const MainApp = ({ user, onLogout }) => {
 };
 
 export default MainApp;
-
-
-
-
 

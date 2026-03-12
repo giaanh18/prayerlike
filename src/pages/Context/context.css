@@ -1,4 +1,12 @@
 /* ./src/pages/Context/context.css */
+* {
+  touch-action: manipulation;
+}
+
+html, body {
+  overflow-x: hidden;
+  width: 100%;
+}
 
 /* ==================== 全域變數 ==================== */
 :root {
@@ -1768,10 +1776,11 @@
 
 .witness-wall-time,
 .post-time {
-  font-size: 12px !important;
+  font-size: 11px !important;
   color: #666666 !important;
   line-height: 1.3 !important;
   margin: 0 !important;
+  white-space: nowrap !important;
 }
 
 .post-badges-container {

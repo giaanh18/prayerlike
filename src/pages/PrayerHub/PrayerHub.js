@@ -1,9 +1,9 @@
+// src/pages/PrayerHub/PrayerHub.js
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import ApiService from '../../services/api';
 import TRANSCRIPT_API from '../../services/TranscriptAPI';
 
-// Import new components
 import AppBackground from '../../components/AppBackground/AppBackground';
 import UserHeader from '../../components/UserHeader/UserHeader';
 import NotificationBell from '../../components/NotificationBell/NotificationBell';
@@ -16,7 +16,6 @@ import NoTribeDetail from '../Context/steps/NoTribeDetail';
 import VoiceRecordButton from '../../components/VoiceRecordButton/VoiceRecordButton';
 import AvatarImage from '../../components/AvatarImage/AvatarImage';
 
-// Import image resources
 import family_and_personal from '../../assets/icons/family_and_personal.png';
 import church from '../../assets/icons/church.png';
 import kingdom from '../../assets/icons/kingdom.png';
@@ -31,7 +30,6 @@ import Nova from '../../assets/icons/Nova.png';
 import Mdi from '../../assets/icons/mdi_family.png';
 import Fluent from '../../assets/icons/fluent_people-interwoven-20-filled.png';
 
-// Tribe icons
 import judahIcon from '../../assets/images/tribes/judah.png';
 import reubenIcon from '../../assets/images/tribes/reuben.png';
 import gadIcon from '../../assets/images/tribes/gad.png';
@@ -46,6 +44,41 @@ import josephIcon from '../../assets/images/tribes/joseph.png';
 import benjaminIcon from '../../assets/images/tribes/benjamin.png';
 
 import './PrayerHub.css';
+
+// ==================== 🕐 GLOBAL TIME UTILITY ====================
+const userTimeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+
+const formatTime = (timeString) => {
+  if (!timeString) return 'Just now';
+  try {
+    const normalized = timeString.endsWith('Z') || timeString.includes('+')
+      ? timeString
+      : timeString + 'Z';
+
+    const date = new Date(normalized);
+    if (isNaN(date.getTime())) return 'Just now';
+
+    const now = new Date();
+    const diffMs = now - date;
+    const diffMin  = Math.floor(diffMs / 60000);
+    const diffHour = Math.floor(diffMs / 3600000);
+    const diffDay  = Math.floor(diffMs / 86400000);
+
+    if (diffMin < 1)   return 'Just now';
+    if (diffMin < 60)  return `${diffMin} minutes ago`;
+    if (diffHour < 24) return `${diffHour} hours ago`;
+    if (diffDay < 7)   return `${diffDay} days ago`;
+
+    return date.toLocaleDateString('en-CA', {
+      timeZone: userTimeZone,
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+    });
+  } catch (e) {
+    return 'Just now';
+  }
+};
 
 // ==================== TRIBE ID MAPPING TABLE ====================
 const tribeIdMap = {
@@ -109,66 +142,58 @@ const WitnessWall = ({ currentUserId, allPosts, privacyFilter, categoryFilter, r
   };
 
   const loadWitnesses = async (page = 1) => {
-  setLoading(true);
-  try {
-    const filters = {};
-    // ✅ Gửi privacy lên server nếu có (kể cả 'public')
-    if (privacyFilter) filters.privacy = privacyFilter.toLowerCase();
-    if (categoryFilter) filters.category = categoryFilter;
+    setLoading(true);
+    try {
+      const filters = {};
+      if (privacyFilter) filters.privacy = privacyFilter.toLowerCase();
+      if (categoryFilter) filters.category = categoryFilter;
 
-    console.log(`📡 Fetching witnesses — page ${page}, filters:`, filters);
-    const result = await ApiService.getWitnessList(page, ITEMS_PER_PAGE, filters);
+      console.log(`📡 Fetching witnesses — page ${page}, filters:`, filters);
+      const result = await ApiService.getWitnessList(page, ITEMS_PER_PAGE, filters);
 
-    if (result.success) {
-      let fetchedWitnesses = result.witnesses || [];
+      if (result.success) {
+        let fetchedWitnesses = result.witnesses || [];
 
-      // ✅ Client-side fallback: filter theo privacy của original_post
-      if (privacyFilter) {
-        fetchedWitnesses = fetchedWitnesses.filter(w => {
-          const originalPost = w.original_post || allPosts?.find(p => p.docid === w.parent_docid);
-          const postPrivacy = (originalPost?.privacy || 'public').toLowerCase();
-          return postPrivacy === privacyFilter.toLowerCase();
-        });
-      }
+        if (privacyFilter) {
+          fetchedWitnesses = fetchedWitnesses.filter(w => {
+            const originalPost = w.original_post || allPosts?.find(p => p.docid === w.parent_docid);
+            const postPrivacy = (originalPost?.privacy || 'public').toLowerCase();
+            return postPrivacy === privacyFilter.toLowerCase();
+          });
+        }
 
-      // ✅ Client-side fallback: filter theo category của original_post
-      if (categoryFilter) {
-        fetchedWitnesses = fetchedWitnesses.filter(w => {
-          const originalPost = w.original_post || allPosts?.find(p => p.docid === w.parent_docid);
-          return originalPost?.category === categoryFilter;
-        });
-      }
+        if (categoryFilter) {
+          fetchedWitnesses = fetchedWitnesses.filter(w => {
+            const originalPost = w.original_post || allPosts?.find(p => p.docid === w.parent_docid);
+            return originalPost?.category === categoryFilter;
+          });
+        }
 
+        const hasActiveFilter = !!(privacyFilter || categoryFilter);
 
-       const hasActiveFilter = !!(privacyFilter || categoryFilter);
+        if (hasActiveFilter) {
+          if (fetchedWitnesses.length === 0) {
+            const safePage = Math.max(page - 1, 1);
+            setCurrentPage(safePage);
+            setTotalPages(safePage);
+            setTotalItems(0);
+            setWitnesses([]);
+          } else {
+            const isLastPage = fetchedWitnesses.length < ITEMS_PER_PAGE;
+            const pages = isLastPage ? page : page + 1;
+            setWitnesses(fetchedWitnesses);
+            setTotalItems(fetchedWitnesses.length);
+            setTotalPages(pages);
+          }
+        } else {
+          const total = result.pagination?.total_items ?? result.total ?? fetchedWitnesses.length;
+          const pages = result.pagination?.total_pages ?? Math.ceil(total / ITEMS_PER_PAGE) ?? 1;
+          setWitnesses(fetchedWitnesses);
+          setTotalItems(total);
+          setTotalPages(Math.max(pages, 1));
+        }
 
-if (hasActiveFilter) {
-  if (fetchedWitnesses.length === 0) {
-    // ✅ Trang này trống → lùi về trang trước, khoá Next
-    const safePage = Math.max(page - 1, 1);
-    setCurrentPage(safePage);
-    setTotalPages(safePage);
-    setTotalItems(0);
-    setWitnesses([]);
-  } else {
-    // ✅ Còn data → kiểm tra có trang tiếp không
-    const isLastPage = fetchedWitnesses.length < ITEMS_PER_PAGE;
-    const pages = isLastPage ? page : page + 1;
-    setWitnesses(fetchedWitnesses);
-    setTotalItems(fetchedWitnesses.length);
-    setTotalPages(pages);
-  }
-} else {
-  // ✅ Không filter → tin hoàn toàn vào API pagination
-  const total = result.pagination?.total_items ?? result.total ?? fetchedWitnesses.length;
-  const pages = result.pagination?.total_pages ?? Math.ceil(total / ITEMS_PER_PAGE) ?? 1;
-  setWitnesses(fetchedWitnesses);
-  setTotalItems(total);
-  setTotalPages(Math.max(pages, 1));
-}
-
-console.log(`✅ Witnesses: ${fetchedWitnesses.length} items | Page ${page} | HasFilter: ${hasActiveFilter}`);
-
+        console.log(`✅ Witnesses: ${fetchedWitnesses.length} items | Page ${page} | HasFilter: ${hasActiveFilter}`);
       }
     } catch (error) {
       console.error('❌ Error loading witnesses:', error);
@@ -180,11 +205,10 @@ console.log(`✅ Witnesses: ${fetchedWitnesses.length} items | Page ${page} | Ha
     }
   };
 
-  // Reset về page 1 khi filter thay đổi
   useEffect(() => {
     setCurrentPage(1);
     loadWitnesses(1);
-  }, [privacyFilter, categoryFilter]);
+  }, [privacyFilter, categoryFilter]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handlePrevPage = () => {
     if (currentPage <= 1 || loading) return;
@@ -212,35 +236,21 @@ console.log(`✅ Witnesses: ${fetchedWitnesses.length} items | Page ${page} | Ha
   }
 
   if (!witnesses || witnesses.length === 0) {
-  return (
-    <div className="witness-wall-empty">
-      <div className="witness-wall-empty-icon">✨</div>
-      <h3>No Witnesses</h3>
-      <p>No witnesses in this category yet. Be the first to share!</p>
-
-      {/* ✅ Vẫn hiện pagination khi empty để user có thể quay lại */}
-      {currentPage > 1 && (
-        <div className="witness-wall-pagination">
-          <button
-            className="pagination-btn"
-            onClick={handlePrevPage}
-            disabled={loading}
-          >
-            ← Previous
-          </button>
-          <span className="pagination-info">Page {currentPage}</span>
-          <button
-            className="pagination-btn"
-            disabled={true}
-          >
-            Next →
-          </button>
-        </div>
-      )}
-    </div>
-  );
-}
-
+    return (
+      <div className="witness-wall-empty">
+        <div className="witness-wall-empty-icon">✨</div>
+        <h3>No Witnesses</h3>
+        <p>No witnesses in this category yet. Be the first to share!</p>
+        {currentPage > 1 && (
+          <div className="witness-wall-pagination">
+            <button className="pagination-btn" onClick={handlePrevPage} disabled={loading}>← Previous</button>
+            <span className="pagination-info">Page {currentPage}</span>
+            <button className="pagination-btn" disabled={true}>Next →</button>
+          </div>
+        )}
+      </div>
+    );
+  }
 
   return (
     <div className="witness-wall">
@@ -268,7 +278,8 @@ console.log(`✅ Witnesses: ${fetchedWitnesses.length} items | Page ${page} | Ha
                     </div>
                     <div className="post-info">
                       <div className="post-author">{originalPost.userid || originalPost.author}</div>
-                      <div className="post-time">{originalPost.datetime || 'Just now'}</div>
+                      {/* ✅ FIX 1 */}
+                      <div className="post-time">{formatTime(originalPost.datetime)}</div>
                     </div>
                   </div>
                   <div className="post-content">
@@ -297,7 +308,8 @@ console.log(`✅ Witnesses: ${fetchedWitnesses.length} items | Page ${page} | Ha
                   </div>
                   <div className="witness-wall-info">
                     <div className="witness-wall-author">{witness.userid}</div>
-                    <div className="witness-wall-time">{witness.datetime || 'Just now'}</div>
+                    {/* ✅ FIX 2 */}
+                    <div className="witness-wall-time">{formatTime(witness.datetime)}</div>
                   </div>
                 </div>
                 <div className="witness-wall-content">
@@ -316,7 +328,6 @@ console.log(`✅ Witnesses: ${fetchedWitnesses.length} items | Page ${page} | Ha
         })}
       </div>
 
-      {/* ✅ Pagination — luôn hiện khi có data */}
       {totalItems > 0 && (
         <div className="witness-wall-pagination">
           <button
@@ -326,9 +337,7 @@ console.log(`✅ Witnesses: ${fetchedWitnesses.length} items | Page ${page} | Ha
           >
             ← Previous
           </button>
-          <span className="pagination-info">
-            Page {currentPage} / {totalPages}
-          </span>
+          <span className="pagination-info">Page {currentPage} / {totalPages}</span>
           <button
             className="pagination-btn"
             onClick={handleNextPage}
@@ -350,7 +359,6 @@ const Comment = ({ comment, onReply, onEdit, onDelete, onLike, currentUserId, po
   const [replies, setReplies] = useState([]);
   const [loadingReplies, setLoadingReplies] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-
   const [isTranslating, setIsTranslating] = useState(false);
   const [translatedContent, setTranslatedContent] = useState(null);
   const [translationError, setTranslationError] = useState(null);
@@ -437,6 +445,7 @@ const Comment = ({ comment, onReply, onEdit, onDelete, onLike, currentUserId, po
         </div>
         <div className="comment-info">
           <div className="comment-author">{comment.author}</div>
+          {/* ✅ FIX 3: comment.time đã được formatTime() khi map trong loadComments */}
           <div className="comment-time">{comment.time}</div>
         </div>
       </div>
@@ -549,16 +558,14 @@ const Post = ({ post, allPosts, onLike, onComment, currentUserId, selectedCatego
   const [hasMoreComments, setHasMoreComments] = useState(false);
   const [loadingComments, setLoadingComments] = useState(false);
   const [commentStates, setCommentStates] = useState({});
-
   const isLikingRef = useRef(false);
   const commentsEndRef = useRef(null);
   const commentFormRef = useRef(null);
-  const [localComments, setLocalComments] = useState([])
+  const [localComments, setLocalComments] = useState([]);
   const [likeCount, setLikeCount] = useState(post.likes || 0);
   const [isLiked, setIsLiked] = useState(post.isLiked || false);
   const [isLiking, setIsLiking] = useState(false);
   const [showCommentForm, setShowCommentForm] = useState(false);
-
   const [isTranslating, setIsTranslating] = useState(false);
   const [translatedContent, setTranslatedContent] = useState(null);
   const [translationError, setTranslationError] = useState(null);
@@ -607,7 +614,8 @@ const Post = ({ post, allPosts, onLike, onComment, currentUserId, selectedCatego
         id: c.docid,
         author: c.userid,
         content: c.content,
-        time: c.datetime || 'Just now',
+        // ✅ FIX 3: formatTime thay vì raw string
+        time: formatTime(c.datetime),
         likes: c.amen_count || 0,
         isLiked: c.amened || false,
         isReply: true,
@@ -658,15 +666,12 @@ const Post = ({ post, allPosts, onLike, onComment, currentUserId, selectedCatego
     if (isLikingRef.current) return;
     isLikingRef.current = true;
     setIsLiking(true);
-
     const prevCount = likeCount;
     const prevLiked = isLiked;
     const newLiked = !prevLiked;
     const newCount = newLiked ? prevCount + 1 : Math.max(0, prevCount - 1);
-
     setIsLiked(newLiked);
     setLikeCount(newCount);
-
     try {
       const result = await ApiService.likePost(post.id, currentUserId);
       if (result.success) {
@@ -692,17 +697,14 @@ const Post = ({ post, allPosts, onLike, onComment, currentUserId, selectedCatego
   const handleLikeComment = async (commentId) => {
     const currentState = commentStates[commentId];
     if (!currentState || currentState.isLiking) return;
-
     const prevCount = currentState.likeCount;
     const prevLiked = currentState.isLiked || false;
     const newLiked = !prevLiked;
     const newCount = newLiked ? prevCount + 1 : Math.max(0, prevCount - 1);
-
     setCommentStates(prev => ({
       ...prev,
       [commentId]: { ...prev[commentId], isLiked: newLiked, likeCount: newCount, isLiking: true }
     }));
-
     try {
       const result = await ApiService.likePost(commentId, currentUserId);
       if (result.success) {
@@ -725,14 +727,11 @@ const Post = ({ post, allPosts, onLike, onComment, currentUserId, selectedCatego
     }
   };
 
-  // ✅ THAY BẰNG
   const handleCommentSubmit = async (e) => {
     e.preventDefault();
     if (!commentText.trim() || isCommenting) return;
     setIsCommenting(true);
-
-    const submittedText = commentText.trim(); // ✅ lưu trước khi clear
-
+    const submittedText = commentText.trim();
     try {
       const result = await ApiService.addComment({
         userid: currentUserId,
@@ -741,9 +740,7 @@ const Post = ({ post, allPosts, onLike, onComment, currentUserId, selectedCatego
         sn: post.sn
       });
       if (result.success) {
-        setCommentText(''); // ✅ clear input
-
-        // ✅ Thêm comment mới vào localComments ngay lập tức
+        setCommentText('');
         const newComment = {
           id: result.comment?.docid || `temp-${Date.now()}`,
           author: currentUserId,
@@ -760,12 +757,8 @@ const Post = ({ post, allPosts, onLike, onComment, currentUserId, selectedCatego
           ...prev,
           [newComment.id]: { likeCount: 0, isLiked: false, isLiking: false }
         }));
-
-        // ✅ Chỉ update count, KHÔNG re-fetch, form KHÔNG đóng
         if (onComment) await onComment(post.id);
         if (refreshBalance) await refreshBalance();
-
-        // ✅ Scroll xuống comment mới
         setTimeout(() => {
           commentsEndRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
         }, 100);
@@ -780,14 +773,13 @@ const Post = ({ post, allPosts, onLike, onComment, currentUserId, selectedCatego
     }
   };
 
-
   const handleCommentReply = (commentId, reply) => { console.log(`💬 Reply to comment ${commentId}:`, reply); };
   const handleCommentEdit = (commentId, newContent) => { console.log(`✏️ Edit comment ${commentId}:`, newContent); };
   const handleCommentDelete = (commentId) => { console.log(`🗑️ Delete comment ${commentId}`); };
+
   const serverCommentIds = new Set(comments.map(c => c.id));
   const filteredLocal = localComments.filter(c => !serverCommentIds.has(c.id));
   const mergedComments = [...filteredLocal, ...comments];
-
 
   return (
     <div className="post-card">
@@ -803,7 +795,8 @@ const Post = ({ post, allPosts, onLike, onComment, currentUserId, selectedCatego
         </div>
         <div className="post-info">
           <div className="post-author">{post.author}</div>
-          <div className="post-time">{post.time || post.datetime || 'Just now'}</div>
+          {/* ✅ FIX 4: formatTime thay vì raw string */}
+          <div className="post-time">{formatTime(post.time || post.datetime)}</div>
         </div>
 
         <div className="post-badges-container">
@@ -909,7 +902,7 @@ const Post = ({ post, allPosts, onLike, onComment, currentUserId, selectedCatego
 
           <div className="comments-section">
             <div className="comments-header">
-              <h4>💬 Prayers({mergedComments.length})</h4>
+              <h4>💬 Prayers ({mergedComments.length})</h4>
               {loadingComments && <span className="loading-indicator">Loading...</span>}
             </div>
             <div className="comments-list">
@@ -932,7 +925,6 @@ const Post = ({ post, allPosts, onLike, onComment, currentUserId, selectedCatego
                   <p>No comments yet. Be the first to comment!</p>
                 </div>
               )}
-              {/* ✅ Anchor scroll */}
               <div ref={commentsEndRef} />
             </div>
             {hasMoreComments && (
@@ -956,24 +948,18 @@ const PrayerHub = ({ user, onLogout }) => {
   const [coinAmount, setCoinAmount] = useState(0);
   const [loadingBalance, setLoadingBalance] = useState(true);
   const [showTribeDetail, setShowTribeDetail] = useState(false);
-
   const [privacyFilterActive, setPrivacyFilterActive] = useState(false);
   const [categoryFilterActive, setCategoryFilterActive] = useState(false);
   const [witnessWallActive, setWitnessWallActive] = useState(false);
-
   const [selectedPrivacy, setSelectedPrivacy] = useState(null);
   const [selectedPrayerCategory, setSelectedPrayerCategory] = useState(null);
-
   const [isPrivacyOpen, setIsPrivacyOpen] = useState(false);
   const [isPrayerCategoryOpen, setIsPrayerCategoryOpen] = useState(false);
-
   const [posts, setPosts] = useState([]);
   const [allPosts, setAllPosts] = useState([]);
   const [loading, setLoading] = useState(false);
-
   const [currentPage, setCurrentPage] = useState(1);
   const [hasNextPage, setHasNextPage] = useState(false);
-
   const privacyRef = useRef(null);
   const prayerCategoryRef = useRef(null);
   const navigatingRef = useRef(false);
@@ -997,9 +983,7 @@ const PrayerHub = ({ user, onLogout }) => {
     const fetchNotificationCount = async () => {
       try {
         const result = await ApiService.getNotifications({ limit: 1, offset: 0, unread_only: false });
-        if (isActive) {
-          setNotificationCount(result.success ? (result.unread_count ?? 0) : 0);
-        }
+        if (isActive) setNotificationCount(result.success ? (result.unread_count ?? 0) : 0);
       } catch (error) {
         console.error('❌ Failed to load notification count:', error);
         if (isActive) setNotificationCount(0);
@@ -1011,7 +995,6 @@ const PrayerHub = ({ user, onLogout }) => {
 
   const userTribeId = currentTribeId;
   let tribeNameProp, tribeLogoProp;
-
   if (userTribeId === null || userTribeId === undefined) {
     tribeNameProp = "not tribe";
     tribeLogoProp = null;
@@ -1045,13 +1028,11 @@ const PrayerHub = ({ user, onLogout }) => {
       setSelectedPrayerCategory(null);
       return;
     }
-
     setCurrentPage(page);
     setLoading(true);
     try {
       const currentUserId = user?.id || user?.userId || ApiService.getCurrentUserId();
       const filters = { viewer_userid: currentUserId };
-
       if (selectedPrivacy) filters.privacy = selectedPrivacy.toLowerCase();
       if (selectedPrayerCategory) filters.category = selectedPrayerCategory;
 
@@ -1065,9 +1046,7 @@ const PrayerHub = ({ user, onLogout }) => {
 
       const commentsCountMap = {};
       rawComments.forEach(c => {
-        if (c.parent_docid) {
-          commentsCountMap[c.parent_docid] = (commentsCountMap[c.parent_docid] || 0) + 1;
-        }
+        if (c.parent_docid) commentsCountMap[c.parent_docid] = (commentsCountMap[c.parent_docid] || 0) + 1;
       });
 
       if (rawPosts.length > 0) {
@@ -1083,11 +1062,11 @@ const PrayerHub = ({ user, onLogout }) => {
           privacy: post.privacy ? post.privacy.toLowerCase() : 'public',
           category: post.category || 'General',
           author: post.author || post.userid || user?.name || 'Anonymous User',
-          time: post.datetime || 'Just now',
+          // ✅ Giữ raw datetime — formatTime xử lý khi render
+          time: post.datetime || post.created_at || null,
           image: post.image || null,
           avatar_url: ApiService.processAvatarUrl(post.avatar_url)
         }));
-
         setPosts(transformedPosts);
         setAllPosts([...rawPosts, ...rawComments]);
         setHasNextPage(postsResult.pagination?.has_next === true);
@@ -1200,7 +1179,6 @@ const PrayerHub = ({ user, onLogout }) => {
   const handleCategoryClick = (categoryName) => {
     if (categoryName === 'Privacy Choices') {
       if (witnessWallActive) {
-        // Đang ở Witness Wall → chỉ mở dropdown, không tắt witnessWall
         setPrivacyFilterActive(true);
         setIsPrivacyOpen(true);
         setCategoryFilterActive(false);
@@ -1213,7 +1191,6 @@ const PrayerHub = ({ user, onLogout }) => {
       }
     } else if (categoryName === 'Prayer Category') {
       if (witnessWallActive) {
-        // Đang ở Witness Wall → chỉ mở dropdown, không tắt witnessWall
         setCategoryFilterActive(true);
         setIsPrayerCategoryOpen(true);
         setPrivacyFilterActive(false);
@@ -1226,12 +1203,10 @@ const PrayerHub = ({ user, onLogout }) => {
       }
     } else if (categoryName === 'Witness Wall') {
       setWitnessWallActive(prev => !prev);
-      // ✅ Giữ nguyên selectedPrivacy & selectedPrayerCategory đã chọn
       setIsPrivacyOpen(false);
       setIsPrayerCategoryOpen(false);
     }
   };
-
 
   const getFilteredPosts = () => posts;
 
@@ -1246,7 +1221,6 @@ const PrayerHub = ({ user, onLogout }) => {
     await refreshBalance();
   };
 
-  // ✅ THAY
   const handleCommentPost = async (postId) => {
     setPosts(prevPosts =>
       prevPosts.map(post =>
@@ -1257,7 +1231,6 @@ const PrayerHub = ({ user, onLogout }) => {
     );
     await refreshBalance();
   };
-
 
   if (showTribeDetail) {
     if (userTribeId === null || userTribeId === undefined) {
@@ -1394,7 +1367,6 @@ const PrayerHub = ({ user, onLogout }) => {
                 categoryFilter={selectedPrayerCategory || null}
                 refreshBalance={refreshBalance}
               />
-
             ) : filteredPosts.length > 0 ? (
               <div className="posts-feed">
                 {filteredPosts.map(post => (
@@ -1410,7 +1382,6 @@ const PrayerHub = ({ user, onLogout }) => {
                   />
                 ))}
 
-                {/* ✅ Pagination cho Posts feed */}
                 <div className="pagination-controls" style={{ display: 'flex', justifyContent: 'center', gap: '20px', padding: '20px 0' }}>
                   <button
                     onClick={handlePrevPage}
