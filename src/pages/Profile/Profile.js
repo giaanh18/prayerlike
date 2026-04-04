@@ -204,7 +204,7 @@ const Profile = ({ user, onLogout }) => {
       }
     } catch (err) {
       console.error('❌ Upload avatar error:', err);
-      alert(`❌ Failed to upload avatar: ${err.message}`);
+      alert(`❌ Photos larger than 10MB: ${err.message}`);
     } finally {
       setUploadingAvatar(false);
     }

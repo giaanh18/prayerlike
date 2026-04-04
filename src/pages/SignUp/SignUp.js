@@ -327,7 +327,7 @@ const SignUp = ({ onSignUpComplete, onReturnToLogin }) => {
                     />
                     {errors.userId && <span className="error-text">{errors.userId}</span>}
                     <small style={{ color: '#999', fontSize: '11px', marginTop: '3px', display: 'block' }}>
-                        3-30 個字元，僅限英文、數字、底線和連字號
+                        3-30 characters, English letters, numbers, underscores and hyphens only
                     </small>
                 </div>
                 <div className="input-group">
@@ -341,7 +341,7 @@ const SignUp = ({ onSignUpComplete, onReturnToLogin }) => {
                     />
                     {errors.name && <span className="error-text">{errors.name}</span>}
                     <small style={{ color: '#999', fontSize: '11px', marginTop: '3px', display: 'block' }}>
-                        您的顯示名稱（2-50 個字元）
+                        Your display name (2-50 characters)
                     </small>
                 </div>
                 
@@ -419,7 +419,7 @@ const SignUp = ({ onSignUpComplete, onReturnToLogin }) => {
                         }}
                         disabled={isSubmitting || isLoading}
                     >
-                        已有帳號？返回登入
+                        Already have an account? Return to Login
                     </button>
                 </div>
             </div>
