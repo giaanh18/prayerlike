@@ -74,6 +74,21 @@ const buildAbsoluteUrl = (url) => {
   return result;
 };
 
+// ==================== 📱 DEVICE INFO HELPER ====================
+const getDeviceHeaders = () => {
+  // 嘗試讀取 Flutter 注入的變數，如果沒有就給預設值 
+  const deviceInfo = window.APP_DEVICE_INFO || {
+    os: 'Unknown',
+    os_version: typeof navigator !== 'undefined' ? navigator.userAgent.substring(0, 50) : 'Unknown',
+    app_version: '1.0.0'
+  };
+
+  return {
+    'X-Client-OS': String(deviceInfo.os),
+    'X-OS-Version': String(deviceInfo.os_version),
+    'X-App-Version': String(deviceInfo.app_version)
+  };
+};
 // ==================== 🚀 MAIN API SERVICE ====================
 
 const ApiService = {
@@ -112,6 +127,7 @@ const ApiService = {
       headers: {
         'Content-Type': 'application/json',
         'Accept': 'application/json',
+        ...getDeviceHeaders(),
         ...options.headers
       },
       ...options
@@ -703,6 +719,9 @@ const ApiService = {
       const response = await fetch(`${POSTS_API_URL}/witness`, {
         method: 'POST',
         credentials: 'include',
+        headers: {
+          ...getDeviceHeaders() // 夾帶設備資訊
+        },
         body: formData
       });
 
@@ -1015,6 +1034,9 @@ const ApiService = {
       const response = await fetch(`${API_BASE_URL}/api/activities`, {
         method: 'POST',
         credentials: 'include',
+        headers: {
+          ...getDeviceHeaders() // 夾帶設備資訊
+        },
         body: formData
       });
 
@@ -1120,7 +1142,8 @@ const ApiService = {
           credentials: 'include',
           headers: {
             'Content-Type': 'application/json',
-            'Accept': 'application/json'
+            'Accept': 'application/json',
+            ...getDeviceHeaders() //夾帶設備資訊
           },
           body: JSON.stringify(payload)
         }
