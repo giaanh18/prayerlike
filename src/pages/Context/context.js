@@ -419,7 +419,7 @@ const WitnessWall = ({ selectedCategory, currentUserId, allPosts, refreshBalance
                   </div>
                   <div className="post-content">
                     {originalPost.title && <h3>{originalPost.title}</h3>}
-                    <p>{originalPost.content}</p>
+                    <p style={{ whiteSpace: 'pre-wrap' }}>{originalPost.content}</p>
                     <button className={`post-translate-button ${translationState.isTranslating ? 'translating' : ''} ${translationState.translatedContent ? 'active' : ''}`} onClick={() => handleTranslateOriginalPost(originalPost.docid, originalPost.content)} disabled={translationState.isTranslating}>
                       <TranslateIcon size={18} />
                     </button>
@@ -564,7 +564,7 @@ const WitnessWall = ({ selectedCategory, currentUserId, allPosts, refreshBalance
                 </div>
                 <div className="witness-wall-content">
                   {witness.title && <h4>{witness.title}</h4>}
-                  <p>{witness.content}</p>
+                  <p style={{ whiteSpace: 'pre-wrap' }}>{witness.content}</p>
                   {witness.image_url && (
                     <div className="witness-media">
                       <img src={witness.image_url} alt="Witness image" loading="lazy" onError={(e) => { e.target.style.display = 'none'; }} />
@@ -932,7 +932,7 @@ const Post = ({ post, allPosts, onLike, onComment, onWitnessCreated, currentUser
       </div>
       <div className="post-content">
         {post.title && <h3>{post.title}</h3>}
-        <p>{post.content}</p>
+        <p style={{ whiteSpace: 'pre-wrap' }}>{post.content}</p>
         <button className={`post-translate-button ${isTranslating ? 'translating' : ''} ${translatedContent ? 'active' : ''}`} onClick={handleTranslate} disabled={isTranslating}>
           <TranslateIcon size={18} />
         </button>

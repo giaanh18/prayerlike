@@ -284,7 +284,7 @@ const WitnessWall = ({ currentUserId, allPosts, privacyFilter, categoryFilter, r
                   </div>
                   <div className="post-content">
                     {originalPost.title && <h3>{originalPost.title}</h3>}
-                    <p>{originalPost.content}</p>
+                    <p style={{ whiteSpace: 'pre-wrap' }}>{originalPost.content}</p>
                   </div>
                   {renderMediaBlock(
                     originalImageUrl,
@@ -314,7 +314,7 @@ const WitnessWall = ({ currentUserId, allPosts, privacyFilter, categoryFilter, r
                 </div>
                 <div className="witness-wall-content">
                   {witness.title && <h4>{witness.title}</h4>}
-                  <p>{witness.content}</p>
+                  <p style={{ whiteSpace: 'pre-wrap' }}>{witness.content}</p>
                 </div>
                 {renderMediaBlock(
                   witnessImageUrl,
@@ -818,7 +818,7 @@ const Post = ({ post, allPosts, onLike, onComment, currentUserId, selectedCatego
 
       <div className="post-content">
         {post.title && <h3>{post.title}</h3>}
-        <p>{post.content}</p>
+        <p style={{ whiteSpace: 'pre-wrap' }}>{post.content}</p>
 
         <button
           className={`post-translate-button ${isTranslating ? 'translating' : ''} ${translatedContent ? 'active' : ''}`}
