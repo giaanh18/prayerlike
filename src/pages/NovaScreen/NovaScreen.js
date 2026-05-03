@@ -13,6 +13,7 @@ import Search from '../../assets/icons/Searchicon.png';
 import Add from '../../assets/icons/Addicon.png';
 import Profile from '../../assets/icons/Profileicon.png';
 import Nova from '../../assets/icons/Nova.png';
+import Nova_com from '../../assets/icons/Nova_com.png';
 
 function NovaScreen({ user, onLogout }) {
   const navigate = useNavigate();
@@ -418,7 +419,7 @@ function NovaScreen({ user, onLogout }) {
       <div className={`nova-sidebar ${isSidebarOpen ? 'open' : 'closed'}`}>
         <div className="sidebar-header">
           <div className="sidebar-logo">
-            <img src={Nova} alt="Nova" />
+            <img src={Nova_com} alt="Nova" />
             <span>Nova AI</span>
           </div>
           <button 
@@ -565,7 +566,7 @@ function NovaScreen({ user, onLogout }) {
               >
                 <div className="message-avatar">
                   {message.type === 'assistant' ? (
-                    <img src={Nova} alt="Nova" />
+                    <img src={Nova_com} alt="Nova" />
                   ) : (
                     <div className="user-avatar">
                       {user?.name ? user.name.charAt(0).toUpperCase() : '👤'}
