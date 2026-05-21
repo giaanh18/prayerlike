@@ -3,6 +3,11 @@ const API_BASE_URL = 'https://pray-api.yalinelena.church';
 const POSTS_API_URL = `${API_BASE_URL}/api`;
 const AUTH_API_URL = `${API_BASE_URL}/auth`;
 
+
+const GOOGLE_TRANSLATE_API_KEY = 
+  (import.meta.env && import.meta.env.VITE_GOOGLE_TRANSLATE_API_KEY) || 
+  (process.env && process.env.REACT_APP_GOOGLE_TRANSLATE_API_KEY);
+
 // ==================== 🔧 UTILITY CLASSES ====================
 
 class ApiError extends Error {
@@ -2344,7 +2349,7 @@ const ApiService = {
         Array.isArray(text) ? `${text.length} đoạn` : text.substring(0, 50) + '...'
       );
 
-      const GOOGLE_TRANSLATE_API_KEY = 'AIzaSyDwa1Yuu7ihKTeXU4eFrsqkbxR2a6Vf7Jw';
+      //const GOOGLE_TRANSLATE_API_KEY = 'AIzaSyDwa1Yuu7ihKTeXU4eFrsqkbxR2a6Vf7Jw';
       const TRANSLATE_URL = 'https://translation.googleapis.com/language/translate/v2';
 
       const params = new URLSearchParams({
@@ -2421,7 +2426,7 @@ const ApiService = {
         Array.isArray(text) ? `${text.length} đoạn` : text.substring(0, 50) + '...'
       );
 
-      const GOOGLE_TRANSLATE_API_KEY = 'AIzaSyDwa1Yuu7ihKTeXU4eFrsqkbxR2a6Vf7Jw';
+      //const GOOGLE_TRANSLATE_API_KEY = 'AIzaSyDwa1Yuu7ihKTeXU4eFrsqkbxR2a6Vf7Jw';
       const DETECT_URL = 'https://translation.googleapis.com/language/translate/v2/detect';
 
       const params = new URLSearchParams({
@@ -2489,7 +2494,7 @@ const ApiService = {
     try {
       console.log(`🌍 Lấy danh sách ngôn ngữ hỗ trợ (target: ${targetLang})`);
 
-      const GOOGLE_TRANSLATE_API_KEY = 'AIzaSyDwa1Yuu7ihKTeXU4eFrsqkbxR2a6Vf7Jw';
+      //const GOOGLE_TRANSLATE_API_KEY = 'AIzaSyDwa1Yuu7ihKTeXU4eFrsqkbxR2a6Vf7Jw';
       const LANGUAGES_URL = 'https://translation.googleapis.com/language/translate/v2/languages';
 
       const params = new URLSearchParams({
