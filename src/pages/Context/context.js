@@ -986,24 +986,29 @@ const Post = ({ post, allPosts, onLike, onComment, onWitnessCreated, onPostEdite
           <div className="post-author">{post.author}</div>
           <div className="post-time">{formatTime(post.time || post.datetime || post.created_at)}</div>
         </div>
-        <div className="post-badges-container">
-          <div className="post-privacy-badge">
-            {(!post.privacy || post.privacy === 'public') && <span>Public</span>}
-            {post.privacy === 'family' && <span>Family</span>}
-            {post.privacy === 'tribe' && <span>Tribe</span>}
-            {(post.privacy === 'individual' || post.privacy === 'private') && <span>Individual</span>}
+        <div className="post-badges-container post-badges-with-edit">
+          <div className="badges-row">
+            <div className="post-privacy-badge">
+              {(!post.privacy || post.privacy === 'public') && <span>Public</span>}
+              {post.privacy === 'family' && <span>Family</span>}
+              {post.privacy === 'tribe' && <span>Tribe</span>}
+              {(post.privacy === 'individual' || post.privacy === 'private') && <span>Individual</span>}
+            </div>
+            <div className="post-category-badge">
+              {post.category === 'Personal & Family' && <span>Personal & Family</span>}
+              {post.category === 'Church & Ministry' && <span>Church & Ministry</span>}
+              {post.category === 'Kingdom Prayer' && <span>Kingdom Prayer</span>}
+              {post.category === 'Tribe Prayer' && <span>Tribe Prayer</span>}
+              {!post.category && <span>{selectedCategory}</span>}
+            </div>
           </div>
-          <div className="post-category-badge">
-            {post.category === 'Personal & Family' && <span>Personal & Family</span>}
-            {post.category === 'Church & Ministry' && <span>Church & Ministry</span>}
-            {post.category === 'Kingdom Prayer' && <span>Kingdom Prayer</span>}
-            {post.category === 'Tribe Prayer' && <span>Tribe Prayer</span>}
-            {!post.category && <span>{selectedCategory}</span>}
-          </div>
+          {String(post.userid) === String(currentUserId) && (
+            <button className="post-edit-btn" onClick={() => setIsEditing(!isEditing)} title="Edit post">✏️</button>
+          )}
         </div>
-        {String(post.userid) === String(currentUserId) && (
-          <button className="post-edit-btn" onClick={() => setIsEditing(!isEditing)} title="Edit post">✏️</button>
-        )}
+
+
+
       </div>
       <div className="post-content">
         {post.title && <h3>{post.title}</h3>}

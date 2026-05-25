@@ -4447,5 +4447,17 @@ select:focus-visible {
     padding: 10px 12px;
   }
 }
+/* ==================== ✏️ POST BADGES WITH EDIT ==================== */
+.post-badges-with-edit {
+  flex-direction: column !important;
+  align-items: flex-end !important;
+  gap: 4px !important;
+}
+
+.post-badges-with-edit .badges-row {
+  display: flex !important;
+  gap: 8px !important;
+  align-items: center !important;
+}
 
 /* ==================== END EDIT POST ==================== */
