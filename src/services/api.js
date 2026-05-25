@@ -594,6 +594,35 @@ const ApiService = {
     }
   },
 
+  // ✏️ Edit Post (Soft Delete + Insert — docid giữ nguyên)
+  editPost: async (docid, updateData) => {
+    try {
+      if (!docid) throw new ApiError('Post docid không được để trống', 400);
+      console.log(`✏️ Editing post ${docid}:`, updateData);
+
+      const { data } = await ApiService.makeRequest(
+        `${POSTS_API_URL}/posts/${encodeURIComponent(docid)}`,
+        {
+          method: 'PUT',
+          credentials: 'include',
+          body: JSON.stringify(updateData)
+        }
+      );
+
+      cache.clear();
+
+      return {
+        success: true,
+        post: data.data,
+        docid: docid,
+        message: data.message || 'Post updated successfully'
+      };
+    } catch (error) {
+      console.error('❌ Edit post failed:', error);
+      return { success: false, message: error.message, error: error.message };
+    }
+  },
+
   likeComment: async (commentDocid, userId) => {
     try {
       console.log(`❤️ Toggle Amen comment ${commentDocid}`);

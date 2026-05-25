@@ -4353,3 +4353,99 @@ select:focus-visible {
     font-size: 11px;
   }
 }
+/* ==================== ✏️ EDIT POST ==================== */
+
+.post-edit-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 16px;
+  padding: 4px 8px;
+  border-radius: 6px;
+  opacity: 0.5;
+  transition: opacity 0.2s, background 0.2s;
+  flex-shrink: 0;
+  margin-left: 4px;
+  line-height: 1;
+}
+
+.post-edit-btn:hover {
+  opacity: 1;
+  background: rgba(0, 0, 0, 0.06);
+}
+
+.post-edit-form-wrapper {
+  margin: 0 0 12px 0;
+  padding: 14px 16px;
+  background: #f8f9fa;
+  border-top: 2px solid #FFD700;
+  border-bottom: 2px solid #FFD700;
+  animation: slideDown 0.3s ease;
+}
+
+.post-edit-form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.post-edit-title-input {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  font-size: 14px;
+  font-family: inherit;
+  box-sizing: border-box;
+  transition: border-color 0.2s;
+  background: #fff;
+  color: #333;
+}
+
+.post-edit-title-input:focus {
+  outline: none;
+  border-color: #FFD700;
+  box-shadow: 0 0 0 3px rgba(255, 215, 0, 0.15);
+}
+
+.post-edit-title-input::placeholder {
+  color: rgba(0, 0, 0, 0.35);
+}
+
+.post-edit-form textarea {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  font-size: 14px;
+  font-family: inherit;
+  resize: vertical;
+  min-height: 80px;
+  box-sizing: border-box;
+  transition: border-color 0.2s;
+  background: #fff;
+  color: #333;
+}
+
+.post-edit-form textarea:focus {
+  outline: none;
+  border-color: #FFD700;
+  box-shadow: 0 0 0 3px rgba(255, 215, 0, 0.15);
+}
+
+.post-edit-form textarea::placeholder {
+  color: rgba(0, 0, 0, 0.35);
+}
+
+@media (max-width: 480px) {
+  .post-edit-btn {
+    font-size: 14px;
+    padding: 3px 6px;
+  }
+
+  .post-edit-form-wrapper {
+    padding: 10px 12px;
+  }
+}
+
+/* ==================== END EDIT POST ==================== */

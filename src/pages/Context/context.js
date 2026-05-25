@@ -148,16 +148,34 @@ const WitnessWall = ({ selectedCategory, currentUserId, allPosts, refreshBalance
           );
           return new Set([...fromApi, ...prev]);
         });
+
+        // 🛡️ BỘ LỌC ĐÃ ĐƯỢC CHÈN VÀO ĐÂY:
+        // ĐOẠN MỚI - Hãy DÁN đoạn này vào
         const filteredWitnesses = result.witnesses.filter(witness => {
           const originalPost = witness.original_post || allPosts?.find(p => p.docid === witness.parent_docid);
+
           if (!originalPost) return false;
+
+          // 🛡️ LỚP BẢO MẬT: CHẶN BÀI INDIVIDUAL CỦA NGƯỜI KHÁC
+          // Nếu privacy là 'individual' VÀ người xem (currentUserId) không phải là chủ bài viết (userid)
+          const isIndividual = String(originalPost.privacy || '').toLowerCase() === 'individual';
+          const isOwner = String(originalPost.userid || '') === String(currentUserId || '');
+
+          if (isIndividual && !isOwner) {
+            return false; // Loại bỏ ngay lập tức
+          }
+
+          // Logic lọc cũ: Kiểm tra viewScope ('my')
           if (viewScope === 'my') {
-            const isMyPost = originalPost.userid === currentUserId || originalPost.author === currentUserId;
+            const isMyPost = String(originalPost.userid || '') === String(currentUserId || '') || String(originalPost.author || '') === String(currentUserId || '');
             if (!isMyPost) return false;
           }
+
+          // Logic lọc cũ: Kiểm tra Category
           if (!selectedCategory) return true;
           return originalPost.category === selectedCategory;
         });
+
         const perPage = 20;
         const startIndex = (page - 1) * perPage;
         const endIndex = startIndex + perPage;
@@ -313,7 +331,12 @@ const WitnessWall = ({ selectedCategory, currentUserId, allPosts, refreshBalance
       const result = await ApiService.addComment({ userid: currentUserId, content: currentState.commentText.trim(), docid: postId, sn: postSn });
       if (result.success) {
         const newCommentId = result.comment?.docid || `temp-${Date.now()}`;
-        const newComment = { id: newCommentId, author: currentUserId, content: currentState.commentText.trim(), time: 'Just now', likes: 0, isReply: true, userid: currentUserId, avatar_url: result.comment?.avatar_url };
+        const newComment = {
+          id: newCommentId, author: currentUserId,
+          content: currentState.commentText.trim(),
+          time: 'Just now', likes: 0, isReply: true,
+          userid: currentUserId, avatar_url: result.comment?.avatar_url
+        };
         setCommentStates(prev => ({ ...prev, [newCommentId]: { likeCount: 0, isLiked: false, isLiking: false } }));
         setPostStates(prev => ({ ...prev, [postId]: { ...prev[postId], commentText: '', isCommenting: false, commentCount: prev[postId].commentCount + 1, comments: [newComment, ...prev[postId].comments] } }));
         if (refreshBalance) await refreshBalance();
@@ -420,7 +443,11 @@ const WitnessWall = ({ selectedCategory, currentUserId, allPosts, refreshBalance
                   <div className="post-content">
                     {originalPost.title && <h3>{originalPost.title}</h3>}
                     <p style={{ whiteSpace: 'pre-wrap' }}>{originalPost.content}</p>
-                    <button className={`post-translate-button ${translationState.isTranslating ? 'translating' : ''} ${translationState.translatedContent ? 'active' : ''}`} onClick={() => handleTranslateOriginalPost(originalPost.docid, originalPost.content)} disabled={translationState.isTranslating}>
+                    <button
+                      className={`post-translate-button ${translationState.isTranslating ? 'translating' : ''} ${translationState.translatedContent ? 'active' : ''}`}
+                      onClick={() => handleTranslateOriginalPost(originalPost.docid, originalPost.content)}
+                      disabled={translationState.isTranslating}
+                    >
                       <TranslateIcon size={18} />
                     </button>
                     {translationState.translatedContent && (<div className="post-translated-content"><span className="translate-label">🌐 Translation:</span><p>{translationState.translatedContent}</p></div>)}
@@ -432,14 +459,12 @@ const WitnessWall = ({ selectedCategory, currentUserId, allPosts, refreshBalance
                       onClick={() => handleLikeOriginalPost(originalPost.docid)}
                       disabled={postState.isLiking}
                     >
-                      {postState.isLiking
-                        ? 'Processing...'
-                        : postState.isLiked
-                          ? `AMENED (${postState.likeCount})`
-                          : `AMEN (${postState.likeCount})`
-                      }
+                      {postState.isLiking ? 'Processing...' : postState.isLiked ? `AMENED (${postState.likeCount})` : `AMEN (${postState.likeCount})`}
                     </button>
-                    <button className={`action-button action-comment ${postState.showCommentForm ? 'active-comment' : ''}`} onClick={() => handleToggleCommentForm(originalPost.docid)}>
+                    <button
+                      className={`action-button action-comment ${postState.showCommentForm ? 'active-comment' : ''}`}
+                      onClick={() => handleToggleCommentForm(originalPost.docid)}
+                    >
                       PRAY FOR ME ({postState.commentCount || 0})
                     </button>
                     <button
@@ -468,9 +493,7 @@ const WitnessWall = ({ selectedCategory, currentUserId, allPosts, refreshBalance
                           </label>
                           <input
                             id={`witness-image-wall-${originalPost.docid}`}
-                            type="file"
-                            accept="image/*"
-                            style={{ display: 'none' }}
+                            type="file" accept="image/*" style={{ display: 'none' }}
                             onChange={(e) => setWitnessFormStates(prev => ({ ...prev, [originalPost.docid]: { ...prev[originalPost.docid], witnessImage: e.target.files[0] || null } }))}
                           />
                           {witnessFormState.witnessImage && (
@@ -529,14 +552,22 @@ const WitnessWall = ({ selectedCategory, currentUserId, allPosts, refreshBalance
                                   </div>
                                   <div className="comment-content">
                                     <p>{comment.content}</p>
-                                    <button className={`comment-translate-button ${commentTransState.isTranslating ? 'translating' : ''} ${commentTransState.translatedContent ? 'active' : ''}`} onClick={() => handleTranslateOriginalPost(comment.id, comment.content)} disabled={commentTransState.isTranslating}>
+                                    <button
+                                      className={`comment-translate-button ${commentTransState.isTranslating ? 'translating' : ''} ${commentTransState.translatedContent ? 'active' : ''}`}
+                                      onClick={() => handleTranslateOriginalPost(comment.id, comment.content)}
+                                      disabled={commentTransState.isTranslating}
+                                    >
                                       <TranslateIcon size={14} />
                                     </button>
                                     {commentTransState.translatedContent && (<div className="comment-translated-content"><span className="translate-label">🌐 Translation:</span><p>{commentTransState.translatedContent}</p></div>)}
                                     {commentTransState.translationError && (<div className="comment-translation-error">⚠️ {commentTransState.translationError}</div>)}
                                   </div>
                                   <div className="comment-actions">
-                                    <button className={`comment-action-btn like ${commentState.isLiked ? 'active-amen' : ''}`} onClick={() => handleLikeComment(comment.id)} disabled={commentState.isLiking}>
+                                    <button
+                                      className={`comment-action-btn like ${commentState.isLiked ? 'active-amen' : ''}`}
+                                      onClick={() => handleLikeComment(comment.id)}
+                                      disabled={commentState.isLiking}
+                                    >
                                       {commentState.isLiking ? 'Processing...' : (commentState.isLiked ? `AMENED (${commentState.likeCount})` : `AMEN (${commentState.likeCount})`)}
                                     </button>
                                   </div>
@@ -627,20 +658,19 @@ const PrivacyDropdown = ({ onChange, initialValue = 'public' }) => {
 };
 
 // ==================== COMMENT COMPONENT ====================
-const Comment = ({ comment, onReply, onEdit, onDelete, onLike, currentUserId, postDocid, commentState }) => {
-  const [isReplying, setIsReplying] = useState(false);
+const Comment = ({ comment, onReply, onEdit, onLike, currentUserId, postDocid, commentState }) => {
   const [isEditing, setIsEditing] = useState(false);
-  const [replyText, setReplyText] = useState('');
   const [editText, setEditText] = useState(comment.content);
-  const [showReplies, setShowReplies] = useState(false);
-  const [replies, setReplies] = useState([]);
-  const [loadingReplies, setLoadingReplies] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isTranslating, setIsTranslating] = useState(false);
   const [translatedContent, setTranslatedContent] = useState(null);
   const [translationError, setTranslationError] = useState(null);
 
-  useEffect(() => { setIsTranslating(false); setTranslatedContent(null); setTranslationError(null); }, [comment.id]);
+  useEffect(() => {
+    setIsTranslating(false);
+    setTranslatedContent(null);
+    setTranslationError(null);
+  }, [comment.id]);
 
   const handleTranslate = async () => {
     if (isTranslating) return;
@@ -654,47 +684,16 @@ const Comment = ({ comment, onReply, onEdit, onDelete, onLike, currentUserId, po
     finally { setIsTranslating(false); }
   };
 
-  const loadReplies = async () => {
-    if (loadingReplies || comment.isReply) return;
-    setLoadingReplies(true);
-    try {
-      const result = await ApiService.getComments(postDocid);
-      if (result.success) setReplies(result.comments.filter(c => c.parent_comment_id === comment.id));
-    } catch (error) { console.error('❌ Error loading replies:', error); }
-    finally { setLoadingReplies(false); }
-  };
-
-  const handleReplySubmit = async (e) => {
-    e.preventDefault();
-    if (!replyText.trim() || isSubmitting) return;
-    setIsSubmitting(true);
-    try {
-      const result = await ApiService.addComment({ userid: currentUserId, content: replyText.trim(), docid: postDocid });
-      if (result.success) { setReplyText(''); setIsReplying(false); setShowReplies(true); if (onReply) onReply(comment.id, result.comment); }
-      else alert(`Reply failed: ${result.message}`);
-    } catch (error) { alert(`Error occurred while replying: ${error.message}`); }
-    finally { setIsSubmitting(false); }
-  };
-
   const handleEditSubmit = async (e) => {
     e.preventDefault();
     if (!editText.trim() || isSubmitting) return;
     setIsSubmitting(true);
     try {
-      const result = await ApiService.editComment(comment.id, currentUserId, editText.trim());
+      const result = await ApiService.editPost(comment.id, { content: editText.trim() });
       if (result.success) { setIsEditing(false); if (onEdit) onEdit(comment.id, editText.trim()); }
       else alert(`Edit failed: ${result.message}`);
     } catch (error) { console.error('❌ Edit error:', error); }
     finally { setIsSubmitting(false); }
-  };
-
-  const handleDelete = async () => {
-    if (!window.confirm('Are you sure you want to delete this comment? This action cannot be undone!')) return;
-    try {
-      const result = await ApiService.deleteComment(comment.id, currentUserId);
-      if (result.success) { if (onDelete) onDelete(comment.id); }
-      else alert(`Delete failed: ${result.message}`);
-    } catch (error) { console.error('❌ Delete error:', error); }
   };
 
   return (
@@ -720,7 +719,11 @@ const Comment = ({ comment, onReply, onEdit, onDelete, onLike, currentUserId, po
         ) : (
           <>
             <p>{comment.content}</p>
-            <button className={`comment-translate-button ${isTranslating ? 'translating' : ''} ${translatedContent ? 'active' : ''}`} onClick={handleTranslate} disabled={isTranslating}>
+            <button
+              className={`comment-translate-button ${isTranslating ? 'translating' : ''} ${translatedContent ? 'active' : ''}`}
+              onClick={handleTranslate}
+              disabled={isTranslating}
+            >
               <TranslateIcon size={14} />
             </button>
             {translatedContent && <div className="comment-translated-content"><span className="translate-label">🌐 Translation:</span><p>{translatedContent}</p></div>}
@@ -729,7 +732,11 @@ const Comment = ({ comment, onReply, onEdit, onDelete, onLike, currentUserId, po
         )}
       </div>
       <div className="comment-actions">
-        <button className={`comment-action-btn like ${commentState?.isLiked ? 'active-amen' : ''}`} onClick={() => onLike(comment.id)} disabled={commentState?.isLiking}>
+        <button
+          className={`comment-action-btn like ${commentState?.isLiked ? 'active-amen' : ''}`}
+          onClick={() => onLike(comment.id)}
+          disabled={commentState?.isLiking}
+        >
           {commentState?.isLiking ? 'Processing...' : (commentState?.isLiked ? `AMENED (${commentState?.likeCount || 0})` : `AMEN (${commentState?.likeCount || 0})`)}
         </button>
       </div>
@@ -738,7 +745,7 @@ const Comment = ({ comment, onReply, onEdit, onDelete, onLike, currentUserId, po
 };
 
 // ==================== POST COMPONENT ====================
-const Post = ({ post, allPosts, onLike, onComment, onWitnessCreated, currentUserId, selectedCategory, refreshBalance }) => {
+const Post = ({ post, allPosts, onLike, onComment, onWitnessCreated, onPostEdited, onLoadComments, currentUserId, selectedCategory, refreshBalance }) => {
   const [isLiking, setIsLiking] = useState(false);
   const [isCommenting, setIsCommenting] = useState(false);
   const [commentText, setCommentText] = useState('');
@@ -757,11 +764,25 @@ const Post = ({ post, allPosts, onLike, onComment, onWitnessCreated, currentUser
   const [activeForm, setActiveForm] = useState(null);
   const WITNESSED_KEY = `witnessed_${currentUserId}`;
 
+  const preservedLikesRef = useRef({ likes: post.likes || 0, isLiked: post.isLiked || false });
+
   const getWitnessedSet = () => { try { return new Set(JSON.parse(localStorage.getItem(WITNESSED_KEY) || '[]')); } catch { return new Set(); } };
   const [hasWitnessed, setHasWitnessed] = useState(() => getWitnessedSet().has(post.id));
   const [isTranslating, setIsTranslating] = useState(false);
   const [translatedContent, setTranslatedContent] = useState(null);
   const [translationError, setTranslationError] = useState(null);
+
+  const [isEditing, setIsEditing] = useState(false);
+  const [editContent, setEditContent] = useState(post.content || '');
+  const [editTitle, setEditTitle] = useState(post.title || '');
+  const [isSubmittingEdit, setIsSubmittingEdit] = useState(false);
+
+  useEffect(() => {
+    if (!isEditing) {
+      setEditContent(post.content || '');
+      setEditTitle(post.title || '');
+    }
+  }, [post.content, post.title]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     const witnessed = allPosts.some(p => p.parent_docid === post.id && p.event === 'witness' && p.userid === currentUserId);
@@ -778,7 +799,8 @@ const Post = ({ post, allPosts, onLike, onComment, onWitnessCreated, currentUser
     .map(c => ({
       id: c.docid, author: c.userid, content: c.content,
       time: formatTime(c.datetime),
-      likes: c.amen_count || 0, isLiked: c.amened || false, userid: c.userid, avatar_url: c.avatar_url
+      likes: c.amen_count || 0, isLiked: c.amened || false,
+      userid: c.userid, avatar_url: c.avatar_url
     }));
   const serverCommentIds = new Set(serverComments.map(c => c.id));
   const filteredLocal = localComments.filter(c => !serverCommentIds.has(c.id));
@@ -792,6 +814,45 @@ const Post = ({ post, allPosts, onLike, onComment, onWitnessCreated, currentUser
     });
   }, [allPosts, post.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  useEffect(() => {
+    if (!isLikingRef.current) {
+      const safeLikes = Math.max(post.likes || 0, preservedLikesRef.current.likes || 0);
+      const safeIsLiked = post.isLiked || preservedLikesRef.current.isLiked || false;
+      setLikeCount(safeLikes);
+      setIsLiked(safeIsLiked);
+      preservedLikesRef.current = { likes: safeLikes, isLiked: safeIsLiked };
+    }
+  }, [post.id, post.likes, post.isLiked]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    const postWitnesses = allPosts.filter(p => p.parent_docid === post.id && p.event === 'witness');
+    setWitnessCount(postWitnesses.length);
+  }, [post.likes, allPosts, post.id]);
+
+  const handleEditSubmit = async (e) => {
+    e.preventDefault();
+    if (!editContent.trim() || isSubmittingEdit) return;
+    setIsSubmittingEdit(true);
+    try {
+      const result = await ApiService.editPost(post.id, { content: editContent.trim(), title: editTitle.trim() || null });
+      if (result.success) {
+        const updatedPost = result.post || result.data || {};
+        const newContent = updatedPost.content || editContent.trim();
+        const newTitle = updatedPost.title ?? editTitle.trim();
+        setEditContent(newContent);
+        setEditTitle(newTitle);
+        setIsEditing(false);
+        if (onPostEdited) onPostEdited(post.id, post.id, {
+          content: newContent,
+          title: newTitle,
+          userid: post.userid,
+          time: post.time,
+        });
+      } else { alert(`Edit failed: ${result.message}`); }
+    } catch (error) { alert(`Error: ${error.message}`); }
+    finally { setIsSubmittingEdit(false); }
+  };
+
   const handleTranslate = async () => {
     if (isTranslating) return;
     if (translatedContent) { setTranslatedContent(null); return; }
@@ -803,12 +864,6 @@ const Post = ({ post, allPosts, onLike, onComment, onWitnessCreated, currentUser
     } catch (error) { setTranslationError('Translation failed, please try again later'); }
     finally { setIsTranslating(false); }
   };
-
-  useEffect(() => {
-    if (post.likes !== undefined) setLikeCount(post.likes);
-    const postWitnesses = allPosts.filter(p => p.parent_docid === post.id && p.event === 'witness');
-    setWitnessCount(postWitnesses.length);
-  }, [post.likes, allPosts, post.id]);
 
   const handleWitnessSubmit = async (e) => {
     e.preventDefault();
@@ -839,8 +894,12 @@ const Post = ({ post, allPosts, onLike, onComment, onWitnessCreated, currentUser
   };
 
   const handleToggleCommentForm = () => {
-    if (activeForm === 'comment') { setActiveForm(null); setCommentText(''); }
-    else { setActiveForm('comment'); setWitnessText(''); }
+    if (activeForm === 'comment') {
+      setActiveForm(null); setCommentText('');
+    } else {
+      setActiveForm('comment'); setWitnessText('');
+      if (onLoadComments && serverComments.length === 0) onLoadComments(post.id);
+    }
   };
 
   const handleLike = async () => {
@@ -850,17 +909,23 @@ const Post = ({ post, allPosts, onLike, onComment, onWitnessCreated, currentUser
     const newLiked = !prevLiked;
     const newCount = newLiked ? prevCount + 1 : Math.max(0, prevCount - 1);
     setIsLiked(newLiked); setLikeCount(newCount); setHasLiked(true);
+    preservedLikesRef.current = { likes: newCount, isLiked: newLiked };
     try {
       const result = await ApiService.likePost(post.id, currentUserId);
       if (result.success) {
         const finalCount = result.data?.amen_count !== undefined ? result.data.amen_count : newCount;
         const finalLiked = result.data?.amened !== undefined ? result.data.amened : newLiked;
         setLikeCount(finalCount); setIsLiked(finalLiked);
+        preservedLikesRef.current = { likes: finalCount, isLiked: finalLiked };
         setTimeout(() => setHasLiked(false), 300);
         if (onLike) onLike(post.id, finalLiked, finalCount);
         if (refreshBalance) await refreshBalance();
       } else throw new Error(result.message || 'API Error');
-    } catch (error) { console.error('❌ Like error:', error); setIsLiked(prevLiked); setLikeCount(prevCount); setHasLiked(false); }
+    } catch (error) {
+      console.error('❌ Like error:', error);
+      setIsLiked(prevLiked); setLikeCount(prevCount); setHasLiked(false);
+      preservedLikesRef.current = { likes: prevCount, isLiked: prevLiked };
+    }
     finally { isLikingRef.current = false; setIsLiking(false); }
   };
 
@@ -879,7 +944,9 @@ const Post = ({ post, allPosts, onLike, onComment, onWitnessCreated, currentUser
         setTimeout(() => { setCommentStates(prev => ({ ...prev, [commentId]: { ...prev[commentId], likeCount: finalCount, isLiked: finalLiked, isLiking: false } })); }, 300);
         if (refreshBalance) await refreshBalance();
       } else throw new Error(result.message || 'API Error');
-    } catch (error) { setCommentStates(prev => ({ ...prev, [commentId]: { ...prev[commentId], isLiked: prevIsLiked, likeCount: prevCount, isLiking: false } })); }
+    } catch (error) {
+      setCommentStates(prev => ({ ...prev, [commentId]: { ...prev[commentId], isLiked: prevIsLiked, likeCount: prevCount, isLiking: false } }));
+    }
   };
 
   const handleCommentSubmit = async (e) => {
@@ -891,7 +958,12 @@ const Post = ({ post, allPosts, onLike, onComment, onWitnessCreated, currentUser
       const result = await ApiService.addComment({ userid: currentUserId, content: submittedText, docid: post.id, sn: post.sn });
       if (result.success) {
         setCommentText('');
-        const newComment = { id: result.comment?.docid || `temp-${Date.now()}`, author: currentUserId, content: submittedText, time: 'Just now', likes: 0, isLiked: false, userid: currentUserId, avatar_url: null };
+        const newComment = {
+          id: result.comment?.docid || `temp-${Date.now()}`,
+          author: currentUserId, content: submittedText,
+          time: 'Just now', likes: 0, isLiked: false,
+          userid: currentUserId, avatar_url: null
+        };
         setLocalComments(prev => [newComment, ...prev]);
         setCommentStates(prev => ({ ...prev, [newComment.id]: { likeCount: 0, isLiked: false, isLiking: false } }));
         if (onComment) await onComment(post.id);
@@ -929,23 +1001,75 @@ const Post = ({ post, allPosts, onLike, onComment, onWitnessCreated, currentUser
             {!post.category && <span>{selectedCategory}</span>}
           </div>
         </div>
+        {String(post.userid) === String(currentUserId) && (
+          <button className="post-edit-btn" onClick={() => setIsEditing(!isEditing)} title="Edit post">✏️</button>
+        )}
       </div>
       <div className="post-content">
         {post.title && <h3>{post.title}</h3>}
         <p style={{ whiteSpace: 'pre-wrap' }}>{post.content}</p>
-        <button className={`post-translate-button ${isTranslating ? 'translating' : ''} ${translatedContent ? 'active' : ''}`} onClick={handleTranslate} disabled={isTranslating}>
+        <button
+          className={`post-translate-button ${isTranslating ? 'translating' : ''} ${translatedContent ? 'active' : ''}`}
+          onClick={handleTranslate}
+          disabled={isTranslating}
+        >
           <TranslateIcon size={18} />
         </button>
         {translatedContent && <div className="post-translated-content"><span className="translate-label">🌐 Translation:</span><p>{translatedContent}</p></div>}
         {translationError && <div className="post-translation-error">⚠️ {translationError}</div>}
         {post.image && <div className="post-image"><img src={post.image} alt="Post image" /></div>}
       </div>
+      {isEditing && String(post.userid) === String(currentUserId) && (
+        <div className="post-edit-form-wrapper">
+          <form onSubmit={handleEditSubmit} className="post-edit-form">
+            <input
+              type="text"
+              value={editTitle}
+              onChange={(e) => setEditTitle(e.target.value)}
+              placeholder="Title (optional)"
+              className="post-edit-title-input"
+              maxLength={255}
+            />
+            <textarea
+              value={editContent}
+              onChange={(e) => setEditContent(e.target.value)}
+              placeholder="Edit your post..."
+              rows="4"
+              maxLength="2000"
+              required
+            />
+            <div className="form-actions">
+              <button type="submit" disabled={!editContent.trim() || isSubmittingEdit} className="submit-btn">
+                {isSubmittingEdit ? 'Saving...' : '💾 Save'}
+              </button>
+              <button
+                type="button"
+                onClick={() => { setIsEditing(false); setEditContent(post.content || ''); setEditTitle(post.title || ''); }}
+                className="cancel-btn"
+              >
+                Cancel
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
       <div className="post-actions">
-        <button className={`action-button action-amen ${isLiked || hasLiked ? 'active-amen' : ''}`} onClick={handleLike} disabled={isLiking}>
+        <button
+          className={`action-button action-amen ${isLiked || hasLiked ? 'active-amen' : ''}`}
+          onClick={handleLike}
+          disabled={isLiking}
+        >
           {isLiking ? 'Processing...' : (isLiked ? `AMENED (${likeCount})` : `AMEN (${likeCount})`)}
         </button>
-        <button className={`action-button action-comment ${activeForm === 'comment' ? 'active-comment' : ''}`} onClick={handleToggleCommentForm}>
-          PRAY FOR ME ({postComments.length})
+        <button
+          className={`action-button action-comment ${activeForm === 'comment' ? 'active-comment' : ''}`}
+          onClick={handleToggleCommentForm}
+        >
+          PRAY FOR ME ({Math.max(
+            post.serverCommentCount || 0,
+            post.calculatedComments || 0,
+            postComments.length || 0
+          )})
         </button>
         <button
           className={`action-button action-witness ${hasWitnessed ? 'witnessed-done' : (activeForm === 'witness' ? 'active-witness' : '')}`}
@@ -958,22 +1082,21 @@ const Post = ({ post, allPosts, onLike, onComment, onWitnessCreated, currentUser
       </div>
       {activeForm === 'witness' && (
         <div className="form-container witness-form-wrapper">
-          <form className="witness-form" onSubmit={handleWitnessSubmit}>            <textarea
-            value={witnessText}
-            onChange={(e) => setWitnessText(e.target.value)}
-            placeholder="Share your testimony..."
-            rows="4"
-            maxLength="1000"
-          />
+          <form className="witness-form" onSubmit={handleWitnessSubmit}>
+            <textarea
+              value={witnessText}
+              onChange={(e) => setWitnessText(e.target.value)}
+              placeholder="Share your testimony..."
+              rows="4"
+              maxLength="1000"
+            />
             <div className="witness-image-picker" style={{ marginTop: '8px' }}>
               <label htmlFor={`witness-image-${post.id}`} style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', cursor: 'pointer', padding: '6px 12px', borderRadius: '8px', border: '1px dashed #aaa', fontSize: '13px', color: '#555', backgroundColor: '#f9f9f9' }}>
                 📷 {witnessImage ? witnessImage.name : 'Add photo (optional)'}
               </label>
               <input
                 id={`witness-image-${post.id}`}
-                type="file"
-                accept="image/*"
-                style={{ display: 'none' }}
+                type="file" accept="image/*" style={{ display: 'none' }}
                 onChange={(e) => setWitnessImage(e.target.files[0] || null)}
               />
               {witnessImage && (
@@ -1069,7 +1192,16 @@ const MainApp = ({ user, onLogout }) => {
   const ACTIVITY_PER_PAGE = 20;
   const [newlyWitnessedPostId, setNewlyWitnessedPostId] = useState(null);
   const navigatingRef = useRef(false);
+  const selectedCategoryRef = useRef(selectedCategory);
+  const currentPageRef = useRef(currentPage);
+  const allPostsRef = useRef([]);
+  const postsRef = useRef([]);
   const hasTribe = currentTribeId !== null && currentTribeId !== undefined;
+
+  useEffect(() => { allPostsRef.current = allPosts; }, [allPosts]);
+  useEffect(() => { postsRef.current = posts; }, [posts]);
+  useEffect(() => { selectedCategoryRef.current = selectedCategory; }, [selectedCategory]);
+  useEffect(() => { currentPageRef.current = currentPage; }, [currentPage]);
 
   useEffect(() => {
     const storedUser = JSON.parse(localStorage.getItem('userData') || '{}');
@@ -1171,7 +1303,7 @@ const MainApp = ({ user, onLogout }) => {
     if (!hasTribe) { setActivities([]); setLoading(false); return; }
     setLoading(true);
     try {
-      const params = { page: page, limit: ACTIVITY_PER_PAGE, tribe: currentTribeId, is_published: true };
+      const params = { page, limit: ACTIVITY_PER_PAGE, tribe: currentTribeId, is_published: true };
       const result = await ApiService.getActivities(params);
       if (result.success) {
         const transformedActivities = result.activities
@@ -1233,14 +1365,18 @@ const MainApp = ({ user, onLogout }) => {
 
   const handleLikePost = async (postId, newLikedStatus, newCount) => {
     setPosts(prevPosts => prevPosts.map(post =>
-      post.id === postId ? { ...post, likes: newCount, isLiked: newLikedStatus, amen_count: newCount, amened: newLikedStatus } : post
+      post.id === postId
+        ? { ...post, likes: newCount, isLiked: newLikedStatus, amen_count: newCount, amened: newLikedStatus }
+        : post
     ));
     await refreshBalance();
   };
 
   const handleCommentPost = async (postId) => {
     setPosts(prevPosts => prevPosts.map(post =>
-      post.id === postId ? { ...post, calculatedComments: (post.calculatedComments || 0) + 1 } : post
+      post.id === postId
+        ? { ...post, calculatedComments: (post.calculatedComments || 0) + 1 }
+        : post
     ));
     await refreshBalance();
   };
@@ -1300,57 +1436,94 @@ const MainApp = ({ user, onLogout }) => {
     fetchPosts(category, 1);
   };
 
-  const getDemoPosts = useCallback(() => [], [user?.name]);
-
   const fetchPosts = useCallback(async (categoryOverride, page = 1) => {
+    const likesBeforeFetch = {};
+    postsRef.current.forEach(p => {
+      likesBeforeFetch[p.id] = { likes: p.likes || 0, isLiked: p.isLiked || false };
+    });
+
     setLoading(true);
     setCurrentPage(page);
     try {
       const categoryToFetch = categoryOverride !== undefined ? categoryOverride : selectedCategory;
-      const currentUserId = user?.id || user?.userId || ApiService.getCurrentUserId();
+      const currentUserId = user?.user_id || user?.id || user?.userId || ApiService.getCurrentUserId();
       const postFilters = {};
       if (categoryToFetch) postFilters.category = categoryToFetch;
       if (viewScope === 'my') postFilters.userid = currentUserId;
-      const commentFilters = {};
-      const [postsResult, commentsResult] = await Promise.all([
-        ApiService.getPosts(page, 50, true, postFilters),
-        ApiService.getCommentsPage(1, 100, commentFilters)
-      ]);
+
+      const postsResult = await ApiService.getPosts(page, 50, true, postFilters);
       const rawPosts = postsResult?.success ? (postsResult.posts || []) : [];
-      const rawComments = commentsResult?.success ? (commentsResult.comments || []) : [];
-      const commentsCountMap = {};
-      rawComments.forEach(c => {
-        if (c.parent_docid && c.event !== 'witness') {
-          commentsCountMap[c.parent_docid] = (commentsCountMap[c.parent_docid] || 0) + 1;
-        }
-      });
+
       if (rawPosts.length > 0) {
         const filteredPosts = rawPosts.filter(post => !post.parent_docid && post.docid);
-        const transformedPosts = filteredPosts.map(post => {
-          const serverCount = post.comment_count !== undefined ? post.comment_count : 0;
-          const localCount = commentsCountMap[post.docid] || 0;
-          return {
-            id: post.docid, sn: post.sn,
-            userid: post.userid || post.author_id,
-            avatar_url: post.avatar_url,
-            likes: post.amen_count !== undefined ? post.amen_count : 0,
-            isLiked: (post.amened === true || post.amened === 1 || post.amened === 'true'),
-            calculatedComments: Math.max(serverCount, localCount),
-            title: post.title || '', content: post.content || '',
-            privacy: post.privacy ? post.privacy.toLowerCase() : mapCategoryToPrivacy(post.category),
-            category: post.category || categoryToFetch,
-            author: post.author || post.userid || user?.name || 'Anonymous',
-            time: post.datetime || post.created_at || null,
-            image: post.image || null,
-            audioRecordId: post.uuid || null,
-            comments: 0
-          };
+        const currentAllPosts = allPostsRef.current;
+
+        const transformedPosts = filteredPosts.map(post => ({
+          id: post.docid,
+          sn: post.sn,
+          userid: post.userid || post.author_id,
+          avatar_url: post.avatar_url,
+          likes: post.amen_count !== undefined ? post.amen_count : 0,
+          isLiked: (post.amened === true || post.amened === 1 || post.amened === 'true'),
+          serverCommentCount: post.comment_count || 0,
+          calculatedComments: Math.max(
+            post.comment_count || 0,
+            currentAllPosts.filter(p => p.parent_docid === post.docid && p.event !== 'witness').length
+          ),
+          title: post.title || '',
+          content: post.content || '',
+          privacy: post.privacy ? post.privacy.toLowerCase() : mapCategoryToPrivacy(post.category),
+          category: post.category || categoryToFetch,
+          author: post.author || post.userid || user?.name || 'Anonymous',
+          time: post.datetime || post.created_at || null,
+          image: post.image || null,
+          audioRecordId: post.uuid || null,
+          comments: 0
+        }));
+
+        setPosts(prev => {
+          const prevMap = new Map(prev.map(p => [p.id, p]));
+          return transformedPosts.map(newPost => {
+            const existing = prevMap.get(newPost.id);
+            const snap = likesBeforeFetch[newPost.id];
+            const serverLikes = newPost.likes || 0;
+            const snapLikes = snap?.likes || 0;
+            const localLikes = existing?.likes || 0;
+            const finalLikes = serverLikes > 0 ? serverLikes : snapLikes > 0 ? snapLikes : localLikes;
+            const finalIsLiked = serverLikes > 0 ? newPost.isLiked : (snap?.isLiked || existing?.isLiked || newPost.isLiked);
+            return {
+              ...newPost,
+              time: newPost.time || existing?.time || null,
+              likes: finalLikes,
+              isLiked: finalIsLiked,
+              serverCommentCount: Math.max(newPost.serverCommentCount || 0, existing?.serverCommentCount || 0),
+              calculatedComments: Math.max(
+                newPost.serverCommentCount || 0,
+                newPost.calculatedComments || 0,
+                existing?.calculatedComments || 0,
+                existing?.serverCommentCount || 0
+              ),
+            };
+          });
         });
-        setPosts(transformedPosts);
-        setAllPosts([...rawPosts, ...rawComments]);
+
+        setAllPosts(prev => {
+          const existingChildren = prev.filter(p => p.parent_docid != null);
+          const newChildren = rawPosts.filter(p => p.parent_docid != null);
+          const newChildDocids = new Set(newChildren.map(p => p.docid));
+          const mergedChildren = [
+            ...newChildren,
+            ...existingChildren.filter(p => !newChildDocids.has(p.docid))
+          ];
+          const rootPosts = rawPosts.filter(p => !p.parent_docid);
+          return [...rootPosts, ...mergedChildren];
+        });
+
         setHasNextPage(postsResult.pagination?.has_next === true);
       } else {
-        setPosts([]); setAllPosts([]); setHasNextPage(false);
+        setPosts([]);
+        setAllPosts(prev => prev.filter(p => p.parent_docid != null));
+        setHasNextPage(false);
       }
     } catch (error) {
       console.error('💥 Error fetching posts:', error);
@@ -1358,12 +1531,54 @@ const MainApp = ({ user, onLogout }) => {
     } finally {
       setLoading(false);
     }
-  }, [getDemoPosts, user, selectedCategory, mapCategoryToPrivacy, viewScope]);
+  }, [user, selectedCategory, mapCategoryToPrivacy, viewScope]);
+
+  const handleLoadComments = useCallback(async (postId) => {
+    try {
+      const result = await ApiService.getCommentsPage(1, 100, { parent_docid: postId })
+        .catch(() => ({ success: false, comments: [] }));
+      if (result?.success && result.comments?.length > 0) {
+        setAllPosts(prev => {
+          const withoutOld = prev.filter(p => p.parent_docid !== postId);
+          return [...withoutOld, ...result.comments];
+        });
+      }
+    } catch (e) {
+      console.error('❌ Error loading comments for post:', postId, e);
+    }
+  }, []);
+
+  const handlePostEdited = useCallback((oldDocid, newDocid, newPostData) => {
+    setPosts(prev => prev.map(p =>
+      p.id === oldDocid
+        ? {
+          ...p,
+          content: newPostData?.content || p.content,
+          title: newPostData?.title ?? p.title,
+          userid: newPostData?.userid || p.userid,
+          time: newPostData?.time ?? p.time ?? p.datetime ?? null,
+          calculatedComments: Math.max(p.calculatedComments || 0, p.serverCommentCount || 0),
+          serverCommentCount: Math.max(p.serverCommentCount || 0, p.calculatedComments || 0),
+        }
+        : p
+    ));
+    setAllPosts(prev => prev.map(p =>
+      p.docid === oldDocid
+        ? { ...p, content: newPostData?.content || p.content, title: newPostData?.title ?? p.title }
+        : p
+    ));
+  }, []);
 
   useEffect(() => {
     fetchPosts(initialCategory, 1);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  useEffect(() => {
+    setCurrentPage(1);
+    fetchPosts(selectedCategory, 1);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [viewScope]);
 
   const handleCloseTribeDetail = () => setShowTribeDetail(false);
 
@@ -1504,7 +1719,7 @@ const MainApp = ({ user, onLogout }) => {
             ) : !loading && viewMode === 'witness' ? (
               <WitnessWall
                 selectedCategory={selectedCategory}
-                currentUserId={user?.id}
+                currentUserId={user?.user_id || user?.userId || user?.id}
                 allPosts={allPosts}
                 refreshBalance={refreshBalance}
                 viewScope={viewScope}
@@ -1515,10 +1730,16 @@ const MainApp = ({ user, onLogout }) => {
               <div className="posts-feed">
                 {filteredPosts.map(post => (
                   <Post
-                    key={post.id} post={post} allPosts={allPosts}
-                    onLike={handleLikePost} onComment={handleCommentPost}
+                    key={post.id}
+                    post={post}
+                    allPosts={allPosts}
+                    onLike={handleLikePost}
+                    onComment={handleCommentPost}
                     onWitnessCreated={handleWitnessCreated}
-                    currentUserId={user?.id} selectedCategory={selectedCategory}
+                    onPostEdited={handlePostEdited}
+                    onLoadComments={handleLoadComments}
+                    currentUserId={user?.user_id || user?.userId || user?.id}
+                    selectedCategory={selectedCategory}
                     refreshBalance={refreshBalance}
                   />
                 ))}
