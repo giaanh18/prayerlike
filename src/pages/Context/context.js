@@ -988,12 +988,13 @@ const Post = ({ post, allPosts, onLike, onComment, onWitnessCreated, onPostEdite
         </div>
         <div className="post-badges-container post-badges-with-edit">
           <div className="badges-row">
-            <div className="post-privacy-badge">
+            <div className={`post-privacy-badge ${(post.privacy === 'individual' || post.privacy === 'private') ? 'privacy-individual' : ''}`}>
               {(!post.privacy || post.privacy === 'public') && <span>Public</span>}
               {post.privacy === 'family' && <span>Family</span>}
               {post.privacy === 'tribe' && <span>Tribe</span>}
               {(post.privacy === 'individual' || post.privacy === 'private') && <span>Individual</span>}
             </div>
+
             <div className="post-category-badge">
               {post.category === 'Personal & Family' && <span>Personal & Family</span>}
               {post.category === 'Church & Ministry' && <span>Church & Ministry</span>}

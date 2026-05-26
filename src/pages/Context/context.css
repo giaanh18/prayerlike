@@ -4459,5 +4459,63 @@ select:focus-visible {
   gap: 8px !important;
   align-items: center !important;
 }
+/* ==================== 🔧 FIX AUTHOR NAME TRUNCATE ==================== */
+.post-author,
+.witness-wall-author {
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  display: block !important;
+  max-width: 100% !important;
+}
 
-/* ==================== END EDIT POST ==================== */
+.post-time,
+.witness-wall-time {
+  white-space: nowrap !important;
+  display: block !important;
+}
+
+.post-badges-container {
+  flex-shrink: 0 !important;
+}
+/* ==================== 🔧 CHỈ CẮT PRIVACY BADGE (INDIVIDUAL) ==================== */
+.post-badges-with-edit {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: flex-end !important;
+  gap: 4px !important;
+  flex-shrink: 0 !important;
+  min-width: 0 !important;
+}
+
+.post-badges-with-edit .badges-row {
+  display: flex !important;
+  gap: 8px !important;
+  align-items: center !important;
+  flex-wrap: nowrap !important;
+}
+
+/* ✅ Reset tất cả privacy badge về bình thường */
+.post-privacy-badge {
+  max-width: unset !important;
+  overflow: visible !important;
+  text-overflow: unset !important;
+}
+
+/* ✅ CHỈ INDIVIDUAL mới bị cắt ... */
+.post-privacy-badge.privacy-individual {
+  max-width: 80px !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+}
+
+
+/* ✅ Category badge giữ nguyên đầy đủ */
+.post-category-badge {
+  max-width: unset !important;
+  overflow: visible !important;
+  white-space: nowrap !important;
+}
+/* ==================== END FIX ==================== */
+
